@@ -1,0 +1,22 @@
+subprojects {
+  apply plugin: 'java'
+
+  repositories {
+    mavenCentral()
+    mavenLocal()
+  }
+
+  group = 'endpoints.servicecontrol'
+
+  compileJava {
+    // Workaround to actually apply project compatibility
+    sourceCompatibility = project.sourceCompatibility
+    targetCompatibility = project.targetCompatibility
+  }
+
+  compileTestJava {
+    // Workaround to actually apply project compatibility
+    sourceCompatibility = project.sourceCompatibility
+    targetCompatibility = project.targetCompatibility
+  }
+}

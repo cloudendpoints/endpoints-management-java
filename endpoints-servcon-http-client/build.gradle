@@ -1,0 +1,40 @@
+apply plugin: 'java'
+apply plugin: 'maven'
+
+group = 'com.google.apis'
+version = 'v1-rev20160404-1.20.0'
+archivesBaseName = 'google-api-services-servicecontrol'
+
+sourceCompatibility = 1.6
+targetCompatibility = 1.6
+jar.manifest.attributes("Built-By": "Google")
+jar.manifest.attributes("Build-Jdk": "1.6.x")
+
+task sourceJar(type: Jar) {
+  classifier = 'sources'
+  from sourceSets.main.allJava
+}
+
+task javadocJar(type: Jar, dependsOn: javadoc) {
+    classifier = 'javadoc'
+    from javadoc.destinationDir
+}
+
+artifacts {
+    archives sourceJar
+    archives javadocJar
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+  compile module(group: 'com.google.api-client', name: 'google-api-client', version: '1.21.0') {
+    module(group: 'com.google.http-client', name: 'google-http-client-jackson2', version: '1.21.0') {
+      dependency('com.fasterxml.jackson.core:jackson-core:2.6.4')
+      dependency('com.google.http-client:google-http-client:1.21.0')
+    }
+    dependency('com.google.oauth-client:google-oauth-client:1.21.0')
+  }
+}

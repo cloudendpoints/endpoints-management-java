@@ -1,0 +1,2 @@
+rootProject.name = 'endpoints-servicecontrol'
+include ':endpoints-servcon-http-client'
