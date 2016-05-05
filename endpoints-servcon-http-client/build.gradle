@@ -1,5 +1,14 @@
+buildscript {
+  repositories {
+    mavenCentral()
+  }
+  dependencies { classpath 'com.google.protobuf:protobuf-gradle-plugin:0.7.4' }
+}
+
 apply plugin: 'java'
 apply plugin: 'maven'
+apply plugin: 'signing'
+apply plugin: 'com.google.protobuf'
 
 group = 'com.google.apis'
 version = 'v1-rev20160404-1.20.0'
@@ -16,20 +25,27 @@ task sourceJar(type: Jar) {
 }
 
 task javadocJar(type: Jar, dependsOn: javadoc) {
-    classifier = 'javadoc'
-    from javadoc.destinationDir
+  classifier = 'javadoc'
+  from javadoc.destinationDir
 }
 
 artifacts {
-    archives sourceJar
-    archives javadocJar
+  archives sourceJar
 }
 
+def tmpSnapshotRepo = "http://104.197.230.53:8081/nexus/content/repositories/snapshots/"
 repositories {
-    mavenCentral()
+  mavenCentral()
+  mavenLocal()
+  maven {
+    // Private maven repo.  Temporary, until googleapis-common-protos is published
+    url tmpSnapshotRepo
+  }
 }
 
 dependencies {
+  compile "io.gapi:googleapis-common-protos:0.0.0-SNAPSHOT"
+  compile "io.gapi:grpc-google-api-servicecontrol-v1:0.6.0-SNAPSHOT"
   compile module(group: 'com.google.api-client', name: 'google-api-client', version: '1.21.0') {
     module(group: 'com.google.http-client', name: 'google-http-client-jackson2', version: '1.21.0') {
       dependency('com.fasterxml.jackson.core:jackson-core:2.6.4')
