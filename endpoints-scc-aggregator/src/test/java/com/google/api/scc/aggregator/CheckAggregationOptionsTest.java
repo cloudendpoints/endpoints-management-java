@@ -23,10 +23,20 @@
 package com.google.api.scc.aggregator;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.fail;
+
+import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
+
+import com.google.common.base.Ticker;
+import com.google.common.cache.Cache;
 
 /**
  * Tests for CheckAggregationOptions.
@@ -51,5 +61,105 @@ public class CheckAggregationOptionsTest {
     assertEquals(-1, options.getNumEntries());
     assertEquals(1, options.getFlushCacheEntryIntervalMillis());
     assertEquals(2 /* cache interval + 1 */, options.getExpirationMillis());
+  }
+
+  @Test
+  public void shouldFailToCreateCacheWithANullOutputDeque() {
+    try {
+      CheckAggregationOptions options = new CheckAggregationOptions();
+      options.createCache(null);
+      fail("should have raised NullPointerException");
+    } catch (NullPointerException e) {
+      // expected
+    }
+  }
+
+  @Test
+  public void shouldFailToCreateACacheWithANullTicker() {
+    try {
+      CheckAggregationOptions options = new CheckAggregationOptions();
+      options.createCache(testDeque(), null);
+      fail("should have raised NullPointerException");
+    } catch (NullPointerException e) {
+      // expected
+    }
+  }
+
+  @Test
+  public void shouldNotCreateACacheUnlessMaxSizeIsPositive() {
+    for (int i : new int[] {-1, 0, 1}) {
+      CheckAggregationOptions options = new CheckAggregationOptions(i,
+          CheckAggregationOptions.DEFAULT_FLUSH_CACHE_ENTRY_INTERVAL_MILLIS,
+          CheckAggregationOptions.DEFAULT_RESPONSE_EXPIRATION_MILLIS);
+      if (i > 0) {
+        assertNotNull(options.createCache(testDeque()));
+      } else {
+        assertNull(options.createCache(testDeque()));
+      }
+    }
+  }
+
+  @Test
+  public void shouldCreateACacheEvenIfExpirationIsNotPositive() {
+    for (int i : new int[] {-1, 0, 1}) {
+      CheckAggregationOptions options =
+          new CheckAggregationOptions(CheckAggregationOptions.DEFAULT_NUM_ENTRIES, i - 1, i);
+      assertNotNull(options.createCache(testDeque()));
+    }
+  }
+
+  @Test
+  public void shouldCreateACacheThatFlushesToTheOutputDeque() {
+    CheckAggregationOptions options = new CheckAggregationOptions(1,
+        CheckAggregationOptions.DEFAULT_FLUSH_CACHE_ENTRY_INTERVAL_MILLIS,
+        CheckAggregationOptions.DEFAULT_RESPONSE_EXPIRATION_MILLIS);
+
+    ConcurrentLinkedDeque<Long> deque = testDeque();
+    Cache<String, Long> cache = options.createCache(deque);
+    cache.put("one", 1L);
+    assertEquals(cache.size(), 1);
+    assertEquals(deque.size(), 0);
+    cache.put("two", 2L);
+    assertEquals(cache.size(), 1);
+    assertEquals(deque.size(), 1);
+    cache.put("three", 3L);
+    assertEquals(cache.size(), 1);
+    assertEquals(deque.size(), 2);
+  }
+
+  @Test
+  public void shouldCreateACacheThatFlushesToTheOutputDequeAfterExpiration() {
+    CheckAggregationOptions options =
+        new CheckAggregationOptions(CheckAggregationOptions.DEFAULT_NUM_ENTRIES, 0, 1);
+
+    ConcurrentLinkedDeque<Long> deque = testDeque();
+    FakeTicker ticker = new FakeTicker();
+    Cache<String, Long> cache = options.createCache(deque, ticker);
+    cache.put("one", 1L);
+    assertEquals(1, cache.size());
+    assertEquals(0, deque.size());
+    ticker.tick(1 /* expires the entry */, TimeUnit.MILLISECONDS);
+    cache.cleanUp();
+    assertEquals(0, cache.size());
+    assertEquals(1, deque.size());
+  }
+
+  private static ConcurrentLinkedDeque<Long> testDeque() {
+    return new ConcurrentLinkedDeque<Long>();
+  }
+
+  static class FakeTicker extends Ticker {
+    private final AtomicLong nanos = new AtomicLong();
+
+    /** Advances the ticker value by {@code time} in {@code timeUnit}. */
+    public FakeTicker tick(long time, TimeUnit timeUnit) {
+      nanos.addAndGet(timeUnit.toNanos(time));
+      return this;
+    }
+
+    @Override
+    public long read() {
+      return nanos.getAndAdd(0);
+    }
   }
 }

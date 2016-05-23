@@ -22,6 +22,18 @@
  */
 package com.google.api.scc.aggregator;
 
+import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.concurrent.TimeUnit;
+
+import javax.annotation.Nullable;
+
+import com.google.common.base.Preconditions;
+import com.google.common.base.Ticker;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.RemovalListener;
+import com.google.common.cache.RemovalNotification;
+
 /**
  * Holds values used to configure report aggregation.
  */
@@ -73,5 +85,51 @@ public class ReportAggregationOptions {
    */
   public int getFlushCacheEntryIntervalMillis() {
     return flushCacheEntryIntervalMillis;
+  }
+
+  /**
+   * Creates a {@link Cache} configured by this instance.
+   *
+   * @param <T>
+   *
+   * @param out a concurrent {@code Deque} to which previously cached values are added as they
+   *        expire
+   * @return a {@link Cache} corresponding to this instance's values or {@code null} unless {@
+   *         #numEntries} is positive.
+   */
+  @Nullable
+  public <T> Cache<String, T> createCache(ConcurrentLinkedDeque<T> out) {
+    return createCache(out, Ticker.systemTicker());
+  }
+
+  /**
+   * Creates a {@link Cache} configured by this instance.
+   *
+   * @param <T> the type of the value stored in the Cache
+   * @param out a concurrent {@code Deque} to which cached values are added as they are removed from
+   *        the cache
+   * @param ticker the time source used to determine expiration
+   * @return a {@link Cache} corresponding to this instance's values or {@code null} unless {@
+   *         #numEntries} is positive.
+   */
+  @Nullable
+  public <T> Cache<String, T> createCache(final ConcurrentLinkedDeque<T> out, Ticker ticker) {
+    Preconditions.checkNotNull(out, "The out deque cannot be null");
+    Preconditions.checkNotNull(ticker, "The ticker cannot be null");
+    if (numEntries <= 0) {
+      return null;
+    }
+    final RemovalListener<String, T> listener = new RemovalListener<String, T>() {
+      @Override
+      public void onRemoval(RemovalNotification<String, T> notification) {
+        out.addFirst(notification.getValue());
+      }
+    };
+    CacheBuilder<String, T> b =
+        CacheBuilder.newBuilder().maximumSize(numEntries).ticker(ticker).removalListener(listener);
+    if (flushCacheEntryIntervalMillis >= 0) {
+      b.expireAfterWrite(flushCacheEntryIntervalMillis, TimeUnit.MILLISECONDS);
+    }
+    return b.build();
   }
 }
