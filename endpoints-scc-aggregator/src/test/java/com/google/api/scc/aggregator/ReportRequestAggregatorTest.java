@@ -32,6 +32,8 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 
 import com.google.api.servicecontrol.v1.Operation;
 import com.google.api.servicecontrol.v1.ReportRequest;
@@ -42,6 +44,7 @@ import com.google.common.base.Ticker;
  * Tests the behavior in {@link ReportRequestAggregator}
  *
  */
+@RunWith(JUnit4.class)
 public class ReportRequestAggregatorTest {
   private static final String TEST_CONSUMER_ID = "testConsumerId";
   private static final String NO_CACHE_NAME = "service.no.cache";

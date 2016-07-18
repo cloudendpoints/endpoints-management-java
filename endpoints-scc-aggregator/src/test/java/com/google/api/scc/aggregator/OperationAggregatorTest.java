@@ -27,6 +27,8 @@ import static org.junit.Assert.assertEquals;
 import java.util.Map;
 
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 
 import com.google.api.MetricDescriptor.MetricKind;
 import com.google.api.servicecontrol.v1.MetricValue;
@@ -39,6 +41,7 @@ import com.google.protobuf.Timestamp;
 /**
  * Tests the behavior of {@link OperationAggregator}
  */
+@RunWith(JUnit4.class)
 public class OperationAggregatorTest {
   private static final double TEST_DOUBLE_VALUE = 1.1;
   private static final Timestamp EARLIEST =

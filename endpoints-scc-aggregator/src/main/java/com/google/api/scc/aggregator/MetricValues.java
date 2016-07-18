@@ -43,7 +43,7 @@ public final class MetricValues {
   private static final String MSG_NOT_MERGABLE = "Metric type not mergeabe";
   private static final String MSG_CANNOT_MERGE_DIFFERENT_TYPES =
       "Cannot merge metrics with different types of value";
-  private static final Logger LOGGER = Logger.getLogger(MetricValues.class.getName());
+  private static final Logger log = Logger.getLogger(MetricValues.class.getName());
 
   private MetricValues() {}
 
@@ -90,7 +90,7 @@ public final class MetricValues {
    */
   public static MetricValue merge(MetricKind kind, MetricValue prior, MetricValue latest) {
     if (prior.getValueCase() != latest.getValueCase()) {
-      LOGGER.log(Level.WARNING, "Could not merge different types of metric: {0}, {1}",
+      log.log(Level.WARNING, "Could not merge different types of metric: {0}, {1}",
           new Object[] {prior, latest});
       throw new IllegalArgumentException(MSG_CANNOT_MERGE_DIFFERENT_TYPES);
     }
@@ -122,7 +122,7 @@ public final class MetricValues {
         builder.setInt64Value(prior.getInt64Value() + latest.getInt64Value());
         break;
       default:
-        LOGGER.log(Level.WARNING, "Could not merge logs with unmergable metric types: {0}, {1}",
+        log.log(Level.WARNING, "Could not merge logs with unmergable metric types: {0}, {1}",
             new Object[] {prior, latest});
         throw new IllegalArgumentException(MSG_NOT_MERGABLE);
     }

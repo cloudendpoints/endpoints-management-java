@@ -42,7 +42,6 @@ import com.google.common.cache.Cache;
  * Tests for ReportAggregationOptions.
  */
 @RunWith(JUnit4.class)
-
 public class ReportAggregationOptionsTest {
   @Test
   public void defaultConstructorShouldSpecifyTheDefaultValues() {

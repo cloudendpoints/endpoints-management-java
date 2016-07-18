@@ -52,7 +52,7 @@ public final class Distributions {
   private static final String MSG_DOUBLE_TOO_LOW = "%s should be > %f";
   private static final String MSG_BAD_NUM_FINITE_BUCKETS = "number of finite buckets should be > 0";
   private static final double TOLERANCE = 1e-5;
-  private static final Logger LOG = Logger.getLogger(Distributions.class.getName());
+  private static final Logger log = Logger.getLogger(Distributions.class.getName());
 
   private Distributions() {}
 
@@ -283,7 +283,7 @@ public final class Distributions {
       index = 1 + ((int) Math.round((value - buckets.getOffset()) / buckets.getWidth()));
     }
     long newCount = distribution.getBucketCounts(index) + 1;
-    LOG.log(Level.FINE, "Updating explicit bucket {0} to {1} for {2}",
+    log.log(Level.FINE, "Updating explicit bucket {0} to {1} for {2}",
         new Object[] {index, newCount, value});
     distribution.setBucketCounts(index, newCount);
   }
@@ -302,7 +302,7 @@ public final class Distributions {
       index = Math.min(buckets.getNumFiniteBuckets() + 1, index);
     }
     long newCount = distribution.getBucketCounts(index) + 1;
-    LOG.log(Level.FINE, "Updating explicit bucket {0} to {1} for {2}",
+    log.log(Level.FINE, "Updating explicit bucket {0} to {1} for {2}",
         new Object[] {index, newCount, value});
     distribution.setBucketCounts(index, newCount);
   }
@@ -324,7 +324,7 @@ public final class Distributions {
       index += 1;
     }
     long newCount = distribution.getBucketCounts(index) + 1;
-    LOG.log(Level.FINE, "Updating explicit bucket {0} to {1} for {2}",
+    log.log(Level.FINE, "Updating explicit bucket {0} to {1} for {2}",
         new Object[] {index, newCount, value});
     distribution.setBucketCounts(index, newCount);
   }
