@@ -20,36 +20,58 @@
  * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY
  * WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+
 package com.google.api.scc.model;
 
+import static javax.servlet.http.HttpServletResponse.SC_OK;
 import static org.junit.Assert.assertEquals;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
-import com.google.protobuf.Timestamp;
+import com.google.api.servicecontrol.v1.CheckError;
+import com.google.api.servicecontrol.v1.CheckError.Code;
+import com.google.api.servicecontrol.v1.CheckResponse;
 
 /**
- * Tests {@link Timestamps}
+ * CheckErrorInfoTest tests the behavior in {@code CheckErrorInfo}
+ *
  */
 @RunWith(JUnit4.class)
-public class TimestampsTest {
-  private static final Timestamp EARLIEST =
-      Timestamp.newBuilder().setNanos(1).setSeconds(1).build();
-  private static final Timestamp EARLY = Timestamp.newBuilder().setNanos(1).setSeconds(100).build();
-  private static final Timestamp LATER = Timestamp.newBuilder().setNanos(2).setSeconds(100).build();
-  private static final Timestamp LATEST =
-      Timestamp.newBuilder().setNanos(100).setSeconds(100).build();
-  private static final Timestamp[][] TESTS = new Timestamp[][] {new Timestamp[] {EARLIEST, EARLY},
-      new Timestamp[] {EARLY, LATER}, new Timestamp[] {LATER, LATEST},};
+public class CheckErrorInfoTest {
+  private static final String TEST_DETAIL = "my-detail";
+  private static final String TEST_PROJECT = "my-project";
 
   @Test
-  public void comparatorShouldOrderTimestampsCorrectly() {
-    for (Timestamp[] timestamps : TESTS) {
-      assertEquals(0, Timestamps.COMPARATOR.compare(timestamps[0], timestamps[0]));
-      assertEquals(-1, Timestamps.COMPARATOR.compare(timestamps[0], timestamps[1]));
-      assertEquals(1, Timestamps.COMPARATOR.compare(timestamps[1], timestamps[0]));
-    }
+  public void shouldBeOkWhenThereAreNoErrors() {
+    CheckResponse noErrors = CheckResponse.newBuilder().build();
+    CheckErrorInfo converted = CheckErrorInfo.convert(noErrors);
+    assertEquals(CheckErrorInfo.OK, converted);
+    assertEquals(SC_OK, converted.getHttpCode());
+    assertEquals("", converted.fullMessage(TEST_PROJECT, TEST_DETAIL));
+  }
+
+  @Test
+  public void shouldIncludeTheProjectIdInFullMessage() {
+    CheckResponse deleted = CheckResponse
+        .newBuilder()
+        .addCheckErrors(CheckError.newBuilder().setCode(Code.PROJECT_DELETED))
+        .build();
+    CheckErrorInfo converted = CheckErrorInfo.convert(deleted);
+    assertEquals(CheckErrorInfo.PROJECT_DELETED, converted);
+    assertEquals("Project my-project has been deleted",
+        converted.fullMessage(TEST_PROJECT, TEST_DETAIL));
+  }
+
+  @Test
+  public void shouldIncludeDetailInFullMessage() {
+    CheckResponse deleted = CheckResponse
+        .newBuilder()
+        .addCheckErrors(CheckError.newBuilder().setCode(Code.IP_ADDRESS_BLOCKED))
+        .build();
+    CheckErrorInfo converted = CheckErrorInfo.convert(deleted);
+    assertEquals(CheckErrorInfo.IP_ADDRESS_BLOCKED, converted);
+    assertEquals(TEST_DETAIL, converted.fullMessage(TEST_PROJECT, TEST_DETAIL));
   }
 }

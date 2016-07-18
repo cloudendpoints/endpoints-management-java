@@ -24,9 +24,12 @@ package com.google.api.scc.model;
 
 import java.util.Comparator;
 
+import com.google.common.base.Ticker;
 import com.google.protobuf.Timestamp;
 
 public final class Timestamps {
+  private static final int NANOS_PER_SECOND = 1000000000;
+
   private Timestamps() {}
 
   /**
@@ -43,4 +46,19 @@ public final class Timestamps {
       }
     }
   };
+
+  /**
+   * Obtain the current time from a {@link Ticker}
+   *
+   * @param ticker gives the current time
+   * @return a {@code Timestamp} corresponding to the ticker's current value
+   */
+  public static Timestamp now(Ticker ticker) {
+    long t = ticker.read();
+    return Timestamp
+        .newBuilder()
+        .setNanos((int) t % NANOS_PER_SECOND)
+        .setSeconds(t / NANOS_PER_SECOND)
+        .build();
+  }
 }
