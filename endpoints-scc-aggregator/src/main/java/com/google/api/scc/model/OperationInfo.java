@@ -30,8 +30,6 @@ import com.google.protobuf.Timestamp;
 
 /**
  * Holds basic information about an operation to be obtained from the HTTP layer.
- *
- * This class is a POJO used to mediate between the service control API and Java HTTP frameworks.
  */
 public class OperationInfo {
   private boolean apiKeyValid;
@@ -41,10 +39,6 @@ public class OperationInfo {
   private String operationName;
   private String referer;
   private String serviceName;
-
-  public OperationInfo() {
-    // default constructor
-  }
 
   /**
    * Returns the {@link Operation} instance corresponding to this instance.

@@ -70,7 +70,7 @@ public class CheckRequestInfoTest {
               .newBuilder()
               .setServiceName(TEST_SERVICE_NAME)
               .setOperation(newExpectedOperationBuilder().putAllLabels(
-                  ImmutableMap.of(CheckRequestInfo.SCC_USER_AGENT, CheckRequestInfo.USER_AGENT,
+                  ImmutableMap.of(CheckRequestInfo.SCC_USER_AGENT, KnownLabels.USER_AGENT,
                       CheckRequestInfo.SCC_REFERER, TEST_REFERER)))
               .build()),
       new InfoTest(new CheckRequestInfo(newTestOperationInfo()).setClientIp(TEST_CLIENT_IP),
@@ -79,7 +79,7 @@ public class CheckRequestInfoTest {
               .setServiceName(TEST_SERVICE_NAME)
               .setOperation(newExpectedOperationBuilder()
                   .putAllLabels(ImmutableMap.of(CheckRequestInfo.SCC_USER_AGENT,
-                      CheckRequestInfo.USER_AGENT, CheckRequestInfo.SCC_CALLER_IP, TEST_CLIENT_IP)))
+                      KnownLabels.USER_AGENT, CheckRequestInfo.SCC_CALLER_IP, TEST_CLIENT_IP)))
               .build())
 
   };

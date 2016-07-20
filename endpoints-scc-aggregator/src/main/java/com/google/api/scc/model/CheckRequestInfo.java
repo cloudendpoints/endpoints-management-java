@@ -40,7 +40,6 @@ public class CheckRequestInfo extends OperationInfo {
   public static final String SCC_CALLER_IP = "servicecontrol.googleapis.com/caller_ip";
   public static final String SCC_USER_AGENT = "servicecontrol.googleapis.com/user_agent";
   public static final String SCC_REFERER = "servicecontrol.googleapis.com/referer";
-  public static final String USER_AGENT = "service-control-client/java";
 
   public CheckRequestInfo() {
     // default constructor
@@ -89,7 +88,7 @@ public class CheckRequestInfo extends OperationInfo {
         "an operation name must be set");
     Operation.Builder b = super.asOperation(ticker).toBuilder();
     Map<String, String> labels = Maps.newHashMap();
-    labels.put(SCC_USER_AGENT, USER_AGENT);
+    labels.put(SCC_USER_AGENT, KnownLabels.USER_AGENT);
     if (!Strings.isNullOrEmpty(getReferer())) {
       labels.put(SCC_REFERER, getReferer());
     }
