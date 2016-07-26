@@ -23,18 +23,13 @@
 
 package com.google.api.scc.model;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
-
-import javax.annotation.Nullable;
 
 import com.google.api.servicecontrol.v1.Operation;
 import com.google.api.servicecontrol.v1.ReportRequest;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 import com.google.common.base.Ticker;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.logging.v1.LogEntry;
 import com.google.protobuf.Struct;
@@ -45,101 +40,6 @@ import com.google.protobuf.Value;
  */
 public class ReportRequestInfo extends OperationInfo {
   private static final int NANOS_PER_MILLIS = 1000000;
-
-  /**
-   * ReportingRule is holds information the determines how to fill a report request
-   */
-  public static class ReportingRule {
-    /**
-     * 'Constructor' that uses names of known {@code KnownMetrics} and {@code KnownLabels}.
-     *
-     * Names that don't correspond to actual instances are ignored, as are instances where there is
-     * not yet an update function that will modify a {@code ReportRequest}
-     *
-     *
-     * @param logs the {@code logs} for which entries will be added {@code ReportRequests}
-     * @param metricNames the names of the {@code KnownMetrics} to use
-     * @param labelNames the names of the {@code KnownLabels} to use
-     * @return
-     */
-    public static ReportingRule fromKnownInputs(@Nullable String[] logs,
-        @Nullable List<String> metricNames, @Nullable List<String> labelNames) {
-      KnownMetrics[] metrics = null;
-      if (metricNames != null) {
-        ArrayList<KnownMetrics> l = Lists.newArrayList();
-        for (KnownMetrics m : KnownMetrics.values()) {
-          if (m.getUpdater() == null || !metricNames.contains(m.getName())) {
-            continue;
-          }
-          l.add(m);
-          metrics = l.toArray(new KnownMetrics[l.size()]);
-        }
-      }
-      KnownLabels[] labels = null;
-      if (labelNames != null) {
-        ArrayList<KnownLabels> knownLabels = Lists.newArrayList();
-        for (KnownLabels k : KnownLabels.values()) {
-          if (k.getUpdater() == null || !labelNames.contains(k.getName())) {
-            continue;
-          }
-          knownLabels.add(k);
-          metrics = knownLabels.toArray(new KnownMetrics[knownLabels.size()]);
-        }
-      }
-      return new ReportingRule(logs, metrics, labels);
-    }
-
-    /**
-     * Constructor that uses {@code KnownMetrics} and {@code KnownLabels} instance directly
-     *
-     * @param logs the {@code logs} for which entries will be added {@code ReportRequests}
-     * @param metrics the {@code KnownMetrics} used to add metrics to {@code ReportRequests}
-     * @param labels the {@code KnownLabels} used to add labels to {@code ReportRequests}
-     */
-    public ReportingRule(@Nullable String[] logs, @Nullable KnownMetrics[] metrics,
-        @Nullable KnownLabels[] labels) {
-      if (logs == null) {
-        this.logs = new String[] {};
-      } else {
-        this.logs = logs;
-      }
-      if (metrics == null) {
-        this.metrics = new KnownMetrics[] {};
-      } else {
-        this.metrics = metrics;
-      }
-      if (labels == null) {
-        this.labels = new KnownLabels[] {};
-      } else {
-        this.labels = labels;
-      }
-    }
-
-    /**
-     * @return the {@code logs} for which entries will be added {@code ReportRequests}
-     */
-    public String[] getLogs() {
-      return logs;
-    }
-
-    /**
-     * @return the {@code KnownMetrics} used to add metrics to {@code ReportRequests}
-     */
-    public KnownMetrics[] getMetrics() {
-      return metrics;
-    }
-
-    /**
-     * @return the {@code KnownLabels} used to add labels to {@code ReportRequests}
-     */
-    public KnownLabels[] getLabels() {
-      return labels;
-    }
-
-    private final String[] logs;
-    private final KnownMetrics[] metrics;
-    private final KnownLabels[] labels;
-  }
 
   /**
    * ReportedPlatform enumerates the platforms that may be reported.
