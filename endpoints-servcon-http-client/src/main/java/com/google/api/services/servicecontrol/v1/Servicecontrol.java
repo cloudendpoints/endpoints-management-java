@@ -16,6 +16,15 @@
 
 package com.google.api.services.servicecontrol.v1;
 
+import com.google.api.client.googleapis.services.AbstractGoogleClient;
+import com.google.api.client.http.protobuf.ProtoHttpContent;
+import com.google.api.client.protobuf.ProtoObjectParser;
+import com.google.api.client.util.ObjectParser;
+import com.google.api.servicecontrol.v1.CheckRequest;
+import com.google.api.servicecontrol.v1.CheckResponse;
+import com.google.api.servicecontrol.v1.ReportRequest;
+import com.google.api.servicecontrol.v1.ReportResponse;
+
 /**
  * Service definition for Servicecontrol (v1).
  *
@@ -37,7 +46,8 @@ package com.google.api.services.servicecontrol.v1;
  * @author Google, Inc.
  */
 @SuppressWarnings("javadoc")
-public class Servicecontrol extends com.google.api.client.googleapis.services.json.AbstractGoogleJsonClient {
+public class Servicecontrol extends AbstractGoogleClient {
+  private static final ObjectParser parser = new ProtoObjectParser();
 
   // Note: Leave this static initializer at the top of the file.
   static {
@@ -87,19 +97,12 @@ public class Servicecontrol extends com.google.api.client.googleapis.services.js
    *        <li>Java: {@link com.google.api.client.googleapis.javanet.GoogleNetHttpTransport#newTrustedTransport()}
    *        </li>
    *        </ul>
-   * @param jsonFactory JSON factory, which may be:
-   *        <ul>
-   *        <li>Jackson: {@code com.google.api.client.json.jackson2.JacksonFactory}</li>
-   *        <li>Google GSON: {@code com.google.api.client.json.gson.GsonFactory}</li>
-   *        <li>Android Honeycomb or higher:
-   *        {@code com.google.api.client.extensions.android.json.AndroidJsonFactory}</li>
-   *        </ul>
    * @param httpRequestInitializer HTTP request initializer or {@code null} for none
    * @since 1.7
    */
-  public Servicecontrol(com.google.api.client.http.HttpTransport transport, com.google.api.client.json.JsonFactory jsonFactory,
+  public Servicecontrol(com.google.api.client.http.HttpTransport transport,
       com.google.api.client.http.HttpRequestInitializer httpRequestInitializer) {
-    this(new Builder(transport, jsonFactory, httpRequestInitializer));
+    this(new Builder(transport, httpRequestInitializer));
   }
 
   /**
@@ -150,37 +153,44 @@ public class Servicecontrol extends com.google.api.client.googleapis.services.js
      * @param content the {@link com.google.api.services.servicecontrol.v1.model.CheckRequest}
      * @return the request
      */
-    public Check check(java.lang.String serviceName, com.google.api.services.servicecontrol.v1.model.CheckRequest content) throws java.io.IOException {
+    public Check check(java.lang.String serviceName, CheckRequest content)
+        throws java.io.IOException {
       Check result = new Check(serviceName, content);
       initialize(result);
       return result;
     }
 
-    public class Check extends ServicecontrolRequest<com.google.api.services.servicecontrol.v1.model.CheckResponse> {
+    public class Check extends ServicecontrolRequest<CheckResponse> {
 
       private static final String REST_PATH = "v1/services/{serviceName}:check";
 
       /**
-       * Checks quota, abuse status etc. to decide whether the given operation should proceed. It should
-       * be called by the service before the given operation is executed.
+       * Checks quota, abuse status etc. to decide whether the given operation should proceed. It
+       * should be called by the service before the given operation is executed.
        *
        * This method requires the `servicemanagement.services.check` permission on the specified
        * service. For more information, see [Google Cloud IAM](https://cloud.google.com/iam).
        *
        * Create a request for the method "services.check".
        *
-       * This request holds the parameters needed by the the servicecontrol server.  After setting any
-       * optional parameters, call the {@link Check#execute()} method to invoke the remote operation.
-       * <p> {@link
-       * Check#initialize(com.google.api.client.googleapis.services.AbstractGoogleClientRequest)} must
-       * be called to initialize this instance immediately after invoking the constructor. </p>
+       * This request holds the parameters needed by the the servicecontrol server. After setting
+       * any optional parameters, call the {@link Check#execute()} method to invoke the remote
+       * operation.
+       * <p>
+       * {@link Check#initialize(com.google.api.client.googleapis.services.AbstractGoogleClientRequest)}
+       * must be called to initialize this instance immediately after invoking the constructor.
+       * </p>
        *
        * @param serviceName Identity of the service. For example 'fortuneteller.example.com'.
-       * @param content the {@link com.google.api.services.servicecontrol.v1.model.CheckRequest}
+       * @param content the {@link CheckRequest}
        * @since 1.13
        */
-      protected Check(java.lang.String serviceName, com.google.api.services.servicecontrol.v1.model.CheckRequest content) {
-        super(Servicecontrol.this, "POST", REST_PATH, content, com.google.api.services.servicecontrol.v1.model.CheckResponse.class);
+      protected Check(java.lang.String serviceName, CheckRequest content) {
+        super(Servicecontrol.this,
+            "POST",
+            REST_PATH,
+            new ProtoHttpContent(content),
+            CheckResponse.class);
         this.serviceName = com.google.api.client.util.Preconditions.checkNotNull(serviceName, "Required parameter serviceName must be specified.");
       }
 
@@ -265,31 +275,32 @@ public class Servicecontrol extends com.google.api.client.googleapis.services.js
         return (Check) super.set(parameterName, value);
       }
     }
+
     /**
-     * Reports an operation to the service control features such as billing, logging, monitoring etc. It
-     * should be called by the service after the given operation is completed.
+     * Reports an operation to the service control features such as billing, logging, monitoring
+     * etc. It should be called by the service after the given operation is completed.
      *
-     * This method requires the `servicemanagement.services.report` permission on the specified service.
-     * For more information, see [Google Cloud IAM](https://cloud.google.com/iam).
+     * This method requires the `servicemanagement.services.report` permission on the specified
+     * service. For more information, see [Google Cloud IAM](https://cloud.google.com/iam).
      *
      * Create a request for the method "services.report".
      *
-     * This request holds the parameters needed by the servicecontrol server.  After setting any
+     * This request holds the parameters needed by the servicecontrol server. After setting any
      * optional parameters, call the {@link Report#execute()} method to invoke the remote operation.
      *
      * @param serviceName The service name that the following operations will be reported against.
-    For example
-     *        'fortuneteller.example.com'.
-     * @param content the {@link com.google.api.services.servicecontrol.v1.model.ReportRequest}
+     *        For example 'fortuneteller.example.com'.
+     * @param content the {@link ReportRequest}
      * @return the request
      */
-    public Report report(java.lang.String serviceName, com.google.api.services.servicecontrol.v1.model.ReportRequest content) throws java.io.IOException {
+    public Report report(java.lang.String serviceName, ReportRequest content)
+        throws java.io.IOException {
       Report result = new Report(serviceName, content);
       initialize(result);
       return result;
     }
 
-    public class Report extends ServicecontrolRequest<com.google.api.services.servicecontrol.v1.model.ReportResponse> {
+    public class Report extends ServicecontrolRequest<ReportResponse> {
 
       private static final String REST_PATH = "v1/services/{serviceName}:report";
 
@@ -314,8 +325,12 @@ public class Servicecontrol extends com.google.api.client.googleapis.services.js
        * @param content the {@link com.google.api.services.servicecontrol.v1.model.ReportRequest}
        * @since 1.13
        */
-      protected Report(java.lang.String serviceName, com.google.api.services.servicecontrol.v1.model.ReportRequest content) {
-        super(Servicecontrol.this, "POST", REST_PATH, content, com.google.api.services.servicecontrol.v1.model.ReportResponse.class);
+      protected Report(java.lang.String serviceName, ReportRequest content) {
+        super(Servicecontrol.this,
+            "POST",
+            REST_PATH,
+            new ProtoHttpContent(content),
+            ReportResponse.class);
         this.serviceName = com.google.api.client.util.Preconditions.checkNotNull(serviceName, "Required parameter serviceName must be specified.");
       }
 
@@ -419,7 +434,7 @@ public class Servicecontrol extends com.google.api.client.googleapis.services.js
    *
    * @since 1.3.0
    */
-  public static final class Builder extends com.google.api.client.googleapis.services.json.AbstractGoogleJsonClient.Builder {
+  public static final class Builder extends AbstractGoogleClient.Builder {
 
     /**
      * Returns an instance of a new builder.
@@ -443,15 +458,14 @@ public class Servicecontrol extends com.google.api.client.googleapis.services.js
      * @param httpRequestInitializer HTTP request initializer or {@code null} for none
      * @since 1.7
      */
-    public Builder(com.google.api.client.http.HttpTransport transport, com.google.api.client.json.JsonFactory jsonFactory,
+    public Builder(com.google.api.client.http.HttpTransport transport,
         com.google.api.client.http.HttpRequestInitializer httpRequestInitializer) {
       super(
           transport,
-          jsonFactory,
           DEFAULT_ROOT_URL,
           DEFAULT_SERVICE_PATH,
-          httpRequestInitializer,
-          false);
+          parser,
+          httpRequestInitializer);
     }
 
     /** Builds a new instance of {@link Servicecontrol}. */

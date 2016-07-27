@@ -16,6 +16,11 @@
 
 package com.google.api.services.servicecontrol.v1;
 
+import java.io.IOException;
+
+import com.google.api.client.googleapis.services.AbstractGoogleClientRequest;
+import com.google.api.client.googleapis.services.CommonGoogleClientRequestInitializer;
+
 /**
  * Servicecontrol request initializer for setting properties like key and userIp.
  *
@@ -77,7 +82,7 @@ package com.google.api.services.servicecontrol.v1;
  *
  * @since 1.12
  */
-public class ServicecontrolRequestInitializer extends com.google.api.client.googleapis.services.json.CommonGoogleJsonClientRequestInitializer {
+public class ServicecontrolRequestInitializer extends CommonGoogleClientRequestInitializer {
 
   public ServicecontrolRequestInitializer() {
     super();
@@ -99,8 +104,8 @@ public class ServicecontrolRequestInitializer extends com.google.api.client.goog
   }
 
   @Override
-  public final void initializeJsonRequest(com.google.api.client.googleapis.services.json.AbstractGoogleJsonClientRequest<?> request) throws java.io.IOException {
-    super.initializeJsonRequest(request);
+  public final void initialize(AbstractGoogleClientRequest<?> request) throws IOException {
+    super.initialize(request);
     initializeServicecontrolRequest((ServicecontrolRequest<?>) request);
   }
 

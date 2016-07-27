@@ -1,3 +1,19 @@
+/*
+ * Copyright 2016 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 buildscript {
   repositories {
     mavenCentral()
@@ -46,11 +62,9 @@ repositories {
 dependencies {
   compile "io.gapi:grpc-google-api-servicecontrol-v1:0.6.0-SNAPSHOT"
   compile "com.google.api.grpc:grpc-core-proto:0.0.6"
-  compile module(group: 'com.google.api-client', name: 'google-api-client', version: '1.21.0') {
-    module(group: 'com.google.http-client', name: 'google-http-client-jackson2', version: '1.21.0') {
-      dependency('com.fasterxml.jackson.core:jackson-core:2.6.4')
-      dependency('com.google.http-client:google-http-client:1.21.0')
-    }
-    dependency('com.google.oauth-client:google-oauth-client:1.21.0')
+  compile 'com.google.api-client:google-api-client-protobuf:1.22.0'
+  compile module(group: 'com.google.api-client', name: 'google-api-client', version: '1.22.0') {
+    dependency('com.google.http-client:google-http-client:1.22.0')
+    dependency('com.google.oauth-client:google-oauth-client:1.22.0')
   }
 }

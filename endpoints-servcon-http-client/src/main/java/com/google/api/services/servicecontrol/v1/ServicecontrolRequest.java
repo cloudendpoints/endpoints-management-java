@@ -16,13 +16,17 @@
 
 package com.google.api.services.servicecontrol.v1;
 
+import com.google.api.client.googleapis.services.AbstractGoogleClientRequest;
+import com.google.api.client.http.HttpContent;
+
+
 /**
  * Servicecontrol request.
  *
  * @since 1.3
  */
 @SuppressWarnings("javadoc")
-public abstract class ServicecontrolRequest<T> extends com.google.api.client.googleapis.services.json.AbstractGoogleJsonClientRequest<T> {
+public abstract class ServicecontrolRequest<T> extends AbstractGoogleClientRequest<T> {
 
   /**
    * @param client Google client
@@ -35,7 +39,8 @@ public abstract class ServicecontrolRequest<T> extends com.google.api.client.goo
    * @param responseClass response class to parse into
    */
   public ServicecontrolRequest(
-      Servicecontrol client, String method, String uriTemplate, Object content, Class<T> responseClass) {
+      Servicecontrol client, String method, String uriTemplate, HttpContent content,
+      Class<T> responseClass) {
     super(
         client,
         method,
