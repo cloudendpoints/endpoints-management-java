@@ -18,7 +18,7 @@ package com.google.api.auth;
 
 import com.google.common.base.Ticker;
 
-import java.time.Duration;
+import java.util.concurrent.TimeUnit;
 
 /**
  * A {@link Ticker} used for testing.
@@ -34,7 +34,7 @@ final class TestingTicker extends Ticker {
     return this.clock;
   }
 
-  void advance(Duration timeToAdvance) {
-    this.clock += timeToAdvance.toNanos();
+  void advance(long secondsToAdvance) {
+    this.clock += TimeUnit.SECONDS.toNanos(secondsToAdvance);
   }
 }

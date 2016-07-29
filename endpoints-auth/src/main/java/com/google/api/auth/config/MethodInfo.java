@@ -48,6 +48,10 @@ public final class MethodInfo {
 
   public Set<String> getAudiencesForIssuer(String issuer) {
     Preconditions.checkNotNull(issuer);
-    return this.issuerAudiences.getOrDefault(issuer, ImmutableSet.<String>of());
+
+    if (this.issuerAudiences.containsKey(issuer)) {
+      return this.issuerAudiences.get(issuer);
+    }
+    return ImmutableSet.<String>of();
   }
 }

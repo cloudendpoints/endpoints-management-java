@@ -25,7 +25,6 @@ import com.google.common.cache.LoadingCache;
 
 import org.jose4j.jwk.JsonWebKeySet;
 
-import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -36,7 +35,7 @@ import java.util.concurrent.TimeUnit;
  *
  */
 public final class CachingJwksSupplier implements JwksSupplier {
-  private static final Duration CACHE_EXPIRATION = Duration.ofMinutes(5);
+  private static final int CACHE_EXPIRATION_IN_MINUTES = 5;
 
   private final LoadingCache<String, JsonWebKeySet> jwksCache;
 
@@ -47,7 +46,7 @@ public final class CachingJwksSupplier implements JwksSupplier {
   @VisibleForTesting
   CachingJwksSupplier(JwksSupplier jwksSupplier, Ticker ticker) {
     this.jwksCache = CacheBuilder.newBuilder()
-        .expireAfterWrite(CACHE_EXPIRATION.toMinutes(), TimeUnit.MINUTES)
+        .expireAfterWrite(CACHE_EXPIRATION_IN_MINUTES, TimeUnit.MINUTES)
         .ticker(ticker)
         .build(new JwksCacheLoader(jwksSupplier));
   }

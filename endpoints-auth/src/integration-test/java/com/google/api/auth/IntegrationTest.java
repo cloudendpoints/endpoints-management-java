@@ -48,9 +48,10 @@ import org.junit.Test;
 
 import java.net.URL;
 import java.net.UnknownHostException;
-import java.time.Duration;
+import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.GET;
@@ -105,7 +106,7 @@ public final class IntegrationTest {
     Authenticator authenticator = createAuthenticator(Clock.SYSTEM, issuerKeyUrls);
 
     String authToken = TestUtils.generateAuthToken(
-        Optional.of(AUDIENCES), Optional.of(EMAIL), Optional.of(ISSUER),
+        Optional.<Collection<String>>of(AUDIENCES), Optional.of(EMAIL), Optional.of(ISSUER),
         Optional.of(SUBJECT), RSA_JSON_WEB_KEY);
     when(httpRequest.getHeader(HttpHeaders.AUTHORIZATION)).thenReturn("Bearer " + authToken);
     UserInfo userInfo = authenticator.authenticate(httpRequest, methodInfo, SERVICE_NAME);
@@ -120,7 +121,7 @@ public final class IntegrationTest {
     Authenticator authenticator = createAuthenticator(Clock.SYSTEM, issuerKeyUrls);
 
     String authToken = TestUtils.generateAuthToken(
-        Optional.of(AUDIENCES), Optional.of(EMAIL), Optional.of(ISSUER),
+        Optional.<Collection<String>>of(AUDIENCES), Optional.of(EMAIL), Optional.of(ISSUER),
         Optional.of(SUBJECT), RSA_JSON_WEB_KEY);
     when(httpRequest.getHeader(HttpHeaders.AUTHORIZATION)).thenReturn(null);
     when(httpRequest.getParameter("access_token")).thenReturn(authToken);
@@ -136,7 +137,7 @@ public final class IntegrationTest {
     Authenticator authenticator = createAuthenticator(Clock.SYSTEM, issuerKeyUrls);
 
     String authToken = TestUtils.generateAuthToken(
-        Optional.of(AUDIENCES), Optional.of(EMAIL), Optional.of(ISSUER),
+        Optional.<Collection<String>>of(AUDIENCES), Optional.of(EMAIL), Optional.of(ISSUER),
         Optional.of(SUBJECT), RSA_JSON_WEB_KEY);
     when(httpRequest.getHeader(HttpHeaders.AUTHORIZATION)).thenReturn("Bearer " + authToken);
     UserInfo userInfo = authenticator.authenticate(httpRequest, methodInfo, SERVICE_NAME);
@@ -145,12 +146,13 @@ public final class IntegrationTest {
 
   @Test
   public void testOpenIdDiscovery() {
-    IssuerKeyUrlConfig issuerKeyUrlConfig = new IssuerKeyUrlConfig(true, Optional.absent());
+    IssuerKeyUrlConfig issuerKeyUrlConfig =
+        new IssuerKeyUrlConfig(true, Optional.<GenericUrl>absent());
     Map<String, IssuerKeyUrlConfig> issuerKeyUrls = ImmutableMap.of(ISSUER, issuerKeyUrlConfig);
     Authenticator authenticator = createAuthenticator(Clock.SYSTEM, issuerKeyUrls);
 
     String authToken = TestUtils.generateAuthToken(
-        Optional.of(AUDIENCES), Optional.of(EMAIL), Optional.of(ISSUER),
+        Optional.<Collection<String>>of(AUDIENCES), Optional.of(EMAIL), Optional.of(ISSUER),
         Optional.of(SUBJECT), RSA_JSON_WEB_KEY);
     when(httpRequest.getHeader(HttpHeaders.AUTHORIZATION)).thenReturn("Bearer " + authToken);
     UserInfo userInfo = authenticator.authenticate(httpRequest, methodInfo, SERVICE_NAME);
@@ -159,12 +161,13 @@ public final class IntegrationTest {
 
   @Test
   public void testFailedOpenIdDiscovery() {
-    IssuerKeyUrlConfig issuerKeyUrlConfig = new IssuerKeyUrlConfig(false, Optional.absent());
+    IssuerKeyUrlConfig issuerKeyUrlConfig =
+        new IssuerKeyUrlConfig(false, Optional.<GenericUrl>absent());
     Map<String, IssuerKeyUrlConfig> issuerKeyUrls = ImmutableMap.of(ISSUER, issuerKeyUrlConfig);
     Authenticator authenticator = createAuthenticator(Clock.SYSTEM, issuerKeyUrls);
 
     String authToken = TestUtils.generateAuthToken(
-        Optional.of(AUDIENCES), Optional.of(EMAIL), Optional.of(ISSUER),
+        Optional.<Collection<String>>of(AUDIENCES), Optional.of(EMAIL), Optional.of(ISSUER),
         Optional.of(SUBJECT), RSA_JSON_WEB_KEY);
     when(httpRequest.getHeader(HttpHeaders.AUTHORIZATION)).thenReturn("Bearer " + authToken);
     try {
@@ -177,7 +180,8 @@ public final class IntegrationTest {
 
   @Test
   public void testAuthenticateWithMalformedJwt() {
-    IssuerKeyUrlConfig issuerKeyUrlConfig = new IssuerKeyUrlConfig(false, Optional.absent());
+    IssuerKeyUrlConfig issuerKeyUrlConfig =
+        new IssuerKeyUrlConfig(false, Optional.<GenericUrl>absent());
     Map<String, IssuerKeyUrlConfig> issuerKeyUrls = ImmutableMap.of(ISSUER, issuerKeyUrlConfig);
     Authenticator authenticator = createAuthenticator(Clock.SYSTEM, issuerKeyUrls);
     when(httpRequest.getHeader(HttpHeaders.AUTHORIZATION)).thenReturn("Bearer malformed-jwt-token");
@@ -191,13 +195,15 @@ public final class IntegrationTest {
 
   @Test
   public void testAuthenticateWithUnknownIssuer() {
-    IssuerKeyUrlConfig issuerKeyUrlConfig = new IssuerKeyUrlConfig(false, Optional.absent());
+    IssuerKeyUrlConfig issuerKeyUrlConfig =
+        new IssuerKeyUrlConfig(false, Optional.<GenericUrl>absent());
     Map<String, IssuerKeyUrlConfig> issuerKeyUrls = ImmutableMap.of(ISSUER, issuerKeyUrlConfig);
     Authenticator authenticator = createAuthenticator(Clock.SYSTEM, issuerKeyUrls);
 
     String authToken = TestUtils.generateAuthToken(
-        Optional.of(AUDIENCES), Optional.of(EMAIL), Optional.of("https://unknown.issuer.com"),
-        Optional.of(SUBJECT), RSA_JSON_WEB_KEY);
+        Optional.<Collection<String>>of(AUDIENCES), Optional.of(EMAIL),
+        Optional.of("https://unknown.issuer.com"), Optional.of(SUBJECT),
+        RSA_JSON_WEB_KEY);
     when(httpRequest.getHeader(HttpHeaders.AUTHORIZATION)).thenReturn("Bearer " + authToken);
     try {
       authenticator.authenticate(httpRequest, methodInfo, SERVICE_NAME);
@@ -211,13 +217,14 @@ public final class IntegrationTest {
 
   @Test
   public void testAuthenticateWithInvalidAudience() {
-    IssuerKeyUrlConfig issuerKeyUrlConfig = new IssuerKeyUrlConfig(true, Optional.absent());
+    IssuerKeyUrlConfig issuerKeyUrlConfig =
+        new IssuerKeyUrlConfig(true, Optional.<GenericUrl>absent());
     Map<String, IssuerKeyUrlConfig> issuerKeyUrls = ImmutableMap.of(ISSUER, issuerKeyUrlConfig);
     Authenticator authenticator = createAuthenticator(Clock.SYSTEM, issuerKeyUrls);
 
     String authToken = TestUtils.generateAuthToken(
-        Optional.of(ImmutableSet.of("disallowed-audience")), Optional.of(EMAIL),
-        Optional.of(ISSUER), Optional.of(SUBJECT), RSA_JSON_WEB_KEY);
+        Optional.<Collection<String>>of(ImmutableSet.of("disallowed-audience")),
+        Optional.of(EMAIL), Optional.of(ISSUER), Optional.of(SUBJECT), RSA_JSON_WEB_KEY);
     when(httpRequest.getHeader(HttpHeaders.AUTHORIZATION)).thenReturn("Bearer " + authToken);
     try {
       authenticator.authenticate(httpRequest, methodInfo, SERVICE_NAME);
@@ -229,15 +236,16 @@ public final class IntegrationTest {
 
   @Test
   public void testAuthenticateWithExpiredAuthToken() {
-    IssuerKeyUrlConfig issuerKeyUrlConfig = new IssuerKeyUrlConfig(true, Optional.absent());
+    IssuerKeyUrlConfig issuerKeyUrlConfig =
+        new IssuerKeyUrlConfig(true, Optional.<GenericUrl>absent());
     Map<String, IssuerKeyUrlConfig> issuerKeyUrls = ImmutableMap.of(ISSUER, issuerKeyUrlConfig);
     TestingClock testingClock = new TestingClock();
     Authenticator authenticator = createAuthenticator(testingClock, issuerKeyUrls);
 
     long currentTimeMillis = System.currentTimeMillis();
-    long fiveMinutesLater = currentTimeMillis + Duration.ofMinutes(5).toMillis();
+    long fiveMinutesLater = currentTimeMillis + TimeUnit.MINUTES.toMillis(5);
     String authToken = TestUtils.generateAuthToken(
-        Optional.of(AUDIENCES),
+        Optional.<Collection<String>>of(AUDIENCES),
         Optional.of(EMAIL),
         NumericDate.fromMilliseconds(fiveMinutesLater),
         Optional.of(ISSUER),
@@ -251,7 +259,7 @@ public final class IntegrationTest {
     authenticator.authenticate(httpRequest, methodInfo, SERVICE_NAME);
 
     // Now advance the clock to make sure that an expired auth token is properly handled.
-    testingClock.setCurrentTime(fiveMinutesLater + Duration.ofMinutes(1).toMillis());
+    testingClock.setCurrentTime(fiveMinutesLater + TimeUnit.MINUTES.toMillis(5));
     try {
       authenticator.authenticate(httpRequest, methodInfo, SERVICE_NAME);
       fail();
@@ -262,13 +270,14 @@ public final class IntegrationTest {
 
   @Test
   public void testInvalidOpenIdDiscoveryUrl() {
-    IssuerKeyUrlConfig issuerKeyUrlConfig = new IssuerKeyUrlConfig(true, Optional.absent());
+    IssuerKeyUrlConfig issuerKeyUrlConfig = new
+        IssuerKeyUrlConfig(true, Optional.<GenericUrl>absent());
     String issuer = "https://invalid.issuer";
     Map<String, IssuerKeyUrlConfig> issuerKeyUrls = ImmutableMap.of(issuer, issuerKeyUrlConfig);
     Authenticator authenticator = createAuthenticator(Clock.SYSTEM, issuerKeyUrls);
-    String authToken = TestUtils.generateAuthToken(Optional.of(AUDIENCES),
-        Optional.of(EMAIL), Optional.of(issuer), Optional.of(SUBJECT),
-        RSA_JSON_WEB_KEY);
+    String authToken = TestUtils.generateAuthToken(
+        Optional.<Collection<String>>of(AUDIENCES), Optional.of(EMAIL),
+        Optional.of(issuer), Optional.of(SUBJECT), RSA_JSON_WEB_KEY);
     when(httpRequest.getHeader(HttpHeaders.AUTHORIZATION)).thenReturn("Bearer " + authToken);
     try {
       authenticator.authenticate(httpRequest, methodInfo, SERVICE_NAME);
@@ -284,7 +293,7 @@ public final class IntegrationTest {
         new IssuerKeyUrlConfig(false, Optional.of(new GenericUrl("https://invalid.jwks.uri")));
     Map<String, IssuerKeyUrlConfig> issuerKeyUrls = ImmutableMap.of(ISSUER, issuerKeyUrlConfig);
     Authenticator authenticator = createAuthenticator(Clock.SYSTEM, issuerKeyUrls);
-    String authToken = TestUtils.generateAuthToken(Optional.of(AUDIENCES),
+    String authToken = TestUtils.generateAuthToken(Optional.<Collection<String>>of(AUDIENCES),
         Optional.of(EMAIL), Optional.of(ISSUER), Optional.of(SUBJECT),
         RSA_JSON_WEB_KEY);
     when(httpRequest.getHeader(HttpHeaders.AUTHORIZATION)).thenReturn("Bearer " + authToken);

@@ -61,9 +61,6 @@ final class IntegrationTestServer {
     sslContextFactory.setKeyStorePassword("keystore");
 
     SecureRequestCustomizer src = new SecureRequestCustomizer();
-    src.setStsMaxAge(2000);
-    src.setStsIncludeSubDomains(true);
-
     HttpConfiguration httpsConfiguration = new HttpConfiguration();
     httpsConfiguration.setSecureScheme("https");
     httpsConfiguration.addCustomizer(src);

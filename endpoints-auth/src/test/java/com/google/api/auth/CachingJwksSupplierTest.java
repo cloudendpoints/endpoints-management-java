@@ -27,7 +27,7 @@ import static org.mockito.Mockito.when;
 import org.jose4j.jwk.JsonWebKeySet;
 import org.junit.Test;
 
-import java.time.Duration;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Tests for {@link CachingJwksSupplier}.
@@ -59,12 +59,12 @@ public final class CachingJwksSupplierTest {
     when(jwksSupplier.supply(ISSUER)).thenReturn(jwks2);
 
     // Advance the ticker by 1 minute and make sure that the JWKS is correctly cached.
-    ticker.advance(Duration.ofMinutes(1));
+    ticker.advance(TimeUnit.MINUTES.toSeconds(1));
     assertEquals(jwks1, cachingJwksSupplier.supply(ISSUER));
     verify(jwksSupplier, never()).supply(ISSUER);
 
     // Advance the ticker by 5 minute to cause the cached JWKS to expire.
-    ticker.advance(Duration.ofMinutes(5));
+    ticker.advance(TimeUnit.MINUTES.toSeconds(5));
     assertEquals(jwks2, cachingJwksSupplier.supply(ISSUER));
     verify(jwksSupplier, only()).supply(ISSUER);
   }

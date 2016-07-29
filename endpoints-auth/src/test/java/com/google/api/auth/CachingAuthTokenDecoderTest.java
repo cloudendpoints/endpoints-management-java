@@ -27,7 +27,7 @@ import static org.mockito.Mockito.when;
 import org.jose4j.jwt.JwtClaims;
 import org.junit.Test;
 
-import java.time.Duration;
+import java.util.concurrent.TimeUnit;
 
 public final class CachingAuthTokenDecoderTest {
   private static final String AUTH_TOKEN = "auth-token";
@@ -53,12 +53,12 @@ public final class CachingAuthTokenDecoderTest {
     when(authTokenDecoder.decode(AUTH_TOKEN)).thenReturn(jwtClaims2);
 
     // Advance the ticker by 1 minute and make sure that the auth token is correctly cached.
-    testingTicker.advance(Duration.ofMinutes(1));
+    testingTicker.advance(TimeUnit.MINUTES.toSeconds(1));
     assertEquals(jwtClaims1, cachingDecoder.decode(AUTH_TOKEN));
     verify(authTokenDecoder, never()).decode(AUTH_TOKEN);
 
     // Advance the ticker by 5 minute to cause the cached entry to expire.
-    testingTicker.advance(Duration.ofMinutes(5));
+    testingTicker.advance(TimeUnit.MINUTES.toSeconds(5));
     assertEquals(jwtClaims2, cachingDecoder.decode(AUTH_TOKEN));
     verify(authTokenDecoder, only()).decode(AUTH_TOKEN);
   }

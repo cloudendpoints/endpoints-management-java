@@ -40,9 +40,9 @@ import java.math.BigInteger;
 import java.security.Provider;
 import java.security.Security;
 import java.security.cert.X509Certificate;
-import java.time.Duration;
 import java.util.Collection;
 import java.util.Date;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Testing utilites.
@@ -144,8 +144,8 @@ public final class TestUtils {
       Security.addProvider(provider);
 
       long currentTimeMillis = System.currentTimeMillis();
-      Date start = new Date(currentTimeMillis - Duration.ofDays(1).toMillis());
-      Date end = new Date(currentTimeMillis + Duration.ofDays(1).toMillis());
+      Date start = new Date(currentTimeMillis - TimeUnit.DAYS.toMillis(1));
+      Date end = new Date(currentTimeMillis + TimeUnit.DAYS.toMillis(1));
       X509v3CertificateBuilder x509v3CertificateBuilder = new X509v3CertificateBuilder(
           new X500Name("cn=example"),
           BigInteger.valueOf(currentTimeMillis),
