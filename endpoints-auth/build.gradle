@@ -32,11 +32,11 @@ dependencies {
   testCompile "org.bouncycastle:bcmail-jdk15on:${bouncycastleVersion}"
   testCompile "org.mockito:mockito-core:${mockitoVersion}"
 
-  testCompile "org.apache.commons:commons-lang3:$commonsVersion"
-  testCompile "org.eclipse.jetty:jetty-server:$jettyVersion"
-  testCompile "org.eclipse.jetty:jetty-servlet:$jettyVersion"
-  testCompile "org.glassfish.jersey.core:jersey-server:$jerseyVersion"
-  testCompile "org.glassfish.jersey.containers:jersey-container-servlet-core:$jerseyVersion"
+  testCompile "org.apache.commons:commons-lang3:${commonsLang3Version}"
+  testCompile "org.eclipse.jetty:jetty-server:${jettyVersion}"
+  testCompile "org.eclipse.jetty:jetty-servlet:${jettyVersion}"
+  testCompile "org.glassfish.jersey.core:jersey-server:${jerseyVersion}"
+  testCompile "org.glassfish.jersey.containers:jersey-container-servlet-core:${jerseyVersion}"
 }
 
 sourceSets {
