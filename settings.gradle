@@ -1,5 +1,6 @@
 rootProject.name = 'endpoints-servicecontrol'
 
 include ':endpoints-auth'
-include ':endpoints-servcon-http-client'
 include ':endpoints-scc-aggregator'
+include ':endpoints-servcon-http-client'
+include ':endpoints-service-config'
