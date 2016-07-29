@@ -16,10 +16,20 @@
 
 package com.google.api.auth;
 
+import com.google.api.AuthProvider;
+import com.google.api.Authentication;
+import com.google.api.Service;
+import com.google.api.client.http.GenericUrl;
+import com.google.api.client.http.HttpRequestFactory;
+import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.util.Clock;
+import com.google.api.config.ServiceConfigFetcher;
 import com.google.api.scc.model.MethodRegistry.AuthInfo;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
+import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
 import com.google.common.net.HttpHeaders;
 
@@ -29,7 +39,9 @@ import org.jose4j.jwt.NumericDate;
 import org.jose4j.jwt.ReservedClaimNames;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.logging.Logger;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -43,6 +55,8 @@ import javax.servlet.http.HttpServletRequest;
  */
 public final class Authenticator {
 
+  private static final Logger logger = Logger.getLogger(Authenticator.class.getName());
+
   private static final String ACCESS_TOKEN_PARAM_NAME = "access_token";
   private static final String BEARER_TOKEN_PREFIX = "Bearer ";
   private static final String EMAIL_CLAIM_NAME = "email";
@@ -50,15 +64,8 @@ public final class Authenticator {
   private final AuthTokenDecoder authTokenDecoder;
   private final Clock clock;
 
-  /**
-   * Constructor.
-   *
-   * @param authTokenDecoder decodes auth tokens into {@link UserInfo} objects.
-   */
-  public Authenticator(AuthTokenDecoder authTokenDecoder, Clock clock) {
-    Preconditions.checkNotNull(authTokenDecoder);
-    Preconditions.checkNotNull(clock);
-
+  @VisibleForTesting
+  Authenticator(AuthTokenDecoder authTokenDecoder, Clock clock) {
     this.authTokenDecoder = authTokenDecoder;
     this.clock = clock;
   }
@@ -126,6 +133,70 @@ public final class Authenticator {
       String message = "Current time is earlier than the \"nbf\" time";
       throw new UnauthenticatedException(message);
     }
+  }
+
+  /**
+   * Create an instance of {@link Authenticator} using the service configuration
+   * fetched from Google Service Management APIs.
+   *
+   * @throws {@link IllegalArgumentException} if the authentication message is
+   * not defined in the fetched service config.
+   */
+  public static Authenticator create() {
+    ServiceConfigFetcher fetcher = ServiceConfigFetcher.create();
+    Service service = fetcher.fetch();
+    if (!service.hasAuthentication()) {
+      throw new IllegalArgumentException("Authentication is not defined in service config");
+    }
+    return create(service.getAuthentication(), Clock.SYSTEM);
+  }
+
+  @VisibleForTesting
+  static Authenticator create(Authentication authentication, Clock clock) {
+    List<AuthProvider> providersList = authentication.getProvidersList();
+    if (providersList == null || providersList.isEmpty()) {
+      throw new IllegalArgumentException("No auth providers are defined in the config.");
+    }
+    Map<String, IssuerKeyUrlConfig> issuerKeyConfigs = generateIssuerKeyConfig(providersList);
+
+    HttpRequestFactory httpRequestFactory = new NetHttpTransport().createRequestFactory();
+    KeyUriSupplier defaultKeyUriSupplier =
+        new DefaultKeyUriSupplier(httpRequestFactory, issuerKeyConfigs);
+    JwksSupplier jwksSupplier = new DefaultJwksSupplier(httpRequestFactory, defaultKeyUriSupplier);
+    JwksSupplier cachingJwksSupplier = new CachingJwksSupplier(jwksSupplier);
+    AuthTokenVerifier authTokenVerifier = new DefaultAuthTokenVerifier(cachingJwksSupplier);
+    AuthTokenDecoder authTokenDecoder = new DefaultAuthTokenDecoder(authTokenVerifier);
+    AuthTokenDecoder cachingAuthTokenDecoder = new CachingAuthTokenDecoder(authTokenDecoder);
+
+    return new Authenticator(cachingAuthTokenDecoder, clock);
+  }
+
+  private static Map<String, IssuerKeyUrlConfig> generateIssuerKeyConfig(
+      List<AuthProvider> authProviders) {
+
+    ImmutableMap.Builder<String, IssuerKeyUrlConfig> issuerConfigBuilder = ImmutableMap.builder();
+    Set<String> issuers = Sets.newHashSet();
+    for (AuthProvider authProvider : authProviders) {
+      String issuer = authProvider.getIssuer();
+      if (Strings.isNullOrEmpty(issuer)) {
+        logger.warning(
+            String.format("The 'issuer' field is not set in AuthProvider (%s)", authProvider));
+        continue;
+      }
+
+      if (issuers.contains(issuer)) {
+        throw new IllegalArgumentException(
+            "Configuration contains multiple auth provider for the same issuer: " + issuer);
+      }
+      issuers.add(issuer);
+
+      String jwksUri = authProvider.getJwksUri();
+      IssuerKeyUrlConfig config = Strings.isNullOrEmpty(jwksUri)
+          ? new IssuerKeyUrlConfig(true, Optional.<GenericUrl>absent())
+          : new IssuerKeyUrlConfig(false, Optional.of(new GenericUrl(jwksUri)));
+      issuerConfigBuilder.put(issuer, config);
+    }
+    return issuerConfigBuilder.build();
   }
 
   private static Optional<NumericDate> getDateClaim(String claimName, JwtClaims jwtClaims) {

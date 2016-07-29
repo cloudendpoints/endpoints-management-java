@@ -22,9 +22,9 @@ import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import com.google.api.client.http.GenericUrl;
-import com.google.api.client.http.HttpRequestFactory;
-import com.google.api.client.http.javanet.NetHttpTransport;
+import com.google.api.AuthProvider;
+import com.google.api.AuthProvider.Builder;
+import com.google.api.Authentication;
 import com.google.api.client.util.Clock;
 import com.google.api.scc.model.MethodRegistry.AuthInfo;
 import com.google.common.base.Optional;
@@ -100,11 +100,8 @@ public final class IntegrationTest {
 
   @Test
   public void testVerifyAuthTokenWithJwks() {
-    GenericUrl keyUrl = new GenericUrl(TEST_SERVER_URL + "/" + JWKS_PATH);
-    IssuerKeyUrlConfig issuerKeyUrlConfig = new IssuerKeyUrlConfig(false, Optional.of(keyUrl));
-    Map<String, IssuerKeyUrlConfig> issuerKeyUrls = ImmutableMap.of(ISSUER, issuerKeyUrlConfig);
-    Authenticator authenticator = createAuthenticator(Clock.SYSTEM, issuerKeyUrls);
-
+    Authenticator authenticator =
+        createAuthenticator(Clock.SYSTEM, ISSUER, TEST_SERVER_URL + "/" + JWKS_PATH);
     String authToken = TestUtils.generateAuthToken(
         Optional.<Collection<String>>of(AUDIENCES), Optional.of(EMAIL), Optional.of(ISSUER),
         Optional.of(SUBJECT), RSA_JSON_WEB_KEY);
@@ -115,11 +112,8 @@ public final class IntegrationTest {
 
   @Test
   public void testExtractAuthTokenFromUrlParameters() {
-    GenericUrl keyUrl = new GenericUrl(TEST_SERVER_URL + "/" + JWKS_PATH);
-    IssuerKeyUrlConfig issuerKeyUrlConfig = new IssuerKeyUrlConfig(false, Optional.of(keyUrl));
-    Map<String, IssuerKeyUrlConfig> issuerKeyUrls = ImmutableMap.of(ISSUER, issuerKeyUrlConfig);
-    Authenticator authenticator = createAuthenticator(Clock.SYSTEM, issuerKeyUrls);
-
+    Authenticator authenticator =
+        createAuthenticator(Clock.SYSTEM, ISSUER, TEST_SERVER_URL + "/" + JWKS_PATH);
     String authToken = TestUtils.generateAuthToken(
         Optional.<Collection<String>>of(AUDIENCES), Optional.of(EMAIL), Optional.of(ISSUER),
         Optional.of(SUBJECT), RSA_JSON_WEB_KEY);
@@ -131,11 +125,8 @@ public final class IntegrationTest {
 
   @Test
   public void testVerifyAuthTokenWithX509Certificates() {
-    GenericUrl keyUrl = new GenericUrl(TEST_SERVER_URL + "/" + X509_PATH);
-    IssuerKeyUrlConfig issuerKeyUrlConfig = new IssuerKeyUrlConfig(false, Optional.of(keyUrl));
-    Map<String, IssuerKeyUrlConfig> issuerKeyUrls = ImmutableMap.of(ISSUER, issuerKeyUrlConfig);
-    Authenticator authenticator = createAuthenticator(Clock.SYSTEM, issuerKeyUrls);
-
+    Authenticator authenticator =
+        createAuthenticator(Clock.SYSTEM, ISSUER, TEST_SERVER_URL + "/" + X509_PATH);
     String authToken = TestUtils.generateAuthToken(
         Optional.<Collection<String>>of(AUDIENCES), Optional.of(EMAIL), Optional.of(ISSUER),
         Optional.of(SUBJECT), RSA_JSON_WEB_KEY);
@@ -146,11 +137,7 @@ public final class IntegrationTest {
 
   @Test
   public void testOpenIdDiscovery() {
-    IssuerKeyUrlConfig issuerKeyUrlConfig =
-        new IssuerKeyUrlConfig(true, Optional.<GenericUrl>absent());
-    Map<String, IssuerKeyUrlConfig> issuerKeyUrls = ImmutableMap.of(ISSUER, issuerKeyUrlConfig);
-    Authenticator authenticator = createAuthenticator(Clock.SYSTEM, issuerKeyUrls);
-
+    Authenticator authenticator = createAuthenticator(Clock.SYSTEM, ISSUER, null);
     String authToken = TestUtils.generateAuthToken(
         Optional.<Collection<String>>of(AUDIENCES), Optional.of(EMAIL), Optional.of(ISSUER),
         Optional.of(SUBJECT), RSA_JSON_WEB_KEY);
@@ -161,11 +148,7 @@ public final class IntegrationTest {
 
   @Test
   public void testFailedOpenIdDiscovery() {
-    IssuerKeyUrlConfig issuerKeyUrlConfig =
-        new IssuerKeyUrlConfig(false, Optional.<GenericUrl>absent());
-    Map<String, IssuerKeyUrlConfig> issuerKeyUrls = ImmutableMap.of(ISSUER, issuerKeyUrlConfig);
-    Authenticator authenticator = createAuthenticator(Clock.SYSTEM, issuerKeyUrls);
-
+    Authenticator authenticator = createAuthenticator(Clock.SYSTEM, "https://unknow.issuer", null);
     String authToken = TestUtils.generateAuthToken(
         Optional.<Collection<String>>of(AUDIENCES), Optional.of(EMAIL), Optional.of(ISSUER),
         Optional.of(SUBJECT), RSA_JSON_WEB_KEY);
@@ -180,10 +163,7 @@ public final class IntegrationTest {
 
   @Test
   public void testAuthenticateWithMalformedJwt() {
-    IssuerKeyUrlConfig issuerKeyUrlConfig =
-        new IssuerKeyUrlConfig(false, Optional.<GenericUrl>absent());
-    Map<String, IssuerKeyUrlConfig> issuerKeyUrls = ImmutableMap.of(ISSUER, issuerKeyUrlConfig);
-    Authenticator authenticator = createAuthenticator(Clock.SYSTEM, issuerKeyUrls);
+    Authenticator authenticator = createAuthenticator(Clock.SYSTEM, ISSUER, null);
     when(httpRequest.getHeader(HttpHeaders.AUTHORIZATION)).thenReturn("Bearer malformed-jwt-token");
     try {
       authenticator.authenticate(httpRequest, authInfo, SERVICE_NAME);
@@ -195,11 +175,7 @@ public final class IntegrationTest {
 
   @Test
   public void testAuthenticateWithUnknownIssuer() {
-    IssuerKeyUrlConfig issuerKeyUrlConfig =
-        new IssuerKeyUrlConfig(false, Optional.<GenericUrl>absent());
-    Map<String, IssuerKeyUrlConfig> issuerKeyUrls = ImmutableMap.of(ISSUER, issuerKeyUrlConfig);
-    Authenticator authenticator = createAuthenticator(Clock.SYSTEM, issuerKeyUrls);
-
+    Authenticator authenticator = createAuthenticator(Clock.SYSTEM, ISSUER, null);
     String authToken = TestUtils.generateAuthToken(
         Optional.<Collection<String>>of(AUDIENCES), Optional.of(EMAIL),
         Optional.of("https://unknown.issuer.com"), Optional.of(SUBJECT),
@@ -217,11 +193,7 @@ public final class IntegrationTest {
 
   @Test
   public void testAuthenticateWithInvalidAudience() {
-    IssuerKeyUrlConfig issuerKeyUrlConfig =
-        new IssuerKeyUrlConfig(true, Optional.<GenericUrl>absent());
-    Map<String, IssuerKeyUrlConfig> issuerKeyUrls = ImmutableMap.of(ISSUER, issuerKeyUrlConfig);
-    Authenticator authenticator = createAuthenticator(Clock.SYSTEM, issuerKeyUrls);
-
+    Authenticator authenticator = createAuthenticator(Clock.SYSTEM, ISSUER, null);
     String authToken = TestUtils.generateAuthToken(
         Optional.<Collection<String>>of(ImmutableSet.of("disallowed-audience")),
         Optional.of(EMAIL), Optional.of(ISSUER), Optional.of(SUBJECT), RSA_JSON_WEB_KEY);
@@ -236,12 +208,8 @@ public final class IntegrationTest {
 
   @Test
   public void testAuthenticateWithExpiredAuthToken() {
-    IssuerKeyUrlConfig issuerKeyUrlConfig =
-        new IssuerKeyUrlConfig(true, Optional.<GenericUrl>absent());
-    Map<String, IssuerKeyUrlConfig> issuerKeyUrls = ImmutableMap.of(ISSUER, issuerKeyUrlConfig);
     TestingClock testingClock = new TestingClock();
-    Authenticator authenticator = createAuthenticator(testingClock, issuerKeyUrls);
-
+    Authenticator authenticator = createAuthenticator(testingClock, ISSUER, null);
     long currentTimeMillis = System.currentTimeMillis();
     long fiveMinutesLater = currentTimeMillis + TimeUnit.MINUTES.toMillis(5);
     String authToken = TestUtils.generateAuthToken(
@@ -270,11 +238,8 @@ public final class IntegrationTest {
 
   @Test
   public void testInvalidOpenIdDiscoveryUrl() {
-    IssuerKeyUrlConfig issuerKeyUrlConfig = new
-        IssuerKeyUrlConfig(true, Optional.<GenericUrl>absent());
     String issuer = "https://invalid.issuer";
-    Map<String, IssuerKeyUrlConfig> issuerKeyUrls = ImmutableMap.of(issuer, issuerKeyUrlConfig);
-    Authenticator authenticator = createAuthenticator(Clock.SYSTEM, issuerKeyUrls);
+    Authenticator authenticator = createAuthenticator(Clock.SYSTEM, issuer, null);
     String authToken = TestUtils.generateAuthToken(
         Optional.<Collection<String>>of(AUDIENCES), Optional.of(EMAIL),
         Optional.of(issuer), Optional.of(SUBJECT), RSA_JSON_WEB_KEY);
@@ -289,10 +254,7 @@ public final class IntegrationTest {
 
   @Test
   public void testInvalidJwksUri() {
-    IssuerKeyUrlConfig issuerKeyUrlConfig =
-        new IssuerKeyUrlConfig(false, Optional.of(new GenericUrl("https://invalid.jwks.uri")));
-    Map<String, IssuerKeyUrlConfig> issuerKeyUrls = ImmutableMap.of(ISSUER, issuerKeyUrlConfig);
-    Authenticator authenticator = createAuthenticator(Clock.SYSTEM, issuerKeyUrls);
+    Authenticator authenticator = createAuthenticator(Clock.SYSTEM, ISSUER, "https://invalid.jwks.uri");
     String authToken = TestUtils.generateAuthToken(Optional.<Collection<String>>of(AUDIENCES),
         Optional.of(EMAIL), Optional.of(ISSUER), Optional.of(SUBJECT),
         RSA_JSON_WEB_KEY);
@@ -305,17 +267,15 @@ public final class IntegrationTest {
     }
   }
 
-  private static Authenticator createAuthenticator(
-      Clock clock, Map<String, IssuerKeyUrlConfig> issuerKeyUrls) {
-    HttpRequestFactory httpRequestFactory = new NetHttpTransport().createRequestFactory();
-    DefaultKeyUriSupplier keyUriSupplier =
-        new DefaultKeyUriSupplier(httpRequestFactory, issuerKeyUrls);
-    JwksSupplier defaultJwksSupplier = new DefaultJwksSupplier(httpRequestFactory, keyUriSupplier);
-    JwksSupplier jwksSupplier = new CachingJwksSupplier(defaultJwksSupplier);
-    AuthTokenVerifier authTokenVerifier = new DefaultAuthTokenVerifier(jwksSupplier);
-    AuthTokenDecoder defaultDecoder = new DefaultAuthTokenDecoder(authTokenVerifier);
-    AuthTokenDecoder cachingDecoder = new CachingAuthTokenDecoder(defaultDecoder);
-    return new Authenticator(cachingDecoder, clock);
+  private static Authenticator createAuthenticator(Clock clock, String issuer, String jwksUri) {
+    Builder authProviderBuilder = AuthProvider.newBuilder().setIssuer(issuer);
+    if (jwksUri != null) {
+      authProviderBuilder.setJwksUri(jwksUri);
+    }
+    Authentication authentication = Authentication.newBuilder()
+        .addProviders(authProviderBuilder.build())
+        .build();
+    return Authenticator.create(authentication, clock);
   }
 
   private static void examineUserInfo(UserInfo userInfo) {

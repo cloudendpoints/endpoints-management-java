@@ -21,6 +21,8 @@ import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import com.google.api.AuthProvider;
+import com.google.api.Authentication;
 import com.google.api.client.util.Clock;
 import com.google.api.scc.model.MethodRegistry.AuthInfo;
 import com.google.common.collect.ImmutableList;
@@ -179,6 +181,46 @@ public final class AuthenticatorTest {
       fail();
     } catch (UnauthenticatedException exception) {
       assertEquals("Current time is earlier than the \"nbf\" time", exception.getMessage());
+    }
+  }
+
+  @Test
+  public void testCreateWithoutAuthProviders() {
+    try {
+      Authenticator.create(Authentication.newBuilder().build(), Clock.SYSTEM);
+      fail();
+    } catch (IllegalArgumentException exception) {
+      assertEquals("No auth providers are defined in the config.", exception.getMessage());
+    }
+  }
+
+  @Test
+  public void testCreateAuthenticator() {
+    AuthProvider authProvider = AuthProvider.newBuilder()
+        .setIssuer("https://issuer.com")
+        .build();
+    Authentication authentication = Authentication.newBuilder()
+        .addProviders(authProvider)
+        .build();
+    Authenticator.create(authentication, Clock.SYSTEM);
+  }
+
+  @Test
+  public void testCreateWithSameIssuers() {
+    AuthProvider authProvider = AuthProvider.newBuilder()
+        .setIssuer("https://issuer.com")
+        .build();
+    Authentication authentication = Authentication.newBuilder()
+        .addProviders(authProvider)
+        .addProviders(authProvider)
+        .build();
+    try {
+      Authenticator.create(authentication, Clock.SYSTEM);
+      fail();
+    } catch (IllegalArgumentException exception) {
+      String message = "Configuration contains multiple auth provider for the same issuer: "
+          + authProvider.getIssuer();
+      assertEquals(message, exception.getMessage());
     }
   }
 
