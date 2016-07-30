@@ -21,8 +21,8 @@ import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import com.google.api.auth.config.MethodInfo;
 import com.google.api.client.util.Clock;
+import com.google.api.scc.model.MethodRegistry.AuthInfo;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -69,9 +69,9 @@ public final class AuthenticatorTest {
 
   @Test
   public void testAuthenticate() {
-    MethodInfo methodInfo =
-        new MethodInfo(ImmutableMap.<String, Set<String>>of(ISSUER, ImmutableSet.of("aud1")));
-    assertUserInfoEquals(userInfo, authenticator.authenticate(request, methodInfo, SERVICE_NAME));
+    AuthInfo authInfo =
+        new AuthInfo(ImmutableMap.<String, Set<String>>of(ISSUER, ImmutableSet.of("aud1")));
+    assertUserInfoEquals(userInfo, authenticator.authenticate(request, authInfo, SERVICE_NAME));
   }
 
   @Test
@@ -84,17 +84,17 @@ public final class AuthenticatorTest {
         NOT_BEFORE_IN_PAST,
         ISSUER);
     UserInfo userInfo1 = new UserInfo(ImmutableList.of(SERVICE_NAME), EMAIL, ID, ISSUER);
-    MethodInfo methodInfo =
-        new MethodInfo(ImmutableMap.<String, Set<String>>of(ISSUER, ImmutableSet.of("aud1")));
+    AuthInfo authInfo =
+        new AuthInfo(ImmutableMap.<String, Set<String>>of(ISSUER, ImmutableSet.of("aud1")));
     when(authTokenDecoder.decode(AUTH_TOKEN)).thenReturn(jwtClaims1);
-    assertUserInfoEquals(userInfo1, authenticator.authenticate(request, methodInfo, SERVICE_NAME));
+    assertUserInfoEquals(userInfo1, authenticator.authenticate(request, authInfo, SERVICE_NAME));
   }
 
   @Test
   public void testUnknownIssuer() {
-    MethodInfo methodInfo = new MethodInfo(ImmutableMap.<String, Set<String>>of());
+    AuthInfo authInfo = new AuthInfo(ImmutableMap.<String, Set<String>>of());
     try {
-      authenticator.authenticate(request, methodInfo, SERVICE_NAME);
+      authenticator.authenticate(request, authInfo, SERVICE_NAME);
       fail();
     } catch (UnauthenticatedException exception) {
       assertEquals("Issuer not allowed", exception.getMessage());
@@ -103,10 +103,10 @@ public final class AuthenticatorTest {
 
   @Test
   public void testAuthenticateWithoutAllowedAudience() {
-    MethodInfo methodInfo =
-        new MethodInfo(ImmutableMap.<String, Set<String>>of(ISSUER, ImmutableSet.of("random-aud")));
+    AuthInfo authInfo =
+        new AuthInfo(ImmutableMap.<String, Set<String>>of(ISSUER, ImmutableSet.of("random-aud")));
     try {
-      authenticator.authenticate(request, methodInfo, SERVICE_NAME);
+      authenticator.authenticate(request, authInfo, SERVICE_NAME);
       fail();
     } catch (UnauthenticatedException exception) {
       assertEquals("Audiences not allowed", exception.getMessage());
@@ -116,9 +116,9 @@ public final class AuthenticatorTest {
   @Test
   public void testBadBearerToken() {
     when(request.getHeader(HttpHeaders.AUTHORIZATION)).thenReturn("bad bearer token");
-    MethodInfo methodInfo = new MethodInfo(ImmutableMap.<String, Set<String>>of());
+    AuthInfo authInfo = new AuthInfo(ImmutableMap.<String, Set<String>>of());
     try {
-      authenticator.authenticate(request, methodInfo, SERVICE_NAME);
+      authenticator.authenticate(request, authInfo, SERVICE_NAME);
       fail();
     } catch (UnauthenticatedException exception) {
       // expected
@@ -129,18 +129,18 @@ public final class AuthenticatorTest {
   public void testAuthTokenAsRequestParameter() {
     when(request.getHeader(HttpHeaders.AUTHORIZATION)).thenReturn(null);
     when(request.getParameter("access_token")).thenReturn(AUTH_TOKEN);
-    MethodInfo methodInfo =
-        new MethodInfo(ImmutableMap.<String, Set<String>>of(ISSUER, ImmutableSet.of("aud1")));
-    assertUserInfoEquals(userInfo, authenticator.authenticate(request, methodInfo, SERVICE_NAME));
+    AuthInfo authInfo =
+        new AuthInfo(ImmutableMap.<String, Set<String>>of(ISSUER, ImmutableSet.of("aud1")));
+    assertUserInfoEquals(userInfo, authenticator.authenticate(request, authInfo, SERVICE_NAME));
   }
 
   @Test
   public void testNoAuthToken() {
     when(request.getHeader(HttpHeaders.AUTHORIZATION)).thenReturn(null);
     when(request.getParameter("access_token")).thenReturn(null);
-    MethodInfo methodInfo = new MethodInfo(ImmutableMap.<String, Set<String>>of());
+    AuthInfo authInfo = new AuthInfo(ImmutableMap.<String, Set<String>>of());
     try {
-      authenticator.authenticate(request, methodInfo, SERVICE_NAME);
+      authenticator.authenticate(request, authInfo, SERVICE_NAME);
       fail();
     } catch (UnauthenticatedException exception) {
       // expected
@@ -151,11 +151,11 @@ public final class AuthenticatorTest {
   public void testExpiredAuthToken() {
     JwtClaims jwtClaims1 =
         createJwtClaims(ImmutableList.of(SERVICE_NAME), EMAIL, -1, ID, NOT_BEFORE_IN_PAST, ISSUER);
-    MethodInfo methodInfo =
-        new MethodInfo(ImmutableMap.<String, Set<String>>of(ISSUER, ImmutableSet.of("aud1")));
+    AuthInfo authInfo =
+        new AuthInfo(ImmutableMap.<String, Set<String>>of(ISSUER, ImmutableSet.of("aud1")));
     when(authTokenDecoder.decode(AUTH_TOKEN)).thenReturn(jwtClaims1);
     try {
-      authenticator.authenticate(request, methodInfo, SERVICE_NAME);
+      authenticator.authenticate(request, authInfo, SERVICE_NAME);
       fail();
     } catch (UnauthenticatedException exception) {
       assertEquals("The auth token has already expired", exception.getMessage());
@@ -171,11 +171,11 @@ public final class AuthenticatorTest {
         ID,
         -1,
         ISSUER);
-    MethodInfo methodInfo =
-        new MethodInfo(ImmutableMap.<String, Set<String>>of(ISSUER, ImmutableSet.of("aud1")));
+    AuthInfo authInfo =
+        new AuthInfo(ImmutableMap.<String, Set<String>>of(ISSUER, ImmutableSet.of("aud1")));
     when(authTokenDecoder.decode(AUTH_TOKEN)).thenReturn(jwtClaims1);
     try {
-      authenticator.authenticate(request, methodInfo, SERVICE_NAME);
+      authenticator.authenticate(request, authInfo, SERVICE_NAME);
       fail();
     } catch (UnauthenticatedException exception) {
       assertEquals("Current time is earlier than the \"nbf\" time", exception.getMessage());

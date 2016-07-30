@@ -16,6 +16,23 @@
 
 package com.google.api.scc.model;
 
+import com.google.api.AuthRequirement;
+import com.google.api.AuthenticationRule;
+import com.google.api.HttpRule;
+import com.google.api.Service;
+import com.google.api.SystemParameter;
+import com.google.api.SystemParameterRule;
+import com.google.api.UsageRule;
+import com.google.common.base.Optional;
+import com.google.common.base.Preconditions;
+import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
+
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -23,20 +40,8 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
-
-import com.google.api.HttpRule;
-import com.google.api.Service;
-import com.google.api.SystemParameter;
-import com.google.api.SystemParameterRule;
-import com.google.api.UsageRule;
-import com.google.common.base.Strings;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
-
-import autovalue.shaded.com.google.common.common.base.Preconditions;
 
 /**
  * MethodRegistry provides registry of the API methods defined by a Service.
@@ -45,6 +50,7 @@ public class MethodRegistry {
   private static final Logger log = Logger.getLogger(MethodRegistry.class.getName());
   private static final String OPTIONS_VERB = "OPTIONS";
   private final Service theService;
+  private final Map<String, AuthInfo> authInfos;
   private final Map<String, List<Info>> infosByHttpMethod;
   private final Map<String, Info> extractedMethods;
 
@@ -58,6 +64,8 @@ public class MethodRegistry {
     theService = s;
     infosByHttpMethod = Maps.newHashMap();
     extractedMethods = Maps.newHashMap();
+    authInfos = extractAuth(s);
+
     extractMethods();
   }
 
@@ -159,7 +167,6 @@ public class MethodRegistry {
     }
 
     Info newInfo = getOrCreateInfo(optionsSelector);
-    newInfo.setAuth(false);
     newInfo.setAllowRegisteredCalls(true);
     for (String u : allUrls) {
       register(OPTIONS_VERB, u, newInfo);
@@ -215,7 +222,10 @@ public class MethodRegistry {
     if (i != null) {
       return i;
     }
-    i = new Info(selector);
+
+    AuthInfo authInfo = this.authInfos.containsKey(selector)
+        ? this.authInfos.get(selector) : null;
+    i = new Info(selector, authInfo);
     extractedMethods.put(selector, i);
     return i;
   }
@@ -254,12 +264,32 @@ public class MethodRegistry {
     }
   }
 
+  private static final Map<String, AuthInfo> extractAuth(Service service) {
+    if (!service.hasAuthentication()) {
+      return ImmutableMap.<String, AuthInfo>of();
+    }
+    ImmutableMap.Builder<String, AuthInfo> authInfoBuilder = ImmutableMap.builder();
+    for (AuthenticationRule authRule : service.getAuthentication().getRulesList()) {
+      ImmutableMap.Builder<String, Set<String>> providerToAudienceBuilder = ImmutableMap.builder();
+      for (AuthRequirement requirement : authRule.getRequirementsList()) {
+        providerToAudienceBuilder.put(
+            requirement.getProviderId(),
+            ImmutableSet.copyOf(requirement.getAudiences().split(",")));
+      }
+      AuthInfo authInfo = new AuthInfo(providerToAudienceBuilder.build());
+      authInfoBuilder.put(authRule.getSelector(), authInfo);
+    }
+    return authInfoBuilder.build();
+  }
+
   /**
    * Consolidates information about methods defined in a Service
    */
   public static class Info {
     private static final String API_KEY_NAME = "api_key";
-    private boolean auth;
+
+    private final Optional<AuthInfo> authInfo;
+
     private boolean allowRegisteredCalls;
     private String selector;
     private String backendAddress;
@@ -268,8 +298,10 @@ public class MethodRegistry {
     private Map<String, List<String>> headerParams;
     private PathTemplate template;
 
-    public Info(String selector) {
+    public Info(String selector, @CheckForNull AuthInfo authInfo) {
       this.selector = selector;
+      this.authInfo = Optional.<AuthInfo>fromNullable(authInfo);
+
       this.urlQueryParams = Maps.newHashMap();
       this.headerParams = Maps.newHashMap();
     }
@@ -324,12 +356,8 @@ public class MethodRegistry {
       return headerParam(API_KEY_NAME);
     }
 
-    public boolean isAuth() {
-      return auth;
-    }
-
-    public void setAuth(boolean auth) {
-      this.auth = auth;
+    public Optional<AuthInfo> getAuthInfo() {
+      return this.authInfo;
     }
 
     public boolean isAllowRegisteredCalls() {
@@ -362,6 +390,32 @@ public class MethodRegistry {
 
     public void setBodyFieldPath(String bodyFieldPath) {
       this.bodyFieldPath = bodyFieldPath;
+    }
+  }
+
+  /**
+   * Consolidates authentication information about methods defined in a Service
+   */
+  public static final class AuthInfo {
+    private final Map<String, Set<String>> issuerToAudiences;
+
+    public AuthInfo(Map<String, Set<String>> issuerToAudiences) {
+      Preconditions.checkNotNull(issuerToAudiences);
+      this.issuerToAudiences = issuerToAudiences;
+    }
+
+    public boolean isIssuerAllowed(String issuer) {
+      Preconditions.checkNotNull(issuer);
+      return this.issuerToAudiences.containsKey(issuer);
+    }
+
+    public Set<String> getAudiencesForIssuer(String issuer) {
+      Preconditions.checkNotNull(issuer);
+
+      if (this.issuerToAudiences.containsKey(issuer)) {
+        return this.issuerToAudiences.get(issuer);
+      }
+      return ImmutableSet.<String>of();
     }
   }
 }

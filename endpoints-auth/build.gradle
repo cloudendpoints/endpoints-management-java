@@ -22,6 +22,10 @@ configurations {
 }
 
 dependencies {
+  compile(project(":endpoints-scc-aggregator")) {
+    transitive = false
+  }
+
   compile "com.fasterxml.jackson.core:jackson-databind:${jacksonVersion}"
   compile "com.google.guava:guava:${guavaVersion}"
   compile "com.google.http-client:google-http-client:${httpClientVersion}"

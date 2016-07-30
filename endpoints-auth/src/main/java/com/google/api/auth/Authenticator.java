@@ -16,8 +16,8 @@
 
 package com.google.api.auth;
 
-import com.google.api.auth.config.MethodInfo;
 import com.google.api.client.util.Clock;
+import com.google.api.scc.model.MethodRegistry.AuthInfo;
 import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Sets;
@@ -67,17 +67,17 @@ public final class Authenticator {
    * Authenticate the current HTTP request.
    *
    * @param httpServletRequest is the incoming HTTP request object.
-   * @param methodInfo contains configurations of the API method being called.
+   * @param authInfo contains authentication configurations of the API method being called.
    * @param serviceName is the name of this service.
    * @return a constructed {@link UserInfo} object representing the identity of the caller.
    */
   public UserInfo authenticate(
       HttpServletRequest httpServletRequest,
-      MethodInfo methodInfo,
+      AuthInfo authInfo,
       String serviceName) {
 
     Preconditions.checkNotNull(httpServletRequest);
-    Preconditions.checkNotNull(methodInfo);
+    Preconditions.checkNotNull(authInfo);
 
     Optional<String> maybeAuthToken = extractAuthToken(httpServletRequest);
     if (!maybeAuthToken.isPresent()) {
@@ -90,7 +90,7 @@ public final class Authenticator {
     String issuer = userInfo.getIssuer();
 
     // Check whether the issuer is allowed
-    if (!methodInfo.isIssuerAllowed(issuer)) {
+    if (!authInfo.isIssuerAllowed(issuer)) {
       throw new UnauthenticatedException("Issuer not allowed");
     }
 
@@ -101,7 +101,7 @@ public final class Authenticator {
     // or 2) at least one audience is allowed in the method configuration.
     Set<String> audiences = userInfo.getAudiences();
     boolean hasServiceName = audiences.contains(serviceName);
-    Set<String> allowedAudiences = methodInfo.getAudiencesForIssuer(issuer);
+    Set<String> allowedAudiences = authInfo.getAudiencesForIssuer(issuer);
     if (!hasServiceName && Sets.intersection(audiences, allowedAudiences).isEmpty()) {
       throw new UnauthenticatedException("Audiences not allowed");
     }

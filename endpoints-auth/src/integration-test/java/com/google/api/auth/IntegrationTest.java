@@ -22,11 +22,11 @@ import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import com.google.api.auth.config.MethodInfo;
 import com.google.api.client.http.GenericUrl;
 import com.google.api.client.http.HttpRequestFactory;
 import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.util.Clock;
+import com.google.api.scc.model.MethodRegistry.AuthInfo;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -82,7 +82,7 @@ public final class IntegrationTest {
       new IntegrationTestServer(TEST_SERVER_PORT, Resource.class);
 
   private final HttpServletRequest httpRequest = mock(HttpServletRequest.class);
-  private final MethodInfo methodInfo = new MethodInfo(ISSUER_AUDIENCES);
+  private final AuthInfo authInfo = new AuthInfo(ISSUER_AUDIENCES);
 
   @BeforeClass
   public static void setUpBeforeClass() throws Exception {
@@ -109,7 +109,7 @@ public final class IntegrationTest {
         Optional.<Collection<String>>of(AUDIENCES), Optional.of(EMAIL), Optional.of(ISSUER),
         Optional.of(SUBJECT), RSA_JSON_WEB_KEY);
     when(httpRequest.getHeader(HttpHeaders.AUTHORIZATION)).thenReturn("Bearer " + authToken);
-    UserInfo userInfo = authenticator.authenticate(httpRequest, methodInfo, SERVICE_NAME);
+    UserInfo userInfo = authenticator.authenticate(httpRequest, authInfo, SERVICE_NAME);
     examineUserInfo(userInfo);
   }
 
@@ -125,7 +125,7 @@ public final class IntegrationTest {
         Optional.of(SUBJECT), RSA_JSON_WEB_KEY);
     when(httpRequest.getHeader(HttpHeaders.AUTHORIZATION)).thenReturn(null);
     when(httpRequest.getParameter("access_token")).thenReturn(authToken);
-    UserInfo userInfo = authenticator.authenticate(httpRequest, methodInfo, SERVICE_NAME);
+    UserInfo userInfo = authenticator.authenticate(httpRequest, authInfo, SERVICE_NAME);
     examineUserInfo(userInfo);
   }
 
@@ -140,7 +140,7 @@ public final class IntegrationTest {
         Optional.<Collection<String>>of(AUDIENCES), Optional.of(EMAIL), Optional.of(ISSUER),
         Optional.of(SUBJECT), RSA_JSON_WEB_KEY);
     when(httpRequest.getHeader(HttpHeaders.AUTHORIZATION)).thenReturn("Bearer " + authToken);
-    UserInfo userInfo = authenticator.authenticate(httpRequest, methodInfo, SERVICE_NAME);
+    UserInfo userInfo = authenticator.authenticate(httpRequest, authInfo, SERVICE_NAME);
     examineUserInfo(userInfo);
   }
 
@@ -155,7 +155,7 @@ public final class IntegrationTest {
         Optional.<Collection<String>>of(AUDIENCES), Optional.of(EMAIL), Optional.of(ISSUER),
         Optional.of(SUBJECT), RSA_JSON_WEB_KEY);
     when(httpRequest.getHeader(HttpHeaders.AUTHORIZATION)).thenReturn("Bearer " + authToken);
-    UserInfo userInfo = authenticator.authenticate(httpRequest, methodInfo, SERVICE_NAME);
+    UserInfo userInfo = authenticator.authenticate(httpRequest, authInfo, SERVICE_NAME);
     examineUserInfo(userInfo);
   }
 
@@ -171,7 +171,7 @@ public final class IntegrationTest {
         Optional.of(SUBJECT), RSA_JSON_WEB_KEY);
     when(httpRequest.getHeader(HttpHeaders.AUTHORIZATION)).thenReturn("Bearer " + authToken);
     try {
-      authenticator.authenticate(httpRequest, methodInfo, SERVICE_NAME);
+      authenticator.authenticate(httpRequest, authInfo, SERVICE_NAME);
       fail();
     } catch (UncheckedExecutionException exception) {
       assertTrue(ExceptionUtils.getRootCause(exception) instanceof UnauthenticatedException);
@@ -186,7 +186,7 @@ public final class IntegrationTest {
     Authenticator authenticator = createAuthenticator(Clock.SYSTEM, issuerKeyUrls);
     when(httpRequest.getHeader(HttpHeaders.AUTHORIZATION)).thenReturn("Bearer malformed-jwt-token");
     try {
-      authenticator.authenticate(httpRequest, methodInfo, SERVICE_NAME);
+      authenticator.authenticate(httpRequest, authInfo, SERVICE_NAME);
       fail();
     } catch (UncheckedExecutionException exception) {
       assertTrue(ExceptionUtils.getRootCause(exception) instanceof JoseException);
@@ -206,7 +206,7 @@ public final class IntegrationTest {
         RSA_JSON_WEB_KEY);
     when(httpRequest.getHeader(HttpHeaders.AUTHORIZATION)).thenReturn("Bearer " + authToken);
     try {
-      authenticator.authenticate(httpRequest, methodInfo, SERVICE_NAME);
+      authenticator.authenticate(httpRequest, authInfo, SERVICE_NAME);
       fail();
     } catch (UncheckedExecutionException exception) {
       Throwable rootCause = ExceptionUtils.getRootCause(exception);
@@ -227,7 +227,7 @@ public final class IntegrationTest {
         Optional.of(EMAIL), Optional.of(ISSUER), Optional.of(SUBJECT), RSA_JSON_WEB_KEY);
     when(httpRequest.getHeader(HttpHeaders.AUTHORIZATION)).thenReturn("Bearer " + authToken);
     try {
-      authenticator.authenticate(httpRequest, methodInfo, SERVICE_NAME);
+      authenticator.authenticate(httpRequest, authInfo, SERVICE_NAME);
       fail();
     } catch (UnauthenticatedException exception) {
       assertEquals("Audiences not allowed", exception.getMessage());
@@ -256,12 +256,12 @@ public final class IntegrationTest {
 
     // First make sure the auth token is not expired initially.
     testingClock.setCurrentTime(currentTimeMillis);
-    authenticator.authenticate(httpRequest, methodInfo, SERVICE_NAME);
+    authenticator.authenticate(httpRequest, authInfo, SERVICE_NAME);
 
     // Now advance the clock to make sure that an expired auth token is properly handled.
     testingClock.setCurrentTime(fiveMinutesLater + TimeUnit.MINUTES.toMillis(5));
     try {
-      authenticator.authenticate(httpRequest, methodInfo, SERVICE_NAME);
+      authenticator.authenticate(httpRequest, authInfo, SERVICE_NAME);
       fail();
     } catch (UnauthenticatedException exception) {
       assertEquals("The auth token has already expired", exception.getMessage());
@@ -280,7 +280,7 @@ public final class IntegrationTest {
         Optional.of(issuer), Optional.of(SUBJECT), RSA_JSON_WEB_KEY);
     when(httpRequest.getHeader(HttpHeaders.AUTHORIZATION)).thenReturn("Bearer " + authToken);
     try {
-      authenticator.authenticate(httpRequest, methodInfo, SERVICE_NAME);
+      authenticator.authenticate(httpRequest, authInfo, SERVICE_NAME);
       fail();
     } catch (UncheckedExecutionException exception) {
       assertTrue(ExceptionUtils.getRootCause(exception) instanceof UnknownHostException);
@@ -298,7 +298,7 @@ public final class IntegrationTest {
         RSA_JSON_WEB_KEY);
     when(httpRequest.getHeader(HttpHeaders.AUTHORIZATION)).thenReturn("Bearer " + authToken);
     try {
-      authenticator.authenticate(httpRequest, methodInfo, SERVICE_NAME);
+      authenticator.authenticate(httpRequest, authInfo, SERVICE_NAME);
       fail();
     } catch (UncheckedExecutionException exception) {
       assertTrue(ExceptionUtils.getRootCause(exception) instanceof UnknownHostException);
