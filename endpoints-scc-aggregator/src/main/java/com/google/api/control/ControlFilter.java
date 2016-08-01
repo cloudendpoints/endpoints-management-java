@@ -21,6 +21,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.security.GeneralSecurityException;
 import java.util.List;
 import java.util.UUID;
 import java.util.logging.Level;
@@ -49,6 +50,7 @@ import com.google.api.scc.model.ReportingRule;
 import com.google.api.servicecontrol.v1.CheckRequest;
 import com.google.api.servicecontrol.v1.CheckResponse;
 import com.google.api.servicecontrol.v1.ReportRequest;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Strings;
 import com.google.common.base.Ticker;
 
@@ -63,22 +65,98 @@ import com.google.common.base.Ticker;
 public class ControlFilter implements Filter {
   private static final Logger log = Logger.getLogger(ControlFilter.class.getName());
   private static final String REFERER = "referer";
+  private static final String PROJECT_ID_PARAM = "endpoints.projectId";
+  private static final String SERVICE_NAME_PARAM = "endpoints.serviceName";
   private final Ticker ticker;
-  private final String projectId;
-  private final Client client;
+  private String projectId;
+  private Client client;
 
-  public ControlFilter(Client client, String projectId, @Nullable Ticker ticker) {
+  @VisibleForTesting
+  public ControlFilter(@Nullable Client client, @Nullable String projectId,
+      @Nullable Ticker ticker) {
     this.client = client;
-    this.projectId = projectId;
+    setProjectId(projectId);
     this.ticker = ticker == null ? Ticker.systemTicker() : ticker;
   }
 
+  public ControlFilter() {
+    this(null, null, null);
+  }
+
   @Override
-  public void init(FilterConfig filterConfig) throws ServletException {}
+  public void init(FilterConfig filterConfig) throws ServletException {
+    String configProjectId = filterConfig.getInitParameter(PROJECT_ID_PARAM);
+    if (!Strings.isNullOrEmpty(configProjectId)) {
+      setProjectId(configProjectId);
+    }
+    String configServiceName = filterConfig.getInitParameter(SERVICE_NAME_PARAM);
+    if (!Strings.isNullOrEmpty(configServiceName)) {
+      try {
+        this.client = createClient(configServiceName);
+        this.client.start();
+      } catch (GeneralSecurityException e) {
+        log.log(Level.SEVERE, "could not create the control client", e);
+      } catch (IOException e) {
+        log.log(Level.SEVERE, "could not create the control client", e);
+      }
+    }
+  }
+
+  @Override
+  public void destroy() {
+    if (this.client != null) {
+      this.client.stop();
+    }
+  }
+
+  /**
+   * A template method used while initializing the filter.
+   *
+   * <strong>Intended Usage</strong>
+   * <p>
+   * Subclasses of may override this method to customize how the project Id is determined
+   * </p>
+   */
+  protected void setProjectId(String projectId) {
+    this.projectId = projectId;
+  }
+
+  /**
+   * A template method for constructing clients.
+   *
+   * <strong>Intended Usage</strong>
+   * <p>
+   * Subclasses of may override this method to customize how the client get's built. Note that this
+   * method is intended to be invoked by {@link ControlFilter#init(FilterConfig)} when the
+   * serviceName parameter is provided. If that parameter is missing, this function will not be
+   * called and the client will not be constructed.
+   * </p>
+   *
+   * @param configServiceName the service name to use in constructing the client
+   * @return a {@link Client}
+   * @throws GeneralSecurityException indicates that client was not created successufully
+   * @throws IOException indicates that the client was not created successfully
+   */
+  protected Client createClient(String configServiceName)
+      throws GeneralSecurityException, IOException {
+    return new Client.Builder(configServiceName).build();
+  }
 
   @Override
   public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
       throws IOException, ServletException {
+    if (client == null) {
+      log.log(Level.INFO,
+          String.format("No control client was created - skipping service control"));
+      chain.doFilter(request, response);
+      return;
+    }
+    if (projectId == null) {
+      log.log(Level.INFO, String.format("No project Id was specified - skipping service control"));
+      chain.doFilter(request, response);
+      return;
+    }
+
     // Start tracking the latency
     LatencyTimer timer = new LatencyTimer(ticker);
     timer.start();
@@ -92,16 +170,24 @@ public class ControlFilter implements Filter {
 
     // Execute the check, and if there is an issue, terminate the request
     HttpServletRequest httpRequest = (HttpServletRequest) request;
-    String uri = httpRequest.getRequestURI();
-    String method = httpRequest.getMethod();
-    CheckRequestInfo checkInfo = createCheckInfo(httpRequest, uri, info);
+    AppStruct appInfo = new AppStruct();
+    appInfo.httpMethod = httpRequest.getMethod();
+    appInfo.requestSize = httpRequest.getContentLength();
+    appInfo.url = httpRequest.getRequestURI();
+    CheckRequestInfo checkInfo = createCheckInfo(httpRequest, appInfo.url, info);
     CheckRequest checkRequest = checkInfo.asCheckRequest(ticker);
     log.log(Level.FINE, String.format("Checking using %s", checkRequest));
     CheckResponse checkResponse = client.check(checkRequest);
     CheckErrorInfo errorInfo = CheckErrorInfo.convert(checkResponse);
     HttpServletResponse httpResponse = (HttpServletResponse) response;
     if (errorInfo != CheckErrorInfo.OK) {
-      // For now assume the any error information will only be in the first error's detail message
+      // 'Send' a report
+      ReportRequest reportRequest =
+          createReportRequest(info, checkInfo, appInfo, ConfigFilter.getReportRule(request), timer);
+      log.log(Level.FINE, String.format("sending the report request %s", reportRequest));
+      client.report(reportRequest);
+
+      // For now, assume that any error information will just be the first error detail message
       httpResponse.sendError(errorInfo.getHttpCode(),
           errorInfo.fullMessage(projectId, checkResponse.getCheckErrors(0).getDetail()));
       return;
@@ -109,11 +195,6 @@ public class ControlFilter implements Filter {
 
     // Add the check response, then perform the rest of the request itself
     log.log(Level.FINE, String.format("adding the check response %s", checkResponse));
-    client.addCheckResponse(checkRequest, checkResponse);
-    AppStruct appInfo = new AppStruct();
-    appInfo.httpMethod = method;
-    appInfo.requestSize = httpRequest.getContentLength();
-    appInfo.url = uri;
     timer.appStart();
 
     // Execute the request in wrapper, capture the data
@@ -162,6 +243,7 @@ public class ControlFilter implements Filter {
 
     return new CheckRequestInfo(new OperationInfo()
         .setApiKey(apiKey)
+        .setApiKeyValid(!Strings.isNullOrEmpty(apiKey))
         .setReferer(request.getHeader(REFERER))
         .setConsumerProjectId(this.projectId)
         .setOperationId(nextOperationId())
@@ -200,9 +282,6 @@ public class ControlFilter implements Filter {
     }
     return "";
   }
-
-  @Override
-  public void destroy() {}
 
   private static class AppStruct {
     String httpMethod;

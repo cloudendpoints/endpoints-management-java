@@ -216,8 +216,10 @@ public enum KnownLabels {
 
   /**
    * The user agent to record in report requests
+   *
+   * At the moment (2016/08/02), the user agent must be either 'ESP' or 'ESF'
    */
-  public static final String USER_AGENT = "service-control-client/java";
+  public static final String USER_AGENT = "ESP";
 
   /**
    * The service agent to record in report requests

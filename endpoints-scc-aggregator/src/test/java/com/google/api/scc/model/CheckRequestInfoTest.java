@@ -29,6 +29,7 @@ import org.junit.runners.JUnit4;
 import com.google.api.servicecontrol.v1.CheckRequest;
 import com.google.api.servicecontrol.v1.Operation;
 import com.google.api.servicecontrol.v1.Operation.Builder;
+import com.google.api.servicecontrol.v1.Operation.Importance;
 import com.google.common.base.Ticker;
 import com.google.common.collect.ImmutableMap;
 import com.google.protobuf.Timestamp;
@@ -124,6 +125,7 @@ public class CheckRequestInfoTest {
   private static Builder newExpectedOperationBuilder() {
     return Operation
         .newBuilder()
+        .setImportance(Importance.LOW)
         .setOperationName(TEST_OPERATION_NAME)
         .setOperationId(TEST_OPERATION_ID)
         .setEndTime(REALLY_EARLY)

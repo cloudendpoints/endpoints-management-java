@@ -129,13 +129,15 @@ public class ReportRequestAggregator {
    *
    * Is intended to be called by the driver before shutdown.
    */
-  public void clear() {
+  public ReportRequest[] clear() {
     if (cache == null) {
-      return;
+      return NO_REQUESTS;
     }
     synchronized (cache) {
+      ReportRequest[] res = generatedFlushRequests(cache.asMap().values());
       cache.invalidateAll();
       out.clear();
+      return res;
     }
   }
 
@@ -161,19 +163,7 @@ public class ReportRequestAggregator {
 
     // Thread safety - the rest of the function deals with items in a ConcurrentLinkedDeque which
     // guarantees a consistent view in multi-threaded scenarios.
-    ArrayList<ReportRequest> reqs = Lists.newArrayList();
-    ReportRequest.Builder current = ReportRequest.newBuilder().setServiceName(serviceName);
-    for (OperationAggregator agg : out) {
-      if (current.getOperationsCount() == MAX_OPERATION_COUNT) {
-        reqs.add(current.build());
-        current.clearOperations();
-      }
-      current.addOperations(agg.asOperation());
-    }
-    if (current.getOperationsCount() > 0) {
-      reqs.add(current.build());
-    }
-    return reqs.toArray(new ReportRequest[] {});
+    return generatedFlushRequests(out);
   }
 
   /**
@@ -212,6 +202,22 @@ public class ReportRequestAggregator {
       }
     }
     return true;
+  }
+
+  protected ReportRequest[] generatedFlushRequests(Iterable<OperationAggregator> aggregators) {
+    ArrayList<ReportRequest> reqs = Lists.newArrayList();
+    ReportRequest.Builder current = ReportRequest.newBuilder().setServiceName(serviceName);
+    for (OperationAggregator agg : aggregators) {
+      if (current.getOperationsCount() == MAX_OPERATION_COUNT) {
+        reqs.add(current.build());
+        current.clearOperations();
+      }
+      current.addOperations(agg.asOperation());
+    }
+    if (current.getOperationsCount() > 0) {
+      reqs.add(current.build());
+    }
+    return reqs.toArray(new ReportRequest[] {});
   }
 
   /**

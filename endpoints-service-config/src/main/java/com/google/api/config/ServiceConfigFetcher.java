@@ -16,6 +16,10 @@
 
 package com.google.api.config;
 
+import java.io.IOException;
+import java.text.MessageFormat;
+import java.util.List;
+
 import com.google.api.Service;
 import com.google.api.Service.Builder;
 import com.google.api.client.http.GenericUrl;
@@ -34,10 +38,6 @@ import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.protobuf.util.JsonFormat;
-
-import java.io.IOException;
-import java.text.MessageFormat;
-import java.util.List;
 
 /**
  * Fetches service configuration from Google Service Management APIs.

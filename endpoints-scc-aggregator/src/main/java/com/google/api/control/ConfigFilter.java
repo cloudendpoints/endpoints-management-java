@@ -50,7 +50,7 @@ public class ConfigFilter implements Filter {
   private ReportingRule rule;
 
   /**
-   * LoadConfig specifies methods for loading a Service instnce.
+   * {@code Loader} specifies a method for loading a {@code Service} instance.
    */
   public static interface Loader {
     /**
@@ -61,7 +61,7 @@ public class ConfigFilter implements Filter {
   }
 
   /**
-   * @param loader
+   * @param loader the used to load the service instance
    */
   public ConfigFilter(Loader loader) {
     Preconditions.checkNotNull(loader, "The laoder must be non-null");

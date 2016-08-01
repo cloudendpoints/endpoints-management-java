@@ -26,6 +26,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
 import com.google.api.servicecontrol.v1.Operation;
+import com.google.api.servicecontrol.v1.Operation.Importance;
 import com.google.common.base.Ticker;
 import com.google.protobuf.Timestamp;
 
@@ -56,6 +57,7 @@ public class OperationInfoTest {
               .setConsumerProjectId(TEST_PROJECT_ID),
           Operation
               .newBuilder()
+              .setImportance(Importance.LOW)
               .setEndTime(REALLY_EARLY)
               .setOperationId(TEST_OPERATION_ID)
               .setStartTime(REALLY_EARLY)
@@ -70,6 +72,7 @@ public class OperationInfoTest {
               .setApiKeyValid(false),
           Operation
               .newBuilder()
+              .setImportance(Importance.LOW)
               .setEndTime(REALLY_EARLY)
               .setOperationId(TEST_OPERATION_ID)
               .setStartTime(REALLY_EARLY)
@@ -83,6 +86,7 @@ public class OperationInfoTest {
               .setApiKeyValid(true),
           Operation
               .newBuilder()
+              .setImportance(Importance.LOW)
               .setEndTime(REALLY_EARLY)
               .setOperationId(TEST_OPERATION_ID)
               .setStartTime(REALLY_EARLY)
@@ -95,6 +99,7 @@ public class OperationInfoTest {
               .setServiceName(TEST_SERVICE_NAME),
           Operation
               .newBuilder()
+              .setImportance(Importance.LOW)
               .setEndTime(REALLY_EARLY)
               .setOperationId(TEST_OPERATION_ID)
               .setStartTime(REALLY_EARLY)
@@ -107,6 +112,7 @@ public class OperationInfoTest {
               .setServiceName(TEST_SERVICE_NAME),
           Operation
               .newBuilder()
+              .setImportance(Importance.LOW)
               .setEndTime(REALLY_EARLY)
               .setOperationName(TEST_OPERATION_NAME)
               .setOperationId(TEST_OPERATION_ID)

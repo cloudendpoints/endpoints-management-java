@@ -36,9 +36,3 @@ subprojects {
     targetCompatibility = project.targetCompatibility
   }
 }
-
-project (":endpoints-scc-aggregator") {
-  dependencies {
-    compile project(":endpoints-servcon-http-client")
-  }
-}
