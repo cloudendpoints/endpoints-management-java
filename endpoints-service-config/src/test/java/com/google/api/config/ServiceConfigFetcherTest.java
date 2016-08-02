@@ -23,12 +23,6 @@ import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import java.io.IOException;
-
-import org.apache.http.HttpStatus;
-import org.junit.Before;
-import org.junit.Test;
-
 import com.google.api.Service;
 import com.google.api.client.http.LowLevelHttpRequest;
 import com.google.api.client.http.LowLevelHttpResponse;
@@ -39,6 +33,12 @@ import com.google.api.client.testing.http.MockLowLevelHttpResponse;
 import com.google.appengine.api.appidentity.AppIdentityService;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.util.JsonFormat;
+
+import org.apache.http.HttpStatus;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.io.IOException;
 
 /**
  * Tests for {@link ServiceConfigFetcher}.
@@ -72,31 +72,35 @@ public final class ServiceConfigFetcherTest {
 
   @Test
   public void testServiceNameNotSet() throws IOException {
-    when(mockEnvironment.getVariable("SERVICE_NAME")).thenReturn("");
+    when(mockEnvironment.getVariable("ENDPOINTS_SERVICE_NAME")).thenReturn("");
     try {
       fetcher.fetch();
       fail();
     } catch (IllegalArgumentException exception) {
-      assertEquals("Environment variable 'SERVICE_NAME' is not set", exception.getMessage());
+      assertEquals(
+          "Environment variable 'ENDPOINTS_SERVICE_NAME' is not set",
+          exception.getMessage());
     }
   }
 
   @Test
   public void testServiceVersionNotSet() throws IOException {
-    when(mockEnvironment.getVariable("SERVICE_NAME")).thenReturn(SERVICE_NAME);
-    when(mockEnvironment.getVariable("SERVICE_VERSION")).thenReturn(null);
+    when(mockEnvironment.getVariable("ENDPOINTS_SERVICE_NAME")).thenReturn(SERVICE_NAME);
+    when(mockEnvironment.getVariable("ENDPOINTS_SERVICE_VERSION")).thenReturn(null);
     try {
       fetcher.fetch();
       fail();
     } catch (IllegalArgumentException exception) {
-      assertEquals("Environment variable 'SERVICE_VERSION' is not set", exception.getMessage());
+      assertEquals(
+          "Environment variable 'ENDPOINTS_SERVICE_VERSION' is not set",
+          exception.getMessage());
     }
   }
 
   @Test
   public void testFetchSuccessfully() throws InvalidProtocolBufferException {
-    when(mockEnvironment.getVariable("SERVICE_NAME")).thenReturn(SERVICE_NAME);
-    when(mockEnvironment.getVariable("SERVICE_VERSION")).thenReturn(SERVICE_VERSION);
+    when(mockEnvironment.getVariable("ENDPOINTS_SERVICE_NAME")).thenReturn(SERVICE_NAME);
+    when(mockEnvironment.getVariable("ENDPOINTS_SERVICE_VERSION")).thenReturn(SERVICE_VERSION);
 
     String content = JsonFormat.printer().print(SERVICE);
     testHttpTransport.setStatusCode(200);
@@ -107,8 +111,8 @@ public final class ServiceConfigFetcherTest {
 
   @Test
   public void testFetchConfigWithWrongServiceName() throws InvalidProtocolBufferException {
-    when(mockEnvironment.getVariable("SERVICE_NAME")).thenReturn(SERVICE_NAME);
-    when(mockEnvironment.getVariable("SERVICE_VERSION")).thenReturn(SERVICE_VERSION);
+    when(mockEnvironment.getVariable("ENDPOINTS_SERVICE_NAME")).thenReturn(SERVICE_NAME);
+    when(mockEnvironment.getVariable("ENDPOINTS_SERVICE_VERSION")).thenReturn(SERVICE_VERSION);
 
     Service service = Service.newBuilder().setName("random-name").build();
     String content = JsonFormat.printer().print(service);
@@ -125,8 +129,8 @@ public final class ServiceConfigFetcherTest {
 
   @Test
   public void testFetchConfigWithWrongServiceVersion() throws InvalidProtocolBufferException {
-    when(mockEnvironment.getVariable("SERVICE_NAME")).thenReturn(SERVICE_NAME);
-    when(mockEnvironment.getVariable("SERVICE_VERSION")).thenReturn(SERVICE_VERSION);
+    when(mockEnvironment.getVariable("ENDPOINTS_SERVICE_NAME")).thenReturn(SERVICE_NAME);
+    when(mockEnvironment.getVariable("ENDPOINTS_SERVICE_VERSION")).thenReturn(SERVICE_VERSION);
 
     Service service = Service.newBuilder()
         .setName(SERVICE_NAME)
@@ -146,8 +150,8 @@ public final class ServiceConfigFetcherTest {
 
   @Test
   public void testFetchFailed() throws IOException {
-    when(mockEnvironment.getVariable("SERVICE_NAME")).thenReturn(SERVICE_NAME);
-    when(mockEnvironment.getVariable("SERVICE_VERSION")).thenReturn(SERVICE_VERSION);
+    when(mockEnvironment.getVariable("ENDPOINTS_SERVICE_NAME")).thenReturn(SERVICE_NAME);
+    when(mockEnvironment.getVariable("ENDPOINTS_SERVICE_VERSION")).thenReturn(SERVICE_VERSION);
     testHttpTransport.setStatusCode(404);
 
     try {
