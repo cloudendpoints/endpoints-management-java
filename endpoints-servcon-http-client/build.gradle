@@ -60,7 +60,9 @@ repositories {
 }
 
 dependencies {
-  compile "io.gapi:grpc-google-api-servicecontrol-v1:${grpcGoogleApiVersion}"
+  compile("io.gapi:grpc-google-api-servicecontrol-v1:${grpcGoogleApiVersion}") {
+    exclude group: "io.gapi", module: "googleapis-common-protos"
+  }
   compile "com.google.api.grpc:grpc-core-proto:${grpcCoreProtoVersion}"
   compile "com.google.api-client:google-api-client-protobuf:${googleApiClientProtobufVersion}"
   compile module(group: 'com.google.api-client', name: 'google-api-client', version: '1.22.0') {
