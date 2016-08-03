@@ -145,7 +145,7 @@ public class MethodRegistry {
       }
       infos.add(theMethod);
       log.log(Level.FINE,
-          String.format("registered template template %s under method %", t, httpMethod));
+          String.format("registered template template %s under method %s", t, httpMethod));
       return true;
     } catch (ValidationException e) {
       log.log(Level.WARNING, String.format("invalid HTTP template %s provided", url));
