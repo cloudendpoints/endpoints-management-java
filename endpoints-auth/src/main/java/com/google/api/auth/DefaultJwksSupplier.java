@@ -48,7 +48,7 @@ import java.util.Map.Entry;
  * @author yangguan@google.com
  *
  */
-public final class DefaultJwksSupplier implements JwksSupplier {
+public class DefaultJwksSupplier implements JwksSupplier {
   @VisibleForTesting
   static final String X509_CERT_PREFIX = "-----BEGIN CERTIFICATE-----";
   @VisibleForTesting

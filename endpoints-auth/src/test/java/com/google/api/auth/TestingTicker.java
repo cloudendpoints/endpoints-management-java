@@ -26,7 +26,7 @@ import java.util.concurrent.TimeUnit;
  * @author yangguan@google.com
  *
  */
-final class TestingTicker extends Ticker {
+class TestingTicker extends Ticker {
   private long clock = 0;
 
   @Override

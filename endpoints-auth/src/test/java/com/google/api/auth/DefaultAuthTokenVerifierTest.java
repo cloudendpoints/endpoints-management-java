@@ -39,7 +39,7 @@ import org.junit.Test;
  * @author yangguan@google.com
  *
  */
-public final class DefaultAuthTokenVerifierTest {
+public class DefaultAuthTokenVerifierTest {
   private static final int BITS_OF_KEY = 2048;
   private static final String ISSUER = "issuer";
 

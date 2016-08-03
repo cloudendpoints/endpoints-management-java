@@ -28,7 +28,7 @@ import java.util.Set;
  * @author yangguan@google.com
  *
  */
-public final class UserInfo {
+public class UserInfo {
   private final Set<String> audiences;
   private final String email;
   private final String id;

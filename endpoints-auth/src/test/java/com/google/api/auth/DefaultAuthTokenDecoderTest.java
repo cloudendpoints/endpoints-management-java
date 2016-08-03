@@ -40,7 +40,7 @@ import java.util.List;
  * @author yangguan@google.com
  *
  */
-public final class DefaultAuthTokenDecoderTest {
+public class DefaultAuthTokenDecoderTest {
 
   private static final List<String> AUDIENCES = ImmutableList.of("aud1", "aud2");
   private static final Optional<String> EMAIL = Optional.of("issuer@issuer.com");

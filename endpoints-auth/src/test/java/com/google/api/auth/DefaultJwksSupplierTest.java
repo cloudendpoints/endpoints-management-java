@@ -59,7 +59,7 @@ import java.util.List;
  * @author yangguan@google.com
  *
  */
-public final class DefaultJwksSupplierTest {
+public class DefaultJwksSupplierTest {
   private static final String ISSUER = "issuer";
   private static final GenericUrl URI = new GenericUrl("https://jwks.uri/");
   private static ObjectWriter OBJECT_WRITER = new ObjectMapper().writer();

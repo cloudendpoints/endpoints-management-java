@@ -33,7 +33,7 @@ import java.util.concurrent.TimeUnit;
  *
  * @author yangguan@google.com
  */
-public final class CachingAuthTokenDecoder implements AuthTokenDecoder {
+public class CachingAuthTokenDecoder implements AuthTokenDecoder {
   private static final int CACHE_CAPACITY = 200;
   private static final int CACHE_EXPIRATION_IN_MINUTES = 5;
 

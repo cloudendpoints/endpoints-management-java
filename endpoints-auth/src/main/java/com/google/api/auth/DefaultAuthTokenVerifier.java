@@ -30,7 +30,7 @@ import org.jose4j.lang.JoseException;
  * @author yangguan@google.com
  *
  */
-public final class DefaultAuthTokenVerifier implements AuthTokenVerifier {
+public class DefaultAuthTokenVerifier implements AuthTokenVerifier {
 
   private final VerificationJwkSelector jwkSelector;
   private final JwksSupplier jwksSupplier;

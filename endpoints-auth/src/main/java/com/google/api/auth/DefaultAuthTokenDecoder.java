@@ -30,7 +30,7 @@ import org.jose4j.jwt.consumer.JwtConsumerBuilder;
  * @author yangguan@google.com
  *
  */
-public final class DefaultAuthTokenDecoder implements AuthTokenDecoder {
+public class DefaultAuthTokenDecoder implements AuthTokenDecoder {
 
   private final AuthTokenVerifier authTokenVerifier;
   private final JwtConsumer jwtConsumer;

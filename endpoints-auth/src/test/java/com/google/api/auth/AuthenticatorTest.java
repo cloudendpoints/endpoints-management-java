@@ -45,7 +45,7 @@ import javax.servlet.http.HttpServletRequest;
  * @author yangguan@google.com
  *
  */
-public final class AuthenticatorTest {
+public class AuthenticatorTest {
   private static final List<String> AUDIENCES = ImmutableList.of("aud1", "aud2");
   private static final String AUTH_TOKEN = "auth-token";
   private static final String EMAIL = "email@test.com";

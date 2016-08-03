@@ -47,7 +47,7 @@ import java.util.Map;
  * @author yangguan@google.com
  *
  */
-public final class DefautKeyUriSupplierTest {
+public class DefautKeyUriSupplierTest {
   private static final ObjectWriter OBJECT_WRITER = new ObjectMapper().writer();
 
   private static final String ISSUER_A = "https://issuer-a.com";

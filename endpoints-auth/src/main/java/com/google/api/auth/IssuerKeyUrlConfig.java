@@ -26,7 +26,7 @@ import com.google.common.base.Preconditions;
  * @author yangguan@google.com
  *
  */
-public final class IssuerKeyUrlConfig {
+public class IssuerKeyUrlConfig {
   private final boolean openIdValid;
   private final Optional<GenericUrl> jwksUri;
 

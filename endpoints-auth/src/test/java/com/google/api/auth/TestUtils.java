@@ -50,7 +50,7 @@ import java.util.concurrent.TimeUnit;
  * @author yangguan@google.com
  *
  */
-public final class TestUtils {
+public class TestUtils {
   private TestUtils() {
     // no instantiation
   }

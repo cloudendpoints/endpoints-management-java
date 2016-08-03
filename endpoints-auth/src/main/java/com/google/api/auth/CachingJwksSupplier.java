@@ -34,7 +34,7 @@ import java.util.concurrent.TimeUnit;
  * @author yangguan@google.com
  *
  */
-public final class CachingJwksSupplier implements JwksSupplier {
+public class CachingJwksSupplier implements JwksSupplier {
   private static final int CACHE_EXPIRATION_IN_MINUTES = 5;
 
   private final LoadingCache<String, JsonWebKeySet> jwksCache;

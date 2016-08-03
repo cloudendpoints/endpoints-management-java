@@ -37,7 +37,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author yangguan@google.com
  *
  */
-public final class DefaultKeyUriSupplier implements KeyUriSupplier {
+public class DefaultKeyUriSupplier implements KeyUriSupplier {
   private static final String HTTPS_PROTOCOL_PREFIX = "https://";
   private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
   private static final String OPEN_ID_CONFIG_PATH = ".well-known/openid-configuration";

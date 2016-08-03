@@ -29,7 +29,7 @@ import org.junit.Test;
 
 import java.util.concurrent.TimeUnit;
 
-public final class CachingAuthTokenDecoderTest {
+public class CachingAuthTokenDecoderTest {
   private static final String AUTH_TOKEN = "auth-token";
 
   private final AuthTokenDecoder authTokenDecoder = mock(AuthTokenDecoder.class);

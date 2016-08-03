@@ -35,7 +35,7 @@ import java.util.concurrent.TimeUnit;
  * @author yangguan@google.com
  *
  */
-public final class CachingJwksSupplierTest {
+public class CachingJwksSupplierTest {
   private static final String ISSUER = "issuer";
 
   private final JwksSupplier jwksSupplier = mock(JwksSupplier.class);
