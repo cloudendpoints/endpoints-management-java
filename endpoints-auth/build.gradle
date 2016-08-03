@@ -26,7 +26,7 @@ archivesBaseName = 'endpoints-management-auth'
 
 dependencies {
   compile project(":endpoints-service-config")
-  compile(project(":endpoints-scc-aggregator")) {
+  compile(project(":endpoints-control")) {
     transitive = false
   }
 
@@ -67,7 +67,6 @@ task integrationTest(type: Test) {
 check.dependsOn integrationTest
 integrationTest.mustRunAfter test
 
-
 archivesBaseName = 'endpoints-management-auth'
-def projectName = 'Endpoints Management - Third-Party authentication'
-def projectDescription = 'Enables authentication by third-party authentication providers'
+def projectName = 'Endpoints API Management - Authentication'
+def projectDescription = 'Enables authentication by multiple authentication providers'

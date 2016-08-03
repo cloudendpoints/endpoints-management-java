@@ -20,7 +20,7 @@ allprojects {
   apply plugin: 'signing'
 
   group = 'com.google.endpoints'
-  version = "0.0.6-SNAPSHOT"
+  version = "0.0.16-SNAPSHOT"
   def tmpSnapshotRepo = "http://104.197.230.53:8081/nexus/content/repositories/snapshots/"
 
   signing {
@@ -63,9 +63,8 @@ subprojects {
     targetCompatibility = project.targetCompatibility
   }
 
-  def projectName = 'Endpoints Management Library'
-  def projectDescription = 'Endpoints Service Proxy as a library'
-
+  def projectName
+  def projectDescription
   uploadArchives {
     repositories {
       mavenDeployer {

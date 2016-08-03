@@ -25,7 +25,7 @@ import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.util.Clock;
 import com.google.api.client.util.Maps;
 import com.google.api.config.ServiceConfigFetcher;
-import com.google.api.scc.model.MethodRegistry.AuthInfo;
+import com.google.api.control.model.MethodRegistry.AuthInfo;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;

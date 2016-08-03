@@ -1,0 +1,327 @@
+/*
+ * Copyright 2016 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.google.api.control;
+
+import static com.google.common.truth.Truth.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import javax.servlet.FilterChain;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
+import org.mockito.ArgumentCaptor;
+
+import com.google.api.client.util.Clock;
+import com.google.api.control.ControlFilter.FilterServletOutputStream;
+import com.google.api.control.aggregator.FakeTicker;
+import com.google.api.control.model.CheckRequestInfo;
+import com.google.api.control.model.FakeClock;
+import com.google.api.control.model.KnownLabels;
+import com.google.api.control.model.KnownMetrics;
+import com.google.api.control.model.MethodRegistry;
+import com.google.api.control.model.ReportingRule;
+import com.google.api.control.model.Timestamps;
+import com.google.api.servicecontrol.v1.CheckError;
+import com.google.api.servicecontrol.v1.CheckError.Code;
+import com.google.api.servicecontrol.v1.CheckRequest;
+import com.google.api.servicecontrol.v1.CheckResponse;
+import com.google.api.servicecontrol.v1.MetricValueSet;
+import com.google.api.servicecontrol.v1.Operation;
+import com.google.api.servicecontrol.v1.ReportRequest;
+import com.google.common.base.Ticker;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
+import com.google.protobuf.Timestamp;
+
+import autovalue.shaded.com.google.common.common.collect.Sets;
+
+/**
+ * Tests for {@code ControlFilter}.
+ */
+@RunWith(JUnit4.class)
+public class ControlFilterTest {
+  private static final Set<String> LABEL_NAMES = ImmutableSet.of(KnownLabels.REFERER.getName(),
+      KnownLabels.RESPONSE_CODE_CLASS.getName(), KnownLabels.PROTOCOL.getName());
+  private static final Set<String> METRIC_NAMES =
+      ImmutableSet.of(KnownMetrics.CONSUMER_REQUEST_SIZES.getName(),
+          KnownMetrics.CONSUMER_REQUEST_ERROR_COUNT.getName());
+  private static final List<String> WANTED_LOGS =
+      ImmutableList.of("my-endpoints-log", "my-alt-endpoints-log");
+
+  private static final String TEST_METHOD = "GET";
+  private static final String TEST_PROJECT_ID = "aProjectId";
+  private static final String TEST_SELECTOR = "mockedSelector";
+  private static final String TEST_URI = "my/test/uri";
+  private static final Integer TEST_REQUEST_SIZE = 5;
+  private static final String TEST_SERVICE_NAME = "testService";
+  private static final String REFERER = "testReferer";
+  private static final String TEST_CLIENT_IP = "196.168.0.3";
+  private HttpServletRequest request;
+  private HttpServletResponse response;
+  private FilterChain chain;
+  private Client client;
+  private Clock testClock;
+  private Ticker testTicker;
+  private MethodRegistry.Info info;
+  private ArgumentCaptor<CheckRequest> capturedCheck;
+  private ArgumentCaptor<ReportRequest> capturedReport;
+  private ByteArrayOutputStream responseContent;
+  private ReportingRule rule;
+  private CheckResponse checkResponse;
+  private static final Timestamp REALLY_EARLY = Timestamps.fromEpoch(0);
+  private static final Map<String, String> OPERATION_LABELS =
+      ImmutableMap.of(CheckRequestInfo.SCC_CALLER_IP, TEST_CLIENT_IP, CheckRequestInfo.SCC_REFERER,
+          REFERER, CheckRequestInfo.SCC_USER_AGENT, "ESP");
+
+  @Before
+  public void setUp() {
+    request = mock(HttpServletRequest.class);
+    response = mock(HttpServletResponse.class);
+    responseContent = new ByteArrayOutputStream();
+    chain = mock(FilterChain.class);
+    client = mock(Client.class);
+    testClock = new FakeClock();
+    testTicker = new FakeTicker(true);
+    info = new MethodRegistry.Info(TEST_SELECTOR, null);
+    capturedCheck = ArgumentCaptor.forClass(CheckRequest.class);
+    capturedReport = ArgumentCaptor.forClass(ReportRequest.class);
+
+    // This rule limits determines what metrics and labels are reported, simplifying testing
+    //
+    // In each test, rule can be modified before calling mockRequestAndResponse to control
+    // the expected metrics/labels that appear in the report request
+    rule = ReportingRule.fromKnownInputs(WANTED_LOGS.toArray(new String[] {}), METRIC_NAMES,
+        LABEL_NAMES);
+    checkResponse = CheckResponse.newBuilder().build();
+  }
+
+  @Test
+  public void shouldCallTheChainIfThereIsNoClient() throws IOException, ServletException {
+    ControlFilter f = new ControlFilter(null, "aProjectId", testTicker, testClock);
+    f.doFilter(request, response, chain);
+    verify(chain).doFilter(request, response);
+  }
+
+  @Test
+  public void shouldNotUseTheClientWithoutAProjectId() throws IOException, ServletException {
+    ControlFilter f = new ControlFilter(client, null, testTicker, testClock);
+    f.doFilter(request, response, chain);
+    verify(chain).doFilter(request, response);
+    verify(client, never()).check(capturedCheck.capture());
+  }
+
+  @Test
+  public void shouldNotUseTheClientIfThereIsNoMethodInfo() throws IOException, ServletException {
+    ControlFilter f = new ControlFilter(client, TEST_PROJECT_ID, testTicker, testClock);
+    when(request.getAttribute(ConfigFilter.METHOD_INFO_ATTRIBUTE)).thenReturn(null);
+    f.doFilter(request, response, chain);
+    verify(chain).doFilter(request, response);
+    verify(client, never()).check(capturedCheck.capture());
+  }
+
+  @Test
+  public void shouldUseTheDefaultLocation() throws IOException, ServletException {
+    rule = ReportingRule.fromKnownInputs(null, null,
+        Sets.newHashSet(KnownLabels.GCP_LOCATION.getName()));
+    mockRequestAndResponse();
+    when(client.check(any(CheckRequest.class))).thenReturn(checkResponse);
+
+    ControlFilter f = new ControlFilter(client, TEST_PROJECT_ID, testTicker, testClock);
+    f.doFilter(request, response, chain);
+    verify(client, times(1)).report(capturedReport.capture());
+    ReportRequest aReport = capturedReport.getValue();
+    assertThat(aReport.getOperationsCount()).isEqualTo(1);
+    Operation op = aReport.getOperations(0);
+    Map<String, String> wantedLabels =
+        ImmutableMap.of(KnownLabels.GCP_LOCATION.getName(), "global");
+    assertThat(op.getLabelsMap()).isEqualTo(wantedLabels);
+    // TODO: Add more assertions
+  }
+
+  @Test
+  public void shouldSetBackendLatency() throws IOException, ServletException {
+    HashSet<String> wantMetricNames =
+        Sets.newHashSet(KnownMetrics.CONSUMER_BACKEND_LATENCIES.getName(),
+            KnownMetrics.PRODUCER_BACKEND_LATENCIES.getName(),
+            KnownMetrics.PRODUCER_BY_CONSUMER_BACKEND_LATENCIES.getName());
+    rule = ReportingRule.fromKnownInputs(null, wantMetricNames, null);
+    mockRequestAndResponse();
+    when(client.check(any(CheckRequest.class))).thenReturn(checkResponse);
+
+    ControlFilter f = new ControlFilter(client, TEST_PROJECT_ID, testTicker, testClock);
+    f.doFilter(request, response, chain);
+    verify(client, times(1)).report(capturedReport.capture());
+    ReportRequest aReport = capturedReport.getValue();
+    assertThat(aReport.getOperationsCount()).isEqualTo(1);
+    Operation op = aReport.getOperations(0);
+
+    // verify that the report includes the specified metrics
+    List<MetricValueSet> mvs = op.getMetricValueSetsList();
+    assertThat(mvs.size()).isEqualTo(3);
+    Set<String> gotMetricNames = Sets.newHashSet();
+    for (MetricValueSet s : mvs) {
+      gotMetricNames.add(s.getMetricName());
+    }
+    assertThat(gotMetricNames).isEqualTo(wantMetricNames);
+  }
+
+  @Test
+  public void shouldUseTheClientIfConfiguredOk() throws IOException, ServletException {
+    ControlFilter f = new ControlFilter(client, TEST_PROJECT_ID, testTicker, testClock);
+    mockRequestAndResponse();
+    when(client.check(any(CheckRequest.class))).thenReturn(checkResponse);
+
+    f.doFilter(request, response, chain);
+    verify(request, times(1)).getAttribute(ConfigFilter.METHOD_INFO_ATTRIBUTE);
+    verify(client, times(1)).check(capturedCheck.capture());
+    verify(client, times(1)).report(capturedReport.capture());
+    CheckRequest aCheck = capturedCheck.getValue();
+    assertThatCheckHasExpectedValues(aCheck);
+
+    ReportRequest aReport = capturedReport.getValue();
+    assertThat(aReport.getOperationsCount()).isEqualTo(1);
+    assertThat(aReport.getServiceName()).isEqualTo(TEST_SERVICE_NAME);
+    Operation op = aReport.getOperations(0);
+    Map<String, String> wantedLabels =
+        ImmutableMap.of(KnownLabels.RESPONSE_CODE_CLASS.getName(), "2xx",
+            KnownLabels.PROTOCOL.getName(), "HTTP", KnownLabels.REFERER.getName(), "testReferer");
+    assertThat(op.getLabelsMap()).isEqualTo(wantedLabels);
+    // TODO: Add more assertions
+  }
+
+  @Test
+  public void shouldSendAReportButNotInvokeTheChainIfTheCheckFails()
+      throws IOException, ServletException {
+    ControlFilter f = new ControlFilter(client, TEST_PROJECT_ID, testTicker, testClock);
+
+    // Fail because the project got deleted
+    CheckResponse deleted = CheckResponse
+        .newBuilder()
+        .addCheckErrors(CheckError.newBuilder().setCode(Code.PROJECT_DELETED))
+        .build();
+    mockRequestAndResponse();
+    when(client.check(any(CheckRequest.class))).thenReturn(deleted);
+
+    f.doFilter(request, response, chain);
+    verify(request, times(1)).getAttribute(ConfigFilter.METHOD_INFO_ATTRIBUTE);
+    verify(response, times(1)).sendError(HttpServletResponse.SC_FORBIDDEN,
+        "Project " + TEST_PROJECT_ID + " has been deleted");
+    verify(client, times(1)).check(capturedCheck.capture());
+    verify(client, times(1)).report(capturedReport.capture());
+    verify(chain, never()).doFilter(request, response);
+
+    // verify the check
+    CheckRequest aCheck = capturedCheck.getValue();
+    assertThatCheckHasExpectedValues(aCheck);
+
+    // verify the report
+    ReportRequest aReport = capturedReport.getValue();
+    assertThat(aReport.getOperationsCount()).isEqualTo(1);
+    assertThat(aReport.getServiceName()).isEqualTo(TEST_SERVICE_NAME);
+    Operation op = aReport.getOperations(0);
+    Map<String, String> wantedLabels =
+        ImmutableMap.of(KnownLabels.RESPONSE_CODE_CLASS.getName(), "5xx",
+            KnownLabels.PROTOCOL.getName(), "HTTP", KnownLabels.REFERER.getName(), "testReferer");
+    assertThat(op.getLabelsMap()).isEqualTo(wantedLabels);
+  }
+
+  @Test
+  public void shouldSendAReportAndInvokeTheChainIfTheCheckErrors()
+      throws IOException, ServletException {
+    ControlFilter f = new ControlFilter(client, TEST_PROJECT_ID, testTicker, testClock);
+
+    // Return null from check to indicate that transport fail occurred
+    mockRequestAndResponse();
+    when(client.check(any(CheckRequest.class))).thenReturn(null);
+
+    f.doFilter(request, response, chain);
+    verify(request, times(1)).getAttribute(ConfigFilter.METHOD_INFO_ATTRIBUTE);
+    verify(client, times(1)).check(capturedCheck.capture());
+    verify(client, times(1)).report(capturedReport.capture());
+    verify(chain, times(1)).doFilter(request, response);
+
+    CheckRequest aCheck = capturedCheck.getValue();
+    assertThatCheckHasExpectedValues(aCheck);
+
+    ReportRequest aReport = capturedReport.getValue();
+    assertThat(aReport.getOperationsCount()).isEqualTo(1);
+    assertThat(aReport.getServiceName()).isEqualTo(TEST_SERVICE_NAME);
+    Operation op = aReport.getOperations(0);
+    Map<String, String> wantedLabels =
+        ImmutableMap.of(KnownLabels.RESPONSE_CODE_CLASS.getName(), "5xx",
+            KnownLabels.PROTOCOL.getName(), "HTTP", KnownLabels.REFERER.getName(), "testReferer");
+    assertThat(op.getLabelsMap()).isEqualTo(wantedLabels);
+  }
+
+  @Test
+  public void shouldStopTheClientWhenDestroyed() throws IOException, ServletException {
+    ControlFilter f = new ControlFilter(client, TEST_PROJECT_ID, testTicker, testClock);
+    f.destroy();
+    verify(client, times(1)).stop();
+  }
+
+  private void assertThatCheckHasExpectedValues(CheckRequest aCheck) {
+    assertThat(aCheck.getOperation().getOperationId()).isNotNull();
+    CheckRequest.Builder comparedCheck = aCheck.toBuilder();
+    comparedCheck.getOperationBuilder().clearOperationId();
+    assertThat(comparedCheck.build()).isEqualTo(wantedCheckRequest().build());
+  }
+
+  private CheckRequest.Builder wantedCheckRequest() {
+    Operation.Builder op = Operation
+        .newBuilder()
+        .setConsumerId("project:" + TEST_PROJECT_ID)
+        .setOperationName(TEST_SELECTOR)
+        .setEndTime(REALLY_EARLY)
+        .setStartTime(REALLY_EARLY)
+        .putAllLabels(OPERATION_LABELS);
+    return CheckRequest.newBuilder().setServiceName(TEST_SERVICE_NAME).setOperation(op);
+  }
+
+  private void mockRequestAndResponse() throws IOException {
+    when(response.getOutputStream()).thenReturn(new FilterServletOutputStream(responseContent));
+    when(request.getAttribute(ConfigFilter.METHOD_INFO_ATTRIBUTE)).thenReturn(info);
+    when(request.getAttribute(ConfigFilter.REPORTING_ATTRIBUTE)).thenReturn(rule);
+    when(request.getParameter(anyString())).thenReturn(null);
+    when(request.getHeaders(anyString())).thenReturn(null);
+    when(request.getRemoteAddr()).thenReturn(TEST_CLIENT_IP);
+    when(request.getHeader("referer")).thenReturn(REFERER);
+    when(request.getAttribute(ConfigFilter.SERVICE_NAME_ATTRIBUTE)).thenReturn(TEST_SERVICE_NAME);
+    when(request.getMethod()).thenReturn(TEST_METHOD);
+    when(request.getRequestURI()).thenReturn(TEST_URI);
+    when(request.getContentLength()).thenReturn(TEST_REQUEST_SIZE);
+  }
+}

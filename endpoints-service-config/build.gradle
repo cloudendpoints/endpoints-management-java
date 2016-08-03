@@ -28,5 +28,5 @@ dependencies {
 }
 
 archivesBaseName = 'endpoints-management-config'
-def projectName = 'Endpoints Management - Service Config'
-def projectDescription = 'Loads the service configuration from the serivce management API'
+def projectName = 'Endpoints API Management - Service Configuration'
+def projectDescription = 'Handles service configuration via the service management API'

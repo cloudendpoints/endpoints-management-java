@@ -14,10 +14,24 @@
  * limitations under the License.
  */
 
-rootProject.name = 'endpoints-api-management'
+package com.google.api.control.model;
 
-include ':endpoints-auth'
-include ':endpoints-control'
-include ':endpoints-control-appengine'
-include ':endpoints-control-api-client'
-include ':endpoints-service-config'
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
+
+import com.google.api.client.util.Clock;
+
+public class FakeClock implements Clock {
+  private final AtomicLong millis = new AtomicLong();
+
+  /** Advances the ticker value by {@code time} in {@code timeUnit}. */
+  public FakeClock tick(long time, TimeUnit timeUnit) {
+    millis.addAndGet(timeUnit.toMillis(time));
+    return this;
+  }
+
+  @Override
+  public long currentTimeMillis() {
+    return millis.get();
+  }
+}

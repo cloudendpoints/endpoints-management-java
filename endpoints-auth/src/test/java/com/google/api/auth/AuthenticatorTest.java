@@ -24,7 +24,7 @@ import static org.mockito.Mockito.when;
 import com.google.api.AuthProvider;
 import com.google.api.Authentication;
 import com.google.api.client.util.Clock;
-import com.google.api.scc.model.MethodRegistry.AuthInfo;
+import com.google.api.control.model.MethodRegistry.AuthInfo;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;

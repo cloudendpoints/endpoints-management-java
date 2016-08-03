@@ -1,0 +1,73 @@
+/*
+ * Copyright 2016 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+buildscript {
+  repositories {
+    mavenCentral()
+  }
+  dependencies { classpath 'com.google.protobuf:protobuf-gradle-plugin:0.7.7' }
+}
+
+apply plugin: 'java'
+apply plugin: 'maven'
+
+def tmpSnapshotRepo = "http://104.197.230.53:8081/nexus/content/repositories/snapshots/"
+repositories {
+  mavenCentral()
+  mavenLocal()
+  maven {
+    // Private maven repo.  Temporary, until googleapis-common-protos is published
+    url tmpSnapshotRepo
+  }
+}
+
+test {
+  testLogging {
+    exceptionFormat = 'full'
+    testLogging.showStandardStreams = true
+  }
+}
+
+sourceSets {
+  test {
+    resources.srcDir file("src/test/resources")
+  }
+}
+
+dependencies {
+  compile "com.google.api.grpc:googleapis-common-protos:$googleapisCommonProtosVersion"
+  compile "com.google.appengine:appengine-api-1.0-sdk:$appengineSdkVersion"
+  compile "com.google.auto.value:auto-value:${autoValueVersion}"
+  compile "com.google.code.findbugs:jsr305:${jsr305Version}"
+  compile "com.google.endpoints:api-servicecontrol-v1:${grpcGoogleApiVersion}"
+  compile "com.google.guava:guava:${guavaVersion}"
+  compile "com.google.http-client:google-http-client-jackson2:${httpClientVersion}"
+  compile "javax.servlet:servlet-api:${servletApiVersion}"
+  compile "com.fasterxml.jackson.core:jackson-core:${jacksonVersion}"
+  compile(group: 'com.google.api-client', name: 'google-api-client-appengine', version: "${googleApiClientAppEngineVersion}") {
+    exclude group: 'com.google.guava', module: 'guava-jdk5'
+  }
+  compile project(":endpoints-control-api-client")
+  compile project(":endpoints-service-config")
+
+  testCompile "junit:junit:${junitVersion}"
+  testCompile "com.google.truth:truth:${truthVersion}"
+  testCompile "org.mockito:mockito-core:${mockitoVersion}"
+}
+
+archivesBaseName = 'endpoints-management-control'
+def projectName = 'Endpoints API Management'
+def projectDescription = 'Provide access control for managed services'
