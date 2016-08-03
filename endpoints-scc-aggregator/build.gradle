@@ -21,11 +21,6 @@ buildscript {
   dependencies { classpath 'com.google.protobuf:protobuf-gradle-plugin:0.7.4' }
 }
 
-task sourceJar(type: Jar, dependsOn: classes) {
-  classifier = 'sources'
-  from sourceSets.main.allJava
-}
-
 apply plugin: 'java'
 apply plugin: 'maven'
 apply plugin: 'com.google.protobuf'
@@ -40,15 +35,13 @@ repositories {
   }
 }
 
-artifacts {
-  archives sourceJar
-}
-
 test {
   testLogging {
     exceptionFormat = 'full'
   }
 }
+
+archivesBaseName = 'endpoints-management-control'
 
 dependencies {
   compile "com.google.api.grpc:googleapis-common-protos:$googleapisCommonProtosVersion"
@@ -69,3 +62,7 @@ dependencies {
   testCompile "junit:junit:${junitVersion}"
   testCompile "com.google.truth:truth:${truthVersion}"
 }
+
+archivesBaseName = 'endpoints-management-control'
+def projectName = 'Endpoints Management - Service controller'
+def projectDescription = 'Provide access control access to managed services'

@@ -43,7 +43,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 /**
- * The default implementation of {@JwksSupplier}.
+ * The default implementation of {@link JwksSupplier}.
  *
  * @author yangguan@google.com
  *

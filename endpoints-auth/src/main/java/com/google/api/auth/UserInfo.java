@@ -36,6 +36,10 @@ public class UserInfo {
 
   /**
    * Constructor.
+   * @param audiences the available audiences
+   * @param email the user's email address
+   * @param id the user's' id
+   * @param issuer the issuer
    */
   public UserInfo(Collection<String> audiences, String email, String id, String issuer) {
     Preconditions.checkNotNull(audiences);

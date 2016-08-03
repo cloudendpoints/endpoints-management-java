@@ -26,29 +26,6 @@ apply plugin: 'maven'
 apply plugin: 'signing'
 apply plugin: 'com.google.protobuf'
 
-group = 'com.google.apis'
-version = 'v1-rev20160404-1.20.0'
-archivesBaseName = 'google-api-services-servicecontrol'
-
-sourceCompatibility = 1.6
-targetCompatibility = 1.6
-jar.manifest.attributes("Built-By": "Google")
-jar.manifest.attributes("Build-Jdk": "1.6.x")
-
-task sourceJar(type: Jar) {
-  classifier = 'sources'
-  from sourceSets.main.allJava
-}
-
-task javadocJar(type: Jar, dependsOn: javadoc) {
-  classifier = 'javadoc'
-  from javadoc.destinationDir
-}
-
-artifacts {
-  archives sourceJar
-}
-
 def tmpSnapshotRepo = "http://104.197.230.53:8081/nexus/content/repositories/snapshots/"
 repositories {
   mavenCentral()
@@ -67,3 +44,7 @@ dependencies {
   }
   compile "com.google.endpoints:api-servicecontrol-v1:${grpcGoogleApiVersion}"
 }
+
+archivesBaseName = 'endpoints-management-http-client'
+def projectName = 'Endpoints Management - HTTP service client'
+def projectDescription = 'Provides a generated http client for the service control service'

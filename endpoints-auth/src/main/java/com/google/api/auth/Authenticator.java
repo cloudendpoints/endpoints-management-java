@@ -64,8 +64,17 @@ public class Authenticator {
   private final AuthTokenDecoder authTokenDecoder;
   private final Clock clock;
 
+  /**
+   * Constructor.
+   *
+   * @param authTokenDecoder decodes auth tokens into {@link UserInfo} objects.
+   * @param clock provides the time
+   */
   @VisibleForTesting
-  Authenticator(AuthTokenDecoder authTokenDecoder, Clock clock) {
+  public Authenticator(AuthTokenDecoder authTokenDecoder, Clock clock) {
+    Preconditions.checkNotNull(authTokenDecoder);
+    Preconditions.checkNotNull(clock);
+
     this.authTokenDecoder = authTokenDecoder;
     this.clock = clock;
   }

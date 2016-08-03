@@ -21,6 +21,9 @@ configurations {
   integrationTestRuntime.extendsFrom testRuntime
 }
 
+archivesBaseName = 'endpoints-management-auth'
+
+
 dependencies {
   compile project(":endpoints-service-config")
   compile(project(":endpoints-scc-aggregator")) {
@@ -64,3 +67,7 @@ task integrationTest(type: Test) {
 check.dependsOn integrationTest
 integrationTest.mustRunAfter test
 
+
+archivesBaseName = 'endpoints-management-auth'
+def projectName = 'Endpoints Management - Third-Party authentication'
+def projectDescription = 'Enables authentication by third-party authentication providers'

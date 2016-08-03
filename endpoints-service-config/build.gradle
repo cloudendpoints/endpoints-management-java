@@ -26,3 +26,7 @@ dependencies {
   testCompile "org.mockito:mockito-core:$mockitoVersion"
   testCompile "junit:junit:$junitVersion"
 }
+
+archivesBaseName = 'endpoints-management-config'
+def projectName = 'Endpoints Management - Service Config'
+def projectDescription = 'Loads the service configuration from the serivce management API'
