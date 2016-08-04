@@ -18,13 +18,13 @@ package com.google.api.scc.model;
 
 import java.util.Map;
 
+import com.google.api.servicecontrol.v1.LogEntry;
 import com.google.api.servicecontrol.v1.Operation;
 import com.google.api.servicecontrol.v1.ReportRequest;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 import com.google.common.base.Ticker;
 import com.google.common.collect.Maps;
-import com.google.logging.v1.LogEntry;
 import com.google.protobuf.Struct;
 import com.google.protobuf.Value;
 
@@ -175,10 +175,7 @@ public class ReportRequestInfo extends OperationInfo {
     }
 
     Struct.Builder theStruct = Struct.newBuilder().putAllFields(values);
-
-    // TODO: update this after updating the LogEntry class by regenerating the proto package that's
-    // used a dependency in maven repo, there a couple of other fields that should be set
-    return LogEntry.newBuilder().setStructPayload(theStruct).setLog(name);
+    return LogEntry.newBuilder().setStructPayload(theStruct).setName(name);
   }
 
   /**

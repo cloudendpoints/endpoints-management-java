@@ -25,11 +25,11 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
 import com.google.api.MetricDescriptor.MetricKind;
+import com.google.api.servicecontrol.v1.LogEntry;
 import com.google.api.servicecontrol.v1.MetricValue;
 import com.google.api.servicecontrol.v1.MetricValueSet;
 import com.google.api.servicecontrol.v1.Operation;
 import com.google.common.collect.ImmutableMap;
-import com.google.logging.v1.LogEntry;
 import com.google.protobuf.Timestamp;
 
 /**
@@ -135,7 +135,7 @@ public class OperationAggregatorTest {
   }
 
   private static LogEntry newLogEntry(String message) {
-    return LogEntry.newBuilder().setLog(message).build();
+    return LogEntry.newBuilder().setName(message).build();
   }
 
   private static Operation.Builder newOperation(Timestamp start, Timestamp end) {

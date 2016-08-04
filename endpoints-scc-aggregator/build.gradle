@@ -51,11 +51,11 @@ test {
 }
 
 dependencies {
-  compile "io.gapi:grpc-google-api-servicecontrol-v1:${grpcGoogleApiVersion}"
-  compile "com.google.api.grpc:grpc-core-proto:${grpcCoreProtoVersion}"
+  compile "com.google.api.grpc:googleapis-common-protos:$googleapisCommonProtosVersion"
   compile "com.google.appengine:appengine-api-1.0-sdk:$appengineSdkVersion"
   compile "com.google.auto.value:auto-value:${autoValueVersion}"
   compile "com.google.code.findbugs:jsr305:${jsr305Version}"
+  compile "com.google.endpoints:api-servicecontrol-v1:${grpcGoogleApiVersion}"
   compile "com.google.guava:guava:${guavaVersion}"
   compile "com.google.http-client:google-http-client-jackson2:${httpClientVersion}"
   compile "javax.servlet:servlet-api:${servletApiVersion}"
