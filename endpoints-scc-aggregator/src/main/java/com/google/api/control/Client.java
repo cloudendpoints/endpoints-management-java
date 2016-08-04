@@ -99,13 +99,7 @@ public class Client {
     Thread t = threads.newThread(new Runnable() {
       @Override
       public void run() {
-        try {
-          scheduleFlushes();
-        } catch (InterruptedException e) {
-          log.log(Level.SEVERE, String.format("the scheduler thread failed with %s", e));
-        } catch (RuntimeException e) {
-          log.log(Level.SEVERE, String.format("the scheduler thread failed with %s", e));
-        }
+        scheduleFlushes();
       }
     });
     t.start();
@@ -131,15 +125,7 @@ public class Client {
         }
       }
 
-      this.stopped = true;
-      if (this.scheduler != null) {
-        // if there are events scheduled, then running will subsequently
-        // be set False by the scheduler thread.
-        //
-        // Sometime however, if aggregation is disabled, there will be no events, so running does
-        // not get set to false
-        this.running = false;
-      }
+      this.stopped = true;  // the scheduler thread will set running to false
     }
   }
 
@@ -194,13 +180,21 @@ public class Client {
     }
   }
 
-  private void scheduleFlushes() throws InterruptedException {
-    flushAndScheduleChecks();
-    flushAndScheduleReports();
-    this.scheduler = new Scheduler(ticker);
-    this.scheduler.run(); // if caching is configured, this blocks until stop is called
-    log.log(Level.INFO, String.format("scheduler run completed %s will exit", this));
-    this.scheduler = null;
+  private void scheduleFlushes() {
+    try {
+      this.scheduler = new Scheduler(ticker);
+      flushAndScheduleChecks();
+      flushAndScheduleReports();
+      this.scheduler.run(); // if caching is configured, this blocks until stop is called
+      log.log(Level.INFO, String.format("scheduler %s has no further tasks and will exit", this));
+      this.scheduler = null;
+    } catch (InterruptedException e) {
+      log.log(Level.SEVERE, String.format("scheduler %s was interrupted and exited", this), e);
+      this.stopped = true;
+    } catch (RuntimeException e) {
+      log.log(Level.SEVERE, String.format("scheduler %s failed and exited", this), e);
+      this.stopped = true;
+    }
   }
 
   private synchronized boolean resetIfStopped() {
