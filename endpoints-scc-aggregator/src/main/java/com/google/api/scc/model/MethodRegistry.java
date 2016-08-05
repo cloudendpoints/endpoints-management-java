@@ -84,7 +84,7 @@ public class MethodRegistry {
     List<Info> infos = infosByHttpMethod.get(httpMethod);
     if (infos == null) {
       log.log(Level.FINE,
-          String.format("no information about urls for HTTP method %s", httpMethod));
+          String.format("no information about any urls for HTTP method %s when checking %s", httpMethod, url));
       return null;
     }
     for (Info info : infos) {
@@ -141,11 +141,11 @@ public class MethodRegistry {
       List<Info> infos = infosByHttpMethod.get(httpMethod);
       if (infos == null) {
         infos = Lists.newArrayList();
-        infosByHttpMethod.put(httpMethod, infos);
+        infosByHttpMethod.put(httpMethod.toLowerCase(), infos);
       }
       infos.add(theMethod);
       log.log(Level.FINE,
-          String.format("registered template template %s under method %s", t, httpMethod));
+          String.format("registered template %s under method %s", t, httpMethod));
       return true;
     } catch (ValidationException e) {
       log.log(Level.WARNING, String.format("invalid HTTP template %s provided", url));
@@ -239,7 +239,7 @@ public class MethodRegistry {
       case PATCH:
       case POST:
       case PUT:
-        return r.toString().toLowerCase();
+        return r.getPatternCase().toString().toLowerCase();
       default:
         return null;
     }

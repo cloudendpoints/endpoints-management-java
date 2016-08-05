@@ -231,7 +231,7 @@ public class Client {
       public void run() {
         flushAndScheduleChecks(); // Do this again after the interval
       }
-    }, interval * Scheduler.NANOS_PER_MILLIS, 0 /* high priority */);
+    }, interval, 0 /* high priority */);
   }
 
   private void flushAndScheduleReports() {
@@ -256,7 +256,7 @@ public class Client {
       public void run() {
         flushAndScheduleReports(); // Do this again after the interval
       }
-    }, interval * Scheduler.NANOS_PER_MILLIS, 1 /* not so high priority */);
+    }, interval, 1 /* not so high priority */);
   }
 
   /**
@@ -351,8 +351,14 @@ public class Client {
       this.ticker = ticker;
     }
 
-    public void enter(Runnable r, long tickerRuntime, int priority) {
-      ScheduledEvent event = new ScheduledEvent(r, tickerRuntime, priority);
+    /**
+     * @param r a {@code Runnable} to run after {@code deltaNanos}
+     * @param deltaMillis the time in the future to run {@code r}
+     * @param priority the priority at which to give running {@code r}
+     */
+    public void enter(Runnable r, long deltaMillis, int priority) {
+      long later = (deltaMillis * NANOS_PER_MILLIS) + ticker.read();
+      ScheduledEvent event = new ScheduledEvent(r, later, priority);
       synchronized (this) {
         queue.add(event);
       }
@@ -377,10 +383,11 @@ public class Client {
         }
         if (delay) {
           long gapMillis = gap / NANOS_PER_MILLIS;
+          log.log(Level.FINE, String.format("Scheduler on %s will sleep for %d millis", Thread.currentThread(), gapMillis));
           Thread.sleep(gapMillis);
         } else {
+          log.log(Level.FINE, String.format("Scheduler on %s will run an event", Thread.currentThread()));
           next.getScheduledAction().run();
-          Thread.sleep(0);
         }
       }
     }

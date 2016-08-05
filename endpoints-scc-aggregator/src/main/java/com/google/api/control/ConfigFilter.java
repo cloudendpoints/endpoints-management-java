@@ -86,12 +86,12 @@ public class ConfigFilter implements Filter {
     if (theService == null) {
       log.log(Level.WARNING,
           "The config filter did not initialize properly, no service is present");
-      chain.doFilter(request, response);
     } else {
       HttpServletRequest httpRequest = (HttpServletRequest) request;
       httpRequest.setAttribute(SERVICE_ATTRIBUTE, theService);
       httpRequest.setAttribute(REGISTRY_ATTRIBUTE, registry);
       httpRequest.setAttribute(REPORTING_ATTRIBUTE, rule);
+      log.log(Level.FINE,  String.format("Added service %s, and associated attributes to the request", theService));
 
       // Determine if service control is required
       String uri = httpRequest.getRequestURI();
@@ -99,8 +99,11 @@ public class ConfigFilter implements Filter {
       Info info = registry.lookup(method, uri);
       if (info != null) {
         httpRequest.setAttribute(METHOD_INFO_ATTRIBUTE, info);
+      } else {
+        log.log(Level.FINE, "did not add method info to the request");
       }
     }
+    chain.doFilter(request, response);
   }
 
   /**
