@@ -23,6 +23,7 @@ import com.google.api.client.http.GenericUrl;
 import com.google.api.client.http.HttpRequestFactory;
 import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.util.Clock;
+import com.google.api.client.util.Maps;
 import com.google.api.config.ServiceConfigFetcher;
 import com.google.api.scc.model.MethodRegistry.AuthInfo;
 import com.google.common.annotations.VisibleForTesting;
@@ -63,20 +64,23 @@ public class Authenticator {
 
   private final AuthTokenDecoder authTokenDecoder;
   private final Clock clock;
+  private final Map<String, String> issuersToProviderIds;
 
   /**
    * Constructor.
    *
    * @param authTokenDecoder decodes auth tokens into {@link UserInfo} objects.
-   * @param clock provides the time
+   * @param clock provides the time.
+   * @param issuersToProviderIds maps from issuers to provider IDs.
    */
   @VisibleForTesting
-  public Authenticator(AuthTokenDecoder authTokenDecoder, Clock clock) {
-    Preconditions.checkNotNull(authTokenDecoder);
-    Preconditions.checkNotNull(clock);
-
+  Authenticator(
+      AuthTokenDecoder authTokenDecoder,
+      Clock clock,
+      Map<String, String> issuersToProviderIds) {
     this.authTokenDecoder = authTokenDecoder;
     this.clock = clock;
+    this.issuersToProviderIds = issuersToProviderIds;
   }
 
   /**
@@ -105,9 +109,15 @@ public class Authenticator {
     UserInfo userInfo = toUserInfo(jwtClaims);
     String issuer = userInfo.getIssuer();
 
-    // Check whether the issuer is allowed
-    if (!authInfo.isIssuerAllowed(issuer)) {
-      throw new UnauthenticatedException("Issuer not allowed");
+    if (!this.issuersToProviderIds.containsKey(issuer)) {
+      throw new UnauthenticatedException("Unknown issuer: " + issuer);
+    }
+    String providerId = this.issuersToProviderIds.get(issuer);
+
+    // Check whether the provider id is allowed.
+    if (!authInfo.isProviderIdAllowed(providerId)) {
+      String message = "The requested method does not allowed this provider id: " + providerId;
+      throw new UnauthenticatedException(message);
     }
 
     checkJwtClaims(jwtClaims);
@@ -117,7 +127,7 @@ public class Authenticator {
     // or 2) at least one audience is allowed in the method configuration.
     Set<String> audiences = userInfo.getAudiences();
     boolean hasServiceName = audiences.contains(serviceName);
-    Set<String> allowedAudiences = authInfo.getAudiencesForIssuer(issuer);
+    Set<String> allowedAudiences = authInfo.getAudiencesForProvider(providerId);
     if (!hasServiceName && Sets.intersection(audiences, allowedAudiences).isEmpty()) {
       throw new UnauthenticatedException("Audiences not allowed");
     }
@@ -168,6 +178,11 @@ public class Authenticator {
     }
     Map<String, IssuerKeyUrlConfig> issuerKeyConfigs = generateIssuerKeyConfig(providersList);
 
+    Map<String, String> issuersToProviderIds = Maps.newHashMap();
+    for (AuthProvider authProvider : providersList) {
+      issuersToProviderIds.put(authProvider.getIssuer(), authProvider.getId());
+    }
+
     HttpRequestFactory httpRequestFactory = new NetHttpTransport().createRequestFactory();
     KeyUriSupplier defaultKeyUriSupplier =
         new DefaultKeyUriSupplier(httpRequestFactory, issuerKeyConfigs);
@@ -177,7 +192,10 @@ public class Authenticator {
     AuthTokenDecoder authTokenDecoder = new DefaultAuthTokenDecoder(authTokenVerifier);
     AuthTokenDecoder cachingAuthTokenDecoder = new CachingAuthTokenDecoder(authTokenDecoder);
 
-    return new Authenticator(cachingAuthTokenDecoder, clock);
+    return new Authenticator(
+        cachingAuthTokenDecoder,
+        clock,
+        ImmutableMap.<String, String>copyOf(issuersToProviderIds));
   }
 
   private static Map<String, IssuerKeyUrlConfig> generateIssuerKeyConfig(

@@ -397,23 +397,23 @@ public class MethodRegistry {
    * Consolidates authentication information about methods defined in a Service
    */
   public static final class AuthInfo {
-    private final Map<String, Set<String>> issuerToAudiences;
+    private final Map<String, Set<String>> providerIdsToAudiences;
 
-    public AuthInfo(Map<String, Set<String>> issuerToAudiences) {
-      Preconditions.checkNotNull(issuerToAudiences);
-      this.issuerToAudiences = issuerToAudiences;
+    public AuthInfo(Map<String, Set<String>> providerIdsToAudiences) {
+      Preconditions.checkNotNull(providerIdsToAudiences);
+      this.providerIdsToAudiences = providerIdsToAudiences;
     }
 
-    public boolean isIssuerAllowed(String issuer) {
-      Preconditions.checkNotNull(issuer);
-      return this.issuerToAudiences.containsKey(issuer);
+    public boolean isProviderIdAllowed(String providerid) {
+      Preconditions.checkNotNull(providerid);
+      return this.providerIdsToAudiences.containsKey(providerid);
     }
 
-    public Set<String> getAudiencesForIssuer(String issuer) {
-      Preconditions.checkNotNull(issuer);
+    public Set<String> getAudiencesForProvider(String providerId) {
+      Preconditions.checkNotNull(providerId);
 
-      if (this.issuerToAudiences.containsKey(issuer)) {
-        return this.issuerToAudiences.get(issuer);
+      if (this.providerIdsToAudiences.containsKey(providerId)) {
+        return this.providerIdsToAudiences.get(providerId);
       }
       return ImmutableSet.<String>of();
     }

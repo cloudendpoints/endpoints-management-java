@@ -35,6 +35,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
@@ -52,11 +53,15 @@ public class AuthenticatorTest {
   private static final int EXPIRATION_IN_FUTURE = 5;
   private static final String ID = "id";
   private static final String ISSUER = "issuer";
+  private static final String PROVIDER_ID = "provider-id";
   private static final int NOT_BEFORE_IN_PAST = 0;
   private static final String SERVICE_NAME = "service-name";
 
+  private final Map<String, String> issuersToProviderIds =
+      ImmutableMap.<String, String>of(ISSUER, PROVIDER_ID);
   private final AuthTokenDecoder authTokenDecoder = mock(AuthTokenDecoder.class);
-  private final Authenticator authenticator = new Authenticator(authTokenDecoder, Clock.SYSTEM);
+  private final Authenticator authenticator =
+      new Authenticator(authTokenDecoder, Clock.SYSTEM, issuersToProviderIds);
 
   private final HttpServletRequest request = mock(HttpServletRequest.class);
   private final JwtClaims jwtClaims =
@@ -72,7 +77,7 @@ public class AuthenticatorTest {
   @Test
   public void testAuthenticate() {
     AuthInfo authInfo =
-        new AuthInfo(ImmutableMap.<String, Set<String>>of(ISSUER, ImmutableSet.of("aud1")));
+        new AuthInfo(ImmutableMap.<String, Set<String>>of(PROVIDER_ID, ImmutableSet.of("aud1")));
     assertUserInfoEquals(userInfo, authenticator.authenticate(request, authInfo, SERVICE_NAME));
   }
 
@@ -87,26 +92,29 @@ public class AuthenticatorTest {
         ISSUER);
     UserInfo userInfo1 = new UserInfo(ImmutableList.of(SERVICE_NAME), EMAIL, ID, ISSUER);
     AuthInfo authInfo =
-        new AuthInfo(ImmutableMap.<String, Set<String>>of(ISSUER, ImmutableSet.of("aud1")));
+        new AuthInfo(ImmutableMap.<String, Set<String>>of(PROVIDER_ID, ImmutableSet.of("aud1")));
     when(authTokenDecoder.decode(AUTH_TOKEN)).thenReturn(jwtClaims1);
     assertUserInfoEquals(userInfo1, authenticator.authenticate(request, authInfo, SERVICE_NAME));
   }
 
   @Test
   public void testUnknownIssuer() {
+    JwtClaims jwtClaims =
+        createJwtClaims(AUDIENCES, EMAIL, EXPIRATION_IN_FUTURE, ID, NOT_BEFORE_IN_PAST, "random-issuer");
+    when(authTokenDecoder.decode(AUTH_TOKEN)).thenReturn(jwtClaims);
     AuthInfo authInfo = new AuthInfo(ImmutableMap.<String, Set<String>>of());
     try {
       authenticator.authenticate(request, authInfo, SERVICE_NAME);
       fail();
     } catch (UnauthenticatedException exception) {
-      assertEquals("Issuer not allowed", exception.getMessage());
+      assertEquals("Unknown issuer: random-issuer", exception.getMessage());
     }
   }
 
   @Test
   public void testAuthenticateWithoutAllowedAudience() {
     AuthInfo authInfo =
-        new AuthInfo(ImmutableMap.<String, Set<String>>of(ISSUER, ImmutableSet.of("random-aud")));
+        new AuthInfo(ImmutableMap.<String, Set<String>>of(PROVIDER_ID, ImmutableSet.of("random-aud")));
     try {
       authenticator.authenticate(request, authInfo, SERVICE_NAME);
       fail();
@@ -132,7 +140,7 @@ public class AuthenticatorTest {
     when(request.getHeader(HttpHeaders.AUTHORIZATION)).thenReturn(null);
     when(request.getParameter("access_token")).thenReturn(AUTH_TOKEN);
     AuthInfo authInfo =
-        new AuthInfo(ImmutableMap.<String, Set<String>>of(ISSUER, ImmutableSet.of("aud1")));
+        new AuthInfo(ImmutableMap.<String, Set<String>>of(PROVIDER_ID, ImmutableSet.of("aud1")));
     assertUserInfoEquals(userInfo, authenticator.authenticate(request, authInfo, SERVICE_NAME));
   }
 
@@ -154,7 +162,7 @@ public class AuthenticatorTest {
     JwtClaims jwtClaims1 =
         createJwtClaims(ImmutableList.of(SERVICE_NAME), EMAIL, -1, ID, NOT_BEFORE_IN_PAST, ISSUER);
     AuthInfo authInfo =
-        new AuthInfo(ImmutableMap.<String, Set<String>>of(ISSUER, ImmutableSet.of("aud1")));
+        new AuthInfo(ImmutableMap.<String, Set<String>>of(PROVIDER_ID, ImmutableSet.of("aud1")));
     when(authTokenDecoder.decode(AUTH_TOKEN)).thenReturn(jwtClaims1);
     try {
       authenticator.authenticate(request, authInfo, SERVICE_NAME);
@@ -174,7 +182,7 @@ public class AuthenticatorTest {
         -1,
         ISSUER);
     AuthInfo authInfo =
-        new AuthInfo(ImmutableMap.<String, Set<String>>of(ISSUER, ImmutableSet.of("aud1")));
+        new AuthInfo(ImmutableMap.<String, Set<String>>of(PROVIDER_ID, ImmutableSet.of("aud1")));
     when(authTokenDecoder.decode(AUTH_TOKEN)).thenReturn(jwtClaims1);
     try {
       authenticator.authenticate(request, authInfo, SERVICE_NAME);
@@ -221,6 +229,19 @@ public class AuthenticatorTest {
       String message = "Configuration contains multiple auth provider for the same issuer: "
           + authProvider.getIssuer();
       assertEquals(message, exception.getMessage());
+    }
+  }
+
+  @Test
+  public void testDisallowedProviderId() {
+    AuthInfo authInfo = new AuthInfo(ImmutableMap.<String, Set<String>>of());
+    try {
+      this.authenticator.authenticate(request, authInfo, SERVICE_NAME);
+      fail("Expected UnauthenticatedException.");
+    } catch (UnauthenticatedException exception) {
+      assertEquals(
+          "The requested method does not allowed this provider id: " + PROVIDER_ID,
+          exception.getMessage());
     }
   }
 

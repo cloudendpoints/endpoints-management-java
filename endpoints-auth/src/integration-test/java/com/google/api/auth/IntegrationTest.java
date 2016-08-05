@@ -66,6 +66,7 @@ public final class IntegrationTest {
 
   private static final int TEST_SERVER_PORT = 8765;
   private static final String ISSUER = "https://localhost" + ":" + TEST_SERVER_PORT;
+  private static final String PROVIDER_ID = "provider-id";
   private static final String TEST_SERVER_URL = ISSUER;
 
   private static final String KEY_ID = "key-id";
@@ -75,14 +76,14 @@ public final class IntegrationTest {
   private static final String EMAIL = "user@localhost.com";
   private static final String SERVICE_NAME = "service-name";
   private static final String SUBJECT = "subject-id";
-  private static final Map<String, Set<String>> ISSUER_AUDIENCES =
-      ImmutableMap.of(ISSUER, AUDIENCES);
+  private static final Map<String, Set<String>> PROVIDER_ID_AUDIENCES =
+      ImmutableMap.of(PROVIDER_ID, AUDIENCES);
 
   private static final IntegrationTestServer server =
       new IntegrationTestServer(TEST_SERVER_PORT, Resource.class);
 
   private final HttpServletRequest httpRequest = mock(HttpServletRequest.class);
-  private final AuthInfo authInfo = new AuthInfo(ISSUER_AUDIENCES);
+  private final AuthInfo authInfo = new AuthInfo(PROVIDER_ID_AUDIENCES);
 
   @BeforeClass
   public static void setUpBeforeClass() throws Exception {
@@ -268,7 +269,7 @@ public final class IntegrationTest {
   }
 
   private static Authenticator createAuthenticator(Clock clock, String issuer, String jwksUri) {
-    Builder authProviderBuilder = AuthProvider.newBuilder().setIssuer(issuer);
+    Builder authProviderBuilder = AuthProvider.newBuilder().setIssuer(issuer).setId(PROVIDER_ID);
     if (jwksUri != null) {
       authProviderBuilder.setJwksUri(jwksUri);
     }
