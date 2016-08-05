@@ -385,6 +385,9 @@ public class ControlFilter implements Filter {
     }
 
     public byte[] getData() {
+      if (newWriter != null) {
+        newWriter.flush();
+      }
       return output.toByteArray();
     }
 
