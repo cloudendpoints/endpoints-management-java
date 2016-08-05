@@ -104,7 +104,7 @@ public class ReportRequestInfo extends OperationInfo {
    * @param ticker Ticker
    */
   public ReportRequest asReportRequest(ReportingRule rules, Ticker ticker) {
-    Preconditions.checkState(Strings.isNullOrEmpty(getServiceName()));
+    Preconditions.checkState(!Strings.isNullOrEmpty(getServiceName()));
 
     // Populate metrics and labels if they can be associated with a method/operation
     Operation.Builder o = asOperation(ticker).toBuilder();
