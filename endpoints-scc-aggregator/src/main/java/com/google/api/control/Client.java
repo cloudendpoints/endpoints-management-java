@@ -322,12 +322,14 @@ public class Client {
       if (r == null) {
         r = new ReportAggregationOptions();
       }
+      final GoogleCredential nestedInitializer = c;
       HttpRequestInitializer addUserAgent = new HttpRequestInitializer() {
         @Override
         public void initialize(HttpRequest request) throws IOException {
           HttpHeaders hdr = new HttpHeaders().setUserAgent(
               KnownLabels.USER_AGENT);
           request.setHeaders(hdr);
+          nestedInitializer.initialize(request);
         }
       };
       return new Client(serviceName, o, r,
