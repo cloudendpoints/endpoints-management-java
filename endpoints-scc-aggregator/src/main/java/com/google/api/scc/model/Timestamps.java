@@ -51,7 +51,7 @@ public final class Timestamps {
     long t = ticker.read();
     return Timestamp
         .newBuilder()
-        .setNanos((int) t % NANOS_PER_SECOND)
+        .setNanos((int) (t % NANOS_PER_SECOND))
         .setSeconds(t / NANOS_PER_SECOND)
         .build();
   }

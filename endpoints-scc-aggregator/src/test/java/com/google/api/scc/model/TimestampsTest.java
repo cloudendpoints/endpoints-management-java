@@ -46,4 +46,14 @@ public class TimestampsTest {
       assertEquals(1, Timestamps.COMPARATOR.compare(timestamps[1], timestamps[0]));
     }
   }
+
+  @Test
+  public void largeNanoDoesntOverflow() {
+    assertEquals(0, Timestamps.now(new Ticker() {
+      @Override
+      public long read() {
+        return 3000000000L;  // -1294967296 when converted to int
+      }
+    }).getNanos());
+  }
 }
