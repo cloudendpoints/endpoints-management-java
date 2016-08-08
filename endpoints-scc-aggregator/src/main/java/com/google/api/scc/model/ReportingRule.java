@@ -249,13 +249,13 @@ public class ReportingRule {
     for (LabelDescriptor d : labelDescs) {
       LabelDescriptor existing = labels.get(d.getKey());
       if (existing != null && !existing.getValueType().equals(d.getValueType())) {
+        log.log(Level.WARNING,
+            String.format("halted label scan: conflicting label in %s", d.getKey()));
         return false;
       }
     }
     for (LabelDescriptor d : labelDescs) {
       if (check.isSupported(d)) {
-        log.log(Level.WARNING,
-            String.format("halted label scan: conflicting label in %s", d.getKey()));
         labels.put(d.getKey(), d);
       }
     }
