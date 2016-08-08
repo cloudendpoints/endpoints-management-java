@@ -148,7 +148,7 @@ public enum KnownMetrics {
    * @param d a {@code LabelDescriptor}
    */
   public boolean matches(MetricDescriptor d) {
-    return d.getName() == name && d.getMetricKind() == kind && d.getValueType() == type;
+    return name.equals(d.getName()) && d.getMetricKind() == kind && d.getValueType() == type;
   }
 
   /**
@@ -225,7 +225,7 @@ public enum KnownMetrics {
 
   private static void addInt64MetricValue(String name, long value, Operation.Builder op) {
     op.addMetricValueSets(MetricValueSet.newBuilder().setMetricName(name).addMetricValues(
-        MetricValue.newBuilder().setDoubleValue(value).build()));
+        MetricValue.newBuilder().setInt64Value(value).build()));
   }
 
   private static void add1ToInt64MetricValue(String name, Operation.Builder op) {

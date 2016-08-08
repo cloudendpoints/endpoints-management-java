@@ -149,7 +149,7 @@ public class ReportingRule {
           continue;
         }
         knownLabels.add(k);
-        metrics = knownLabels.toArray(new KnownMetrics[knownLabels.size()]);
+        labels = knownLabels.toArray(new KnownLabels[knownLabels.size()]);
       }
     }
     return new ReportingRule(logs, metrics, labels);
@@ -274,15 +274,15 @@ public class ReportingRule {
   }
 
   private static boolean addLabelsForAMonitoredResource(
-      List<MonitoredResourceDescriptor> resourceDescs, String name,
+      List<MonitoredResourceDescriptor> resourceDescs, String resourceType,
       Map<String, LabelDescriptor> labels, ReportingRule.LabelTest check) {
     for (MonitoredResourceDescriptor d : resourceDescs) {
-      if (d.getName().equals(name)) {
+      if (d.getType().equals(resourceType)) {
         return addLabelsFromDescriptors(d.getLabelsList(), labels, check);
       }
     }
     log.log(Level.WARNING,
-        String.format("bad monitored resource label scan: resource %s was not found", name));
+        String.format("bad monitored resource label scan: resource %s was not found", resourceType));
     return false;
   }
 

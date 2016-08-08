@@ -53,7 +53,7 @@ public enum KnownLabels {
         BaseEncoding encoder = BaseEncoding.base64Url();
         if (!Strings.isNullOrEmpty(info.getAuthAudience())) {
           labels.put(name,
-              String.format("jwtAuth:issuer=%s&audience=",
+              String.format("jwtAuth:issuer=%s&audience=%s",
                   encoder.encode(info.getAuthIssuer().getBytes(StandardCharsets.UTF_8)),
                   encoder.encode(info.getAuthAudience().getBytes(StandardCharsets.UTF_8))));
         } else {
@@ -205,7 +205,7 @@ public enum KnownLabels {
       });
 
   /**
-   * A null implementation of {@link Updater}
+   * A null implementation of {@link Update}
    */
   public static final Update NO_UPDATE = new Update() {
     @Override
@@ -256,7 +256,7 @@ public enum KnownLabels {
    * @param d a {@code LabelDescriptor}
    */
   public boolean matches(LabelDescriptor d) {
-    return d.getKey() == this.name && d.getValueType() == this.type;
+    return name.equals(d.getKey()) && d.getValueType() == this.type;
   }
 
   /**
