@@ -38,8 +38,16 @@ repositories {
 test {
   testLogging {
     exceptionFormat = 'full'
+    testLogging.showStandardStreams = true
   }
 }
+
+sourceSets {
+  test {
+    resources.srcDir file("src/test/resources")
+  }
+}
+
 
 archivesBaseName = 'endpoints-management-control'
 

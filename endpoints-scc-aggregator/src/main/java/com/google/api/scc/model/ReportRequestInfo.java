@@ -16,6 +16,8 @@
 
 package com.google.api.scc.model;
 
+import java.util.Map;
+
 import com.google.api.client.util.Clock;
 import com.google.api.servicecontrol.v1.LogEntry;
 import com.google.api.servicecontrol.v1.Operation;
@@ -23,13 +25,15 @@ import com.google.api.servicecontrol.v1.ReportRequest;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 import com.google.common.collect.Maps;
+import com.google.logging.type.LogSeverity;
 import com.google.protobuf.Struct;
 import com.google.protobuf.Value;
 
-import java.util.Map;
-
 /**
  * Holds information about a {@code ReportRequest} to be obtained from the HTTP layer.
+ *
+ * Also provides methods for converting that info into protocol buffer messages used in the caching
+ * and transport layers.
  */
 public class ReportRequestInfo extends OperationInfo {
   private static final int NANOS_PER_MILLIS = 1000000;
@@ -78,6 +82,11 @@ public class ReportRequestInfo extends OperationInfo {
   private long responseSize;
   private String url;
 
+  /**
+   * Default constructor,
+   *
+   * Does not initialize the fields of the base {@link OperationInfo}.
+   */
   public ReportRequestInfo() {
     // default constructor
   }
@@ -104,7 +113,8 @@ public class ReportRequestInfo extends OperationInfo {
    * @param clock Clock
    */
   public ReportRequest asReportRequest(ReportingRule rules, Clock clock) {
-    Preconditions.checkState(!Strings.isNullOrEmpty(getServiceName()));
+    Preconditions.checkState(!Strings.isNullOrEmpty(getServiceName()),
+        "a service name must be set");
 
     // Populate metrics and labels if they can be associated with a method/operation
     Operation.Builder o = asOperation(clock).toBuilder();
@@ -171,12 +181,17 @@ public class ReportRequestInfo extends OperationInfo {
     if (!Strings.isNullOrEmpty(getUrl())) {
       values.put("url", vb.setStringValue(getUrl()).build());
     }
+    LogSeverity severity = LogSeverity.INFO;
     if (getResponseCode() >= 400) {
       values.put("error_cause", vb.setStringValue(getErrorCause().name()).build());
+      severity = LogSeverity.ERROR;
     }
-
     Struct.Builder theStruct = Struct.newBuilder().putAllFields(values);
-    return LogEntry.newBuilder().setStructPayload(theStruct).setName(name);
+    return LogEntry
+        .newBuilder()
+        .setStructPayload(theStruct)
+        .setName(name)
+        .setSeverity(severity);
   }
 
   /**

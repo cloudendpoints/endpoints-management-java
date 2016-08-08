@@ -16,7 +16,7 @@
 
 package com.google.api.scc.model;
 
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -33,7 +33,6 @@ import com.google.api.MonitoredResourceDescriptor;
 import com.google.api.Monitoring;
 import com.google.api.Monitoring.MonitoringDestination;
 import com.google.api.Service;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
 import autovalue.shaded.com.google.common.common.collect.Sets;
@@ -84,25 +83,64 @@ public class ReportingRule {
   }
 
   /**
+   * 'Constructor' that uses names of known {@code KnownMetrics} and {@code KnownLabels}.
+   *
+   * Names that don't correspond to actual instances are ignored, as are instances where there is
+   * not yet an update function that will modify a {@code ReportRequest}
+   *
+   * @param logs the {@code logs} for which entries will be added {@code ReportRequests}
+   * @param metricNames the names of the {@code KnownMetrics} to use
+   * @param labelNames the names of the {@code KnownLabels} to use
+   * @return {@code ReportingRule}
+   */
+  public static ReportingRule fromKnownInputs(@Nullable String[] logs,
+      @Nullable Set<String> metricNames, @Nullable Set<String> labelNames) {
+    log.fine(String.format("creating rule from log names %s, metric names %s, labelNames %s",
+        Arrays.toString(logs), metricNames, labelNames));
+    Map<String, KnownMetrics> namedRuleMetrics = Maps.newHashMap();
+    if (metricNames != null) {
+      for (KnownMetrics m : KnownMetrics.values()) {
+        if (m.getUpdater() == null || !metricNames.contains(m.getName())) {
+          continue;
+        }
+        log.fine(String.format("Adding metric named '%s' to the rule", m.getName()));
+        namedRuleMetrics.put(m.getName(), m);
+      }
+    }
+    Map<String, KnownLabels> namedRuleLabels = Maps.newHashMap();
+    if (labelNames != null) {
+      for (KnownLabels k : KnownLabels.values()) {
+        if (k.getUpdater() == null || !labelNames.contains(k.getName())) {
+          continue;
+        }
+        log.fine(String.format("Adding label named '%s' to the rule", k.getName()));
+        namedRuleLabels.put(k.getName(), k);
+      }
+    }
+    return new ReportingRule(logs,
+        namedRuleMetrics.values().toArray(new KnownMetrics[namedRuleMetrics.size()]),
+        namedRuleLabels.values().toArray(new KnownLabels[namedRuleLabels.size()]));
+  }
+
+  /**
    * 'Constructor' that uses a {@code Service}.
    *
-   * @param s the {@code Service} whose metric, labels and logs configurations are used to
-   *        configure the {@code ReportingRule}
+   * @param s the {@code Service} whose metric, labels and logs configurations are used to configure
+   *        the {@code ReportingRule}
    *
    * @param checkMetrics used to determine which {@code MetricDescriptors} are allowed
    * @param checkLabels used to determine which {@code LabelDescriptors} are allowed
    *
    * @return {@code ReportingRule}
    */
-  public static ReportingRule fromService(Service s, ReportingRule.MetricTest checkMetrics,
+  private static ReportingRule fromService(Service s, ReportingRule.MetricTest checkMetrics,
       ReportingRule.LabelTest checkLabels) {
     List<MonitoredResourceDescriptor> resourceDescs = s.getMonitoredResourcesList();
     Map<String, LabelDescriptor> labels = Maps.newHashMap();
     Set<String> logs = Sets.newHashSet();
     if (s.hasLogging()) {
       List<LoggingDestination> producers = s.getLogging().getProducerDestinationsList();
-      logs = addLoggingDestinations(producers, resourceDescs, s.getLogsList(), labels,
-          checkLabels);
+      logs = addLoggingDestinations(producers, resourceDescs, s.getLogsList(), labels, checkLabels);
     }
     Set<String> metrics = Sets.newHashSet();
     if (s.hasMonitoring()) {
@@ -112,47 +150,8 @@ public class ReportingRule {
       addMonitoringDestinations(monitoring.getProducerDestinationsList(), resourceDescs,
           s.getMetricsList(), metrics, checkMetrics, labels, checkLabels);
     }
-    return ReportingRule.fromKnownInputs(logs.toArray(new String[logs.size()]),
-        Lists.newArrayList(metrics.iterator()), Lists.newArrayList(labels.keySet().iterator()));
-  }
-
-  /**
-   * 'Constructor' that uses names of known {@code KnownMetrics} and {@code KnownLabels}.
-   *
-   * Names that don't correspond to actual instances are ignored, as are instances where there is
-   * not yet an update function that will modify a {@code ReportRequest}
-   *
-   *
-   * @param logs the {@code logs} for which entries will be added {@code ReportRequests}
-   * @param metricNames the names of the {@code KnownMetrics} to use
-   * @param labelNames the names of the {@code KnownLabels} to use
-   * @return {@code ReportingRule}
-   */
-  public static ReportingRule fromKnownInputs(@Nullable String[] logs,
-      @Nullable List<String> metricNames, @Nullable List<String> labelNames) {
-    KnownMetrics[] metrics = null;
-    if (metricNames != null) {
-      ArrayList<KnownMetrics> l = Lists.newArrayList();
-      for (KnownMetrics m : KnownMetrics.values()) {
-        if (m.getUpdater() == null || !metricNames.contains(m.getName())) {
-          continue;
-        }
-        l.add(m);
-        metrics = l.toArray(new KnownMetrics[l.size()]);
-      }
-    }
-    KnownLabels[] labels = null;
-    if (labelNames != null) {
-      ArrayList<KnownLabels> knownLabels = Lists.newArrayList();
-      for (KnownLabels k : KnownLabels.values()) {
-        if (k.getUpdater() == null || !labelNames.contains(k.getName())) {
-          continue;
-        }
-        knownLabels.add(k);
-        labels = knownLabels.toArray(new KnownLabels[knownLabels.size()]);
-      }
-    }
-    return new ReportingRule(logs, metrics, labels);
+    return ReportingRule.fromKnownInputs(logs.toArray(new String[logs.size()]), metrics,
+        labels.keySet());
   }
 
   /**
@@ -162,7 +161,7 @@ public class ReportingRule {
    * @param metrics the {@code KnownMetrics} used to add metrics to {@code ReportRequests}
    * @param labels the {@code KnownLabels} used to add labels to {@code ReportRequests}
    */
-  public ReportingRule(@Nullable String[] logs, @Nullable KnownMetrics[] metrics,
+  private ReportingRule(@Nullable String[] logs, @Nullable KnownMetrics[] metrics,
       @Nullable KnownLabels[] labels) {
     if (logs == null) {
       this.logs = new String[] {};
@@ -216,7 +215,7 @@ public class ReportingRule {
         continue;
       }
       for (String name : d.getLogsList()) {
-        if (!addLabelsForALog(logDescs, name, labels, checkLabels)) {
+        if (addLabelsForALog(logDescs, name, labels, checkLabels)) {
           logs.add(name);
         }
       }
@@ -235,8 +234,8 @@ public class ReportingRule {
       }
       for (String metric : d.getMetricsList()) {
         MetricDescriptor metricDest = findMetricDescriptor(metricDests, metric, checkMetric);
-        if (metricDest != null
-            && !addLabelsFromDescriptors(metricDest.getLabelsList(), labels, checkLabel)) {
+        if (metricDest == null
+            || !addLabelsFromDescriptors(metricDest.getLabelsList(), labels, checkLabel)) {
           continue; // skip unrecognized or bad metric, or it has bad labels
         }
         metrics.add(metric);

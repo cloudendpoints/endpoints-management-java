@@ -104,7 +104,7 @@ public enum KnownLabels {
     }
   }),
 
-  RESPONSE_CODE_CLASS("/response_code", ValueType.STRING, Kind.USER, new Update() {
+  RESPONSE_CODE_CLASS("/response_code_class", ValueType.STRING, Kind.USER, new Update() {
     @Override
     public void update(String name, ReportRequestInfo info, Map<String, String> labels) {
       if (info.getResponseCode() > 0) {

@@ -1,0 +1,98 @@
+{
+  "logs": [{
+    "name": "my-endpoints-log",
+    "labels": [{
+      "key": "/referer"
+    },{
+      "key": "unused/unknown-log-label"
+    },{
+      "key": "fyi: logs only adds /referer as the 'known' test label, the metrics/monitoredResource should add the others"
+    }]
+  }, {
+    "name": "my-alt-endpoints-log",
+    "labels": [{
+      "key": "/referer"
+    }]
+  }],
+
+  "metrics": [{
+    "name": "serviceruntime.googleapis.com/api/consumer/request_sizes",
+    "valueType": "DISTRIBUTION",
+    "metricKind": "DELTA",
+    "labels": [{
+      "key": "/protocol"
+    }]
+  }, {
+    "name": "serviceruntime.googleapis.com/api/consumer/error_count",
+    "valueType": "INT64",
+    "metricKind": "DELTA",
+    "labels": [{
+      "key": "/response_code_class"
+    }]
+  }, {
+    "name": "serviceruntime.googleapis.com/api/consumer/response_sizes",
+    "valueType": "INT64",
+    "metricKind": "DELTA",
+    "labels": [{
+      "key": "/response_code_class"
+    }, {
+      "key": "unused/not-known"
+    }]
+  }, {
+    "name": "serviceruntime.googleapis.com/api/producer/total_latencies",
+    "valueType": "DISTRIBUTION",
+    "metricKind": "DELTA",
+    "labels": [{
+      "key": "/status_code"
+    }, {
+      "key": "/response_code"
+    },{
+      "key": "N.B, the other metrics are known, but this metric name not referenced"
+    }]
+  }],
+
+  "monitoredResources": [{
+    "type": "endpoints.googleapis.com/endpoints",
+    "labels": [{
+      "key": "/referer"
+    }]
+  }, {
+    "type": "endpoints.googleapis.com/alt-endpoints",
+    "labels": [{
+      "key": "/response_code_class"
+    }, {
+      "key": "/response_code"
+    },{
+      "key": "N.B, the other metrics are known but this type is not referenced"
+    }]
+  }],
+
+  "logging": {
+    "producerDestinations": [{
+      "monitoredResource": "endpoints.googleapis.com/endpoints",
+        "logs": ["my-endpoints-log", "my-alt-endpoints-log"]
+    }, {
+      "monitoredResource": "endpoints.googleapis.com/ignored-endpoints",
+        "logs": ["my-endpoints-log", "unused/as-this-is-not-declared"]
+    }]
+  },
+
+  "monitoring": {
+    "consumerDestinations": [{
+      "monitoredResource": "endpoints.googleapis.com/endpoints",
+        "metrics": [
+         "serviceruntime.googleapis.com/api/consumer/request_sizes",
+         "serviceruntime.googleapis.com/api/consumer/error_count"
+      ]
+    }],
+
+    "producerDestinations": [{
+      "monitoredResource": "endpoints.googleapis.com/ignored-endpoints",
+      "metrics": [
+         "serviceruntime.googleapis.com/api/consumer/request_sizes",
+         "serviceruntime.googleapis.com/api/consumer/response_sizes",
+         "unused/ignored-as-this-is-not-declared"
+      ]
+    }]
+  }
+}
