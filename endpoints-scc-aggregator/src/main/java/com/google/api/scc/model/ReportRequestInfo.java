@@ -114,6 +114,7 @@ public class ReportRequestInfo extends OperationInfo {
       for (KnownLabels l : rules.getLabels()) {
         l.performUpdate(this, addedLabels);
       }
+      o.putAllLabels(addedLabels);
       KnownMetrics[] metrics = rules.getMetrics();
       for (KnownMetrics m : metrics) {
         m.performUpdate(this, o);
@@ -378,7 +379,8 @@ public class ReportRequestInfo extends OperationInfo {
   }
 
   public ReportRequestInfo setResponseCode(int responseCode) {
-    this.responseCode = responseCode;
+    // Servlet responses sometimes report their response code as 0 before the response is finalized.
+    this.responseCode = responseCode != 0 ? responseCode : 200;
     return this;
   }
 
