@@ -77,6 +77,9 @@ public class OperationAggregator {
    * @return an {@code Operation} that combines all the merged {@code Operation}s
    */
   public Operation asOperation() {
+    // We have to clear this in case this is called multiple times. Otherwise, metrics will be
+    // duplicated on subsequent calls.
+    op.clearMetricValueSets();
     Set<String> keySet = Sets.newTreeSet(this.metricValues.keySet());
     for (String name : keySet) {
       Collection<MetricValue> values = this.metricValues.get(name).values();
