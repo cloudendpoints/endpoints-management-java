@@ -82,19 +82,19 @@ public class KnownMetricsTest {
       new StructuredTest(KnownMetrics.CONSUMER_REQUEST_COUNT, MetricValueSet
           .newBuilder()
           .setMetricName(KnownMetrics.CONSUMER_REQUEST_COUNT.getName())
-          .addMetricValues(MetricValue.newBuilder().setDoubleValue(1L))
+          .addMetricValues(MetricValue.newBuilder().setInt64Value(1L))
           .build()),
       new StructuredTest(KnownMetrics.PRODUCER_REQUEST_COUNT,
           MetricValueSet
               .newBuilder()
               .setMetricName(KnownMetrics.PRODUCER_REQUEST_COUNT.getName())
-              .addMetricValues(MetricValue.newBuilder().setDoubleValue(1L))
+              .addMetricValues(MetricValue.newBuilder().setInt64Value(1L))
               .build()),
       new StructuredTest(KnownMetrics.PRODUCER_BY_CONSUMER_REQUEST_COUNT,
           MetricValueSet
               .newBuilder()
               .setMetricName(KnownMetrics.PRODUCER_BY_CONSUMER_REQUEST_COUNT.getName())
-              .addMetricValues(MetricValue.newBuilder().setDoubleValue(1L))
+              .addMetricValues(MetricValue.newBuilder().setInt64Value(1L))
               .build()),
       new StructuredTest(KnownMetrics.CONSUMER_REQUEST_ERROR_COUNT),
       new StructuredTest(new ReportRequestInfo().setResponseCode(400),
@@ -102,7 +102,7 @@ public class KnownMetricsTest {
           MetricValueSet
               .newBuilder()
               .setMetricName(KnownMetrics.CONSUMER_REQUEST_ERROR_COUNT.getName())
-              .addMetricValues(MetricValue.newBuilder().setDoubleValue(1L))
+              .addMetricValues(MetricValue.newBuilder().setInt64Value(1L))
               .build()),
       new StructuredTest(KnownMetrics.PRODUCER_REQUEST_ERROR_COUNT),
       new StructuredTest(new ReportRequestInfo().setResponseCode(400),
@@ -110,7 +110,7 @@ public class KnownMetricsTest {
           MetricValueSet
               .newBuilder()
               .setMetricName(KnownMetrics.PRODUCER_REQUEST_ERROR_COUNT.getName())
-              .addMetricValues(MetricValue.newBuilder().setDoubleValue(1L))
+              .addMetricValues(MetricValue.newBuilder().setInt64Value(1L))
               .build()),
       new StructuredTest(KnownMetrics.PRODUCER_BY_CONSUMER_ERROR_COUNT),
       new StructuredTest(new ReportRequestInfo().setResponseCode(400),
@@ -118,7 +118,7 @@ public class KnownMetricsTest {
           MetricValueSet
               .newBuilder()
               .setMetricName(KnownMetrics.PRODUCER_BY_CONSUMER_ERROR_COUNT.getName())
-              .addMetricValues(MetricValue.newBuilder().setDoubleValue(1L))
+              .addMetricValues(MetricValue.newBuilder().setInt64Value(1L))
               .build()),
       };
 

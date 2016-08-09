@@ -115,6 +115,9 @@ public class ReportRequestAggregatorTest {
     ReportRequest[] flushed = agg.flush();
     assertEquals(1, flushed.length);
     assertEquals(2, flushed[0].getOperationsCount());
+
+    // flushing again immediately should result in 0 entries
+    assertEquals(0, agg.flush().length);
   }
 
   @Test

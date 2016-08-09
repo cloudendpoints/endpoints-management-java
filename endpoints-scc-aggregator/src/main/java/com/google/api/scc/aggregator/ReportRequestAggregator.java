@@ -159,11 +159,12 @@ public class ReportRequestAggregator {
     // aggregated operations to the output deque.
     synchronized (cache) {
       cache.cleanUp();
+      // Thread safety - the rest of the function deals with items in a ConcurrentLinkedDeque which
+      // guarantees a consistent view in multi-threaded scenarios.
+      ReportRequest[] res = generatedFlushRequests(out);
+      out.clear();
+      return res;
     }
-
-    // Thread safety - the rest of the function deals with items in a ConcurrentLinkedDeque which
-    // guarantees a consistent view in multi-threaded scenarios.
-    return generatedFlushRequests(out);
   }
 
   /**

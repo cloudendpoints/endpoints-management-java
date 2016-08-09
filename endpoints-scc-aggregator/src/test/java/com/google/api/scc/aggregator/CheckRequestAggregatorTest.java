@@ -292,6 +292,9 @@ public class CheckRequestAggregatorTest {
     // the cached request
     ticker.tick(1, TimeUnit.MILLISECONDS);
     assertEquals(1, agg.flush().length);
+
+    // flushing again immediately should result in 0 entries
+    assertEquals(0, agg.flush().length);
   }
 
   public void shouldClearRequests() {

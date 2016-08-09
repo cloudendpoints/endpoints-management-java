@@ -155,19 +155,16 @@ public class CheckRequestAggregator {
     // aggregated operations to the output deque.
     synchronized (cache) {
       cache.cleanUp();
-    }
-
-    // Thread safety - the rest of the function deals with items in a ConcurrentLinkedDeque which
-    // guarantees a consistent view in multi-threaded scenarios.
-    ArrayList<CheckRequest> reqs = Lists.newArrayList();
-    for (CachedItem item : out) {
-      CheckRequest req = item.extractRequest();
-      if (req != null) {
-        reqs.add(req);
+      ArrayList<CheckRequest> reqs = Lists.newArrayList();
+      for (CachedItem item : out) {
+        CheckRequest req = item.extractRequest();
+        if (req != null) {
+          reqs.add(req);
+        }
       }
+      out.clear();
+      return reqs.toArray(new CheckRequest[reqs.size()]);
     }
-
-    return reqs.toArray(new CheckRequest[reqs.size()]);
   }
 
   /**
