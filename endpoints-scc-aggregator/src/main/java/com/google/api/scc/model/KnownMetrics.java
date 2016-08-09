@@ -104,6 +104,7 @@ public enum KnownMetrics {
   private static final double SIZE_SCALE = 1e6;
   private static final double DISTRIBUTION_GROWTH_FACTOR = 10.0;
   private static final int DISTRIBUTION_BUCKETS = 8;
+  private static final double MILLIS_PER_SEC = 1000.0;
 
   private String name;
   private MetricKind kind;
@@ -289,7 +290,7 @@ public enum KnownMetrics {
 
   private static void addTimeDistributionMetricValue(String name, long value,
       Operation.Builder op) {
-    Distribution d = Distributions.addSample(value, newTimeDistribution());
+    Distribution d = Distributions.addSample(value / MILLIS_PER_SEC, newTimeDistribution());
     op.addMetricValueSets(MetricValueSet.newBuilder().setMetricName(name).addMetricValues(
         MetricValue.newBuilder().setDistributionValue(d).build()));
   }

@@ -16,17 +16,17 @@
 
 package com.google.api.scc.model;
 
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
-
 import com.google.api.MetricDescriptor;
 import com.google.api.MetricDescriptor.MetricKind;
 import com.google.api.servicecontrol.v1.Distribution;
 import com.google.api.servicecontrol.v1.MetricValue;
 import com.google.api.servicecontrol.v1.MetricValueSet;
 import com.google.api.servicecontrol.v1.Operation;
+
+import org.junit.Assert;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 
 /**
  * KnownMetricsTest tests the behavior in {@code KnownMetrics}
@@ -63,22 +63,24 @@ public class KnownMetricsTest {
       new StructuredTest(KnownMetrics.PRODUCER_RESPONSE_SIZES, KnownMetrics.newSizeDistribution()),
       new StructuredTest(KnownMetrics.PRODUCER_BY_CONSUMER_RESPONSE_SIZES,
           KnownMetrics.newSizeDistribution()),
-      new StructuredTest(KnownMetrics.CONSUMER_TOTAL_LATENCIES, KnownMetrics.newTimeDistribution()),
-      new StructuredTest(KnownMetrics.PRODUCER_TOTAL_LATENCIES, KnownMetrics.newTimeDistribution()),
+      new StructuredTest(KnownMetrics.CONSUMER_TOTAL_LATENCIES,
+          KnownMetrics.newTimeDistribution(), true),
+      new StructuredTest(KnownMetrics.PRODUCER_TOTAL_LATENCIES,
+          KnownMetrics.newTimeDistribution(), true),
       new StructuredTest(KnownMetrics.PRODUCER_BY_CONSUMER_TOTAL_LATENCIES,
-          KnownMetrics.newTimeDistribution()),
+          KnownMetrics.newTimeDistribution(), true),
       new StructuredTest(KnownMetrics.CONSUMER_BACKEND_LATENCIES,
-          KnownMetrics.newTimeDistribution()),
+          KnownMetrics.newTimeDistribution(), true),
       new StructuredTest(KnownMetrics.PRODUCER_BACKEND_LATENCIES,
-          KnownMetrics.newTimeDistribution()),
+          KnownMetrics.newTimeDistribution(), true),
       new StructuredTest(KnownMetrics.PRODUCER_BY_CONSUMER_BACKEND_LATENCIES,
-          KnownMetrics.newTimeDistribution()),
+          KnownMetrics.newTimeDistribution(), true),
       new StructuredTest(KnownMetrics.CONSUMER_REQUEST_OVERHEAD_LATENCIES,
-          KnownMetrics.newTimeDistribution()),
+          KnownMetrics.newTimeDistribution(), true),
       new StructuredTest(KnownMetrics.PRODUCER_REQUEST_OVERHEAD_LATENCIES,
-          KnownMetrics.newTimeDistribution()),
+          KnownMetrics.newTimeDistribution(), true),
       new StructuredTest(KnownMetrics.PRODUCER_BY_CONSUMER_REQUEST_OVERHEAD_LATENCIES,
-          KnownMetrics.newTimeDistribution()),
+          KnownMetrics.newTimeDistribution(), true),
       new StructuredTest(KnownMetrics.CONSUMER_REQUEST_COUNT, MetricValueSet
           .newBuilder()
           .setMetricName(KnownMetrics.CONSUMER_REQUEST_COUNT.getName())
@@ -147,6 +149,13 @@ public class KnownMetricsTest {
     StructuredTest(KnownMetrics subject, Distribution baseDistribution) {
       this(subject);
       this.wantedDistribution = Distributions.addSample(wantedSize, baseDistribution);
+    }
+
+    StructuredTest(KnownMetrics subject, Distribution baseDistribution, boolean isTime) {
+      this(subject);
+      this.wantedDistribution = Distributions.addSample(
+          isTime ? wantedSize / 1000.0 : wantedSize,
+          baseDistribution);
     }
 
     StructuredTest(ReportRequestInfo given, KnownMetrics subject, MetricValueSet wantedMetrics) {
