@@ -18,11 +18,12 @@ package com.google.api.scc.model;
 
 import static org.junit.Assert.assertEquals;
 
+import com.google.api.client.util.Clock;
+import com.google.protobuf.Timestamp;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
-
-import com.google.protobuf.Timestamp;
 
 /**
  * Tests {@link Timestamps}
@@ -49,9 +50,9 @@ public class TimestampsTest {
 
   @Test
   public void largeNanoDoesntOverflow() {
-    assertEquals(0, Timestamps.now(new Ticker() {
+    assertEquals(0, Timestamps.now(new Clock() {
       @Override
-      public long read() {
+      public long currentTimeMillis() {
         return 3000000000L;  // -1294967296 when converted to int
       }
     }).getNanos());

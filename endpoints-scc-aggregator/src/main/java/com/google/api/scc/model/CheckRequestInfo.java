@@ -16,14 +16,14 @@
 
 package com.google.api.scc.model;
 
-import java.util.Map;
-
+import com.google.api.client.util.Clock;
 import com.google.api.servicecontrol.v1.CheckRequest;
 import com.google.api.servicecontrol.v1.Operation;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
-import com.google.common.base.Ticker;
 import com.google.common.collect.Maps;
+
+import java.util.Map;
 
 /**
  * Holds information about a {@code CheckRequest} to be obtained from the HTTP layer.
@@ -67,19 +67,19 @@ public class CheckRequestInfo extends OperationInfo {
    * The service name, operation ID and operation Name must all be set
    * <p>
    *
-   * @param Ticker is used to determine the current timestamp
+   * @param clock is used to determine the current timestamp
    *
    * @return a {@link CheckRequest}
    * @throws {@link IllegalStateException} if any required values are not set when this is called.
    */
-  public CheckRequest asCheckRequest(Ticker ticker) {
+  public CheckRequest asCheckRequest(Clock clock) {
     Preconditions.checkState(!Strings.isNullOrEmpty(getServiceName()),
         "a service name must be set");
     Preconditions.checkState(!Strings.isNullOrEmpty(getOperationId()),
         "an operation ID must be set");
     Preconditions.checkState(!Strings.isNullOrEmpty(getOperationName()),
         "an operation name must be set");
-    Operation.Builder b = super.asOperation(ticker).toBuilder();
+    Operation.Builder b = super.asOperation(clock).toBuilder();
     Map<String, String> labels = Maps.newHashMap();
     labels.put(SCC_USER_AGENT, KnownLabels.USER_AGENT);
     if (!Strings.isNullOrEmpty(getReferer())) {

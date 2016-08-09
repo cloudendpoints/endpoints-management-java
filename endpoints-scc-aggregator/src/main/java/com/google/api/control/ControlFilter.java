@@ -16,6 +16,22 @@
 
 package com.google.api.control;
 
+import com.google.api.client.util.Clock;
+import com.google.api.scc.model.CheckErrorInfo;
+import com.google.api.scc.model.CheckRequestInfo;
+import com.google.api.scc.model.MethodRegistry;
+import com.google.api.scc.model.OperationInfo;
+import com.google.api.scc.model.ReportRequestInfo;
+import com.google.api.scc.model.ReportRequestInfo.ReportedPlatforms;
+import com.google.api.scc.model.ReportRequestInfo.ReportedProtocols;
+import com.google.api.scc.model.ReportingRule;
+import com.google.api.servicecontrol.v1.CheckRequest;
+import com.google.api.servicecontrol.v1.CheckResponse;
+import com.google.api.servicecontrol.v1.ReportRequest;
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Strings;
+import com.google.common.base.Ticker;
+
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -39,21 +55,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpServletResponseWrapper;
 
-import com.google.api.scc.model.CheckErrorInfo;
-import com.google.api.scc.model.CheckRequestInfo;
-import com.google.api.scc.model.MethodRegistry;
-import com.google.api.scc.model.OperationInfo;
-import com.google.api.scc.model.ReportRequestInfo;
-import com.google.api.scc.model.ReportRequestInfo.ReportedPlatforms;
-import com.google.api.scc.model.ReportRequestInfo.ReportedProtocols;
-import com.google.api.scc.model.ReportingRule;
-import com.google.api.servicecontrol.v1.CheckRequest;
-import com.google.api.servicecontrol.v1.CheckResponse;
-import com.google.api.servicecontrol.v1.ReportRequest;
-import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Strings;
-import com.google.common.base.Ticker;
-
 /**
  * ControlFilter is a {@link Filter} that provides service control.
  *
@@ -68,19 +69,21 @@ public class ControlFilter implements Filter {
   private static final String PROJECT_ID_PARAM = "endpoints.projectId";
   private static final String SERVICE_NAME_PARAM = "endpoints.serviceName";
   private final Ticker ticker;
+  private final Clock clock;
   private String projectId;
   private Client client;
 
   @VisibleForTesting
   public ControlFilter(@Nullable Client client, @Nullable String projectId,
-      @Nullable Ticker ticker) {
+      @Nullable Ticker ticker, @Nullable Clock clock) {
     this.client = client;
     setProjectId(projectId);
     this.ticker = ticker == null ? Ticker.systemTicker() : ticker;
+    this.clock = clock == null ? Clock.SYSTEM : clock;
   }
 
   public ControlFilter() {
-    this(null, null, null);
+    this(null, null, null, null);
   }
 
   @Override
@@ -175,7 +178,7 @@ public class ControlFilter implements Filter {
     appInfo.requestSize = httpRequest.getContentLength();
     appInfo.url = httpRequest.getRequestURI();
     CheckRequestInfo checkInfo = createCheckInfo(httpRequest, appInfo.url, info);
-    CheckRequest checkRequest = checkInfo.asCheckRequest(ticker);
+    CheckRequest checkRequest = checkInfo.asCheckRequest(clock);
     log.log(Level.FINE, String.format("Checking using %s", checkRequest));
     CheckResponse checkResponse = client.check(checkRequest);
     CheckErrorInfo errorInfo = CheckErrorInfo.convert(checkResponse);
@@ -230,7 +233,7 @@ public class ControlFilter implements Filter {
         .setResponseCode(appInfo.responseCode)
         .setResponseSize(appInfo.responseSize)
         .setUrl(appInfo.url)
-        .asReportRequest(rules, ticker);
+        .asReportRequest(rules, clock);
   }
 
   private CheckRequestInfo createCheckInfo(HttpServletRequest request, String uri,

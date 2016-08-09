@@ -19,20 +19,19 @@ package com.google.api.scc.model;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
+import com.google.api.client.util.Clock;
+import com.google.api.servicecontrol.v1.CheckRequest;
+import com.google.api.servicecontrol.v1.Operation;
+import com.google.api.servicecontrol.v1.Operation.Builder;
+import com.google.api.servicecontrol.v1.Operation.Importance;
+import com.google.common.collect.ImmutableMap;
+import com.google.protobuf.Timestamp;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
-import com.google.api.servicecontrol.v1.CheckRequest;
-import com.google.api.servicecontrol.v1.Operation;
-import com.google.api.servicecontrol.v1.Operation.Builder;
-import com.google.api.servicecontrol.v1.Operation.Importance;
-import com.google.common.base.Ticker;
-import com.google.common.collect.ImmutableMap;
-import com.google.protobuf.Timestamp;
+import java.util.concurrent.TimeUnit;
 
 /**
  * CheckRequestInfoTest tests the behavior of {@code CheckRequestInfo}
@@ -43,11 +42,11 @@ public class CheckRequestInfoTest {
   private static final String TEST_OPERATION_NAME = "anOperationName";
   private static final String TEST_OPERATION_ID = "anOperationId";
   private static final String TEST_SERVICE_NAME = "aServiceName";
-  private static FakeTicker TEST_TICKER = new FakeTicker();
+  private static FakeClock TEST_CLOCK = new FakeClock();
   static {
-    TEST_TICKER.tick(2L, TimeUnit.SECONDS);
+    TEST_CLOCK.tick(2L, TimeUnit.SECONDS);
   }
-  private static Timestamp REALLY_EARLY = Timestamps.now(TEST_TICKER);
+  private static Timestamp REALLY_EARLY = Timestamps.now(TEST_CLOCK);
   private static final String TEST_CLIENT_IP = "127.0.0.1";
   private static final CheckRequestInfo[] INVALID_INFO = {
       new CheckRequestInfo(
@@ -81,7 +80,7 @@ public class CheckRequestInfoTest {
   @Test
   public void test() {
     for (InfoTest t : AS_CHECK_REQUEST_TEST) {
-      assertEquals(t.want, t.given.asCheckRequest(TEST_TICKER));
+      assertEquals(t.want, t.given.asCheckRequest(TEST_CLOCK));
     }
   }
 
@@ -89,7 +88,7 @@ public class CheckRequestInfoTest {
   public void whenIncompleteShouldFailAsCheckRequest() {
     for (CheckRequestInfo i : INVALID_INFO) {
       try {
-        i.asCheckRequest(Ticker.systemTicker());
+        i.asCheckRequest(Clock.SYSTEM);
         fail("Should have raised IllegalStateException");
       } catch (IllegalStateException e) {
         // expected
@@ -104,21 +103,6 @@ public class CheckRequestInfoTest {
     public InfoTest(CheckRequestInfo given, CheckRequest want) {
       this.given = given;
       this.want = want;
-    }
-  }
-
-  private static class FakeTicker extends Ticker {
-    private final AtomicLong nanos = new AtomicLong();
-
-    /** Advances the ticker value by {@code time} in {@code timeUnit}. */
-    public FakeTicker tick(long time, TimeUnit timeUnit) {
-      nanos.addAndGet(timeUnit.toNanos(time));
-      return this;
-    }
-
-    @Override
-    public long read() {
-      return nanos.getAndAdd(0);
     }
   }
 

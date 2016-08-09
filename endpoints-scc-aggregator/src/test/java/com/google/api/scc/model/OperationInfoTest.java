@@ -18,17 +18,15 @@ package com.google.api.scc.model;
 
 import static org.junit.Assert.assertEquals;
 
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
+import com.google.api.servicecontrol.v1.Operation;
+import com.google.api.servicecontrol.v1.Operation.Importance;
+import com.google.protobuf.Timestamp;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
-import com.google.api.servicecontrol.v1.Operation;
-import com.google.api.servicecontrol.v1.Operation.Importance;
-import com.google.common.base.Ticker;
-import com.google.protobuf.Timestamp;
+import java.util.concurrent.TimeUnit;
 
 /**
  * OperationInfoTest tests the behavior of {@code OperationInfo}
@@ -41,11 +39,11 @@ public class OperationInfoTest {
   private static final String TEST_REFERER = "aReferer";
   private static final String TEST_OPERATION_NAME = "anOperationName";
   private static final String TEST_OPERATION_ID = "anOperationId";
-  private static FakeTicker TEST_TICKER = new FakeTicker();
+  private static FakeClock TEST_CLOCK = new FakeClock();
   static {
-    TEST_TICKER.tick(2L, TimeUnit.SECONDS);
+    TEST_CLOCK.tick(2L, TimeUnit.SECONDS);
   }
-  private static Timestamp REALLY_EARLY = Timestamps.now(TEST_TICKER);
+  private static Timestamp REALLY_EARLY = Timestamps.now(TEST_CLOCK);
   private static final InfoTest[] AS_OPERATION_TEST = {
       new InfoTest(
           new OperationInfo()
@@ -126,7 +124,7 @@ public class OperationInfoTest {
   @Test
   public void test() {
     for (InfoTest t : AS_OPERATION_TEST) {
-      assertEquals(t.want, t.given.asOperation(TEST_TICKER));
+      assertEquals(t.want, t.given.asOperation(TEST_CLOCK));
     }
   }
 
@@ -137,21 +135,6 @@ public class OperationInfoTest {
     InfoTest(OperationInfo given, Operation want) {
       this.given = given;
       this.want = want;
-    }
-  }
-
-  private static class FakeTicker extends Ticker {
-    private final AtomicLong nanos = new AtomicLong();
-
-    /** Advances the ticker value by {@code time} in {@code timeUnit}. */
-    public FakeTicker tick(long time, TimeUnit timeUnit) {
-      nanos.addAndGet(timeUnit.toNanos(time));
-      return this;
-    }
-
-    @Override
-    public long read() {
-      return nanos.getAndAdd(0);
     }
   }
 }

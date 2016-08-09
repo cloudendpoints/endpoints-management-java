@@ -16,17 +16,17 @@
 
 package com.google.api.scc.model;
 
-import java.util.Map;
-
+import com.google.api.client.util.Clock;
 import com.google.api.servicecontrol.v1.LogEntry;
 import com.google.api.servicecontrol.v1.Operation;
 import com.google.api.servicecontrol.v1.ReportRequest;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
-import com.google.common.base.Ticker;
 import com.google.common.collect.Maps;
 import com.google.protobuf.Struct;
 import com.google.protobuf.Value;
+
+import java.util.Map;
 
 /**
  * Holds information about a {@code ReportRequest} to be obtained from the HTTP layer.
@@ -101,13 +101,13 @@ public class ReportRequestInfo extends OperationInfo {
    * Make a {@code LogEntry} from the instance.
    *
    * @param rules ReportingRules
-   * @param ticker Ticker
+   * @param clock Clock
    */
-  public ReportRequest asReportRequest(ReportingRule rules, Ticker ticker) {
+  public ReportRequest asReportRequest(ReportingRule rules, Clock clock) {
     Preconditions.checkState(!Strings.isNullOrEmpty(getServiceName()));
 
     // Populate metrics and labels if they can be associated with a method/operation
-    Operation.Builder o = asOperation(ticker).toBuilder();
+    Operation.Builder o = asOperation(clock).toBuilder();
     if (!Strings.isNullOrEmpty(o.getOperationId())
         && !Strings.isNullOrEmpty(o.getOperationName())) {
       Map<String, String> addedLabels = Maps.newHashMap();
@@ -122,7 +122,7 @@ public class ReportRequestInfo extends OperationInfo {
     }
 
     String[] logs = rules.getLogs();
-    long timestampMillis = ticker.read() / NANOS_PER_MILLIS;
+    long timestampMillis = clock.currentTimeMillis();
     for (String l : logs) {
       o.addLogEntries(asLogEntry(l, timestampMillis));
     }

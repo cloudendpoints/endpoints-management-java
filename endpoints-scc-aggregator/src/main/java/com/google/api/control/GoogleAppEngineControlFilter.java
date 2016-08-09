@@ -23,13 +23,14 @@
 
 package com.google.api.control;
 
-import java.io.IOException;
-import java.security.GeneralSecurityException;
-
 import com.google.api.client.extensions.appengine.http.UrlFetchTransport;
+import com.google.api.client.util.Clock;
 import com.google.appengine.api.ThreadManager;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Ticker;
+
+import java.io.IOException;
+import java.security.GeneralSecurityException;
 
 /**
  * {@code GoogleAppEngineControlFilter} is a {@code ControlFilter} where the control client is
@@ -43,8 +44,8 @@ import com.google.common.base.Ticker;
  */
 public class GoogleAppEngineControlFilter extends ControlFilter {
   @VisibleForTesting
-  GoogleAppEngineControlFilter(Client client, String projectId, Ticker ticker) {
-    super(client, projectId, ticker);
+  GoogleAppEngineControlFilter(Client client, String projectId, Ticker ticker, Clock clock) {
+    super(client, projectId, ticker, clock);
   }
 
   /**

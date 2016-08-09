@@ -16,10 +16,10 @@
 
 package com.google.api.scc.model;
 
+import com.google.api.client.util.Clock;
 import com.google.api.servicecontrol.v1.Operation;
 import com.google.api.servicecontrol.v1.Operation.Importance;
 import com.google.common.base.Strings;
-import com.google.common.base.Ticker;
 import com.google.protobuf.Timestamp;
 
 /**
@@ -41,10 +41,10 @@ public class OperationInfo {
    *
    * @return a {@link Operation}
    */
-  public Operation asOperation(Ticker ticker) {
+  public Operation asOperation(Clock clock) {
     Operation.Builder b = Operation.newBuilder();
     b.setImportance(Importance.LOW);
-    Timestamp now = Timestamps.now(ticker);
+    Timestamp now = Timestamps.now(clock);
     b.setStartTime(now).setEndTime(now);
     if (!Strings.isNullOrEmpty(operationId)) {
       b.setOperationId(operationId);
