@@ -1,0 +1,20 @@
+{
+  "monitoredResources": [{
+    "type": "endpoints.googleapis.com/endpoints"
+  }],
+
+  "metrics": [{
+    "name": "serviceruntime.googleapis.com/api/consumer/request_sizes",
+    "valueType": "DISTRIBUTION",
+    "metricKind": "DELTA"
+  }],
+
+  "monitoring": {
+    "consumerDestinations": [{
+      "monitoredResource": "endpoints.googleapis.com/endpoints",
+        "metrics": [
+         "serviceruntime.googleapis.com/api/consumer/request_sizes"
+      ]
+    }]
+  }
+}

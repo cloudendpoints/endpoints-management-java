@@ -1,0 +1,16 @@
+{
+  "logs": [{
+    "name": "report-request-info-base-logging"
+  }],
+
+  "monitoredResources": [{
+    "type": "endpoints.googleapis.com/endpoints"
+  }],
+
+  "logging": {
+    "producerDestinations": [{
+      "monitoredResource": "endpoints.googleapis.com/endpoints",
+        "logs": ["report-request-info-base-logging"]
+    }]
+  }
+}

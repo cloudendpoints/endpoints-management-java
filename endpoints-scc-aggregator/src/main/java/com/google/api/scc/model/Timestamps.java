@@ -16,10 +16,10 @@
 
 package com.google.api.scc.model;
 
+import java.util.Comparator;
+
 import com.google.api.client.util.Clock;
 import com.google.protobuf.Timestamp;
-
-import java.util.Comparator;
 
 public final class Timestamps {
   private static final int MILLIS_PER_SECOND = 1000;
@@ -49,11 +49,20 @@ public final class Timestamps {
    * @return a {@code Timestamp} corresponding to the ticker's current value
    */
   public static Timestamp now(Clock clock) {
-    long t = clock.currentTimeMillis();
+    return fromEpoch(clock.currentTimeMillis());
+  }
+
+  /**
+   * Obtain the current time from the unix epoch
+   *
+   * @param epoch gives the current time in milliseconds since since the epoch
+   * @return a {@code Timestamp} corresponding to the ticker's current value
+   */
+  public static Timestamp fromEpoch(long epochMillis) {
     return Timestamp
         .newBuilder()
-        .setNanos((int) ((t % MILLIS_PER_SECOND) * NANOS_PER_MILLI))
-        .setSeconds(t / MILLIS_PER_SECOND)
+        .setNanos((int) ((epochMillis % MILLIS_PER_SECOND) * NANOS_PER_MILLI))
+        .setSeconds(epochMillis / MILLIS_PER_SECOND)
         .build();
   }
 }

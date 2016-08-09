@@ -36,8 +36,6 @@ import com.google.protobuf.Value;
  * and transport layers.
  */
 public class ReportRequestInfo extends OperationInfo {
-  private static final int NANOS_PER_MILLIS = 1000000;
-
   /**
    * ReportedPlatform enumerates the platforms that may be reported.
    */
@@ -104,6 +102,7 @@ public class ReportRequestInfo extends OperationInfo {
     setOperationName(o.getOperationName());
     setReferer(o.getReferer());
     setServiceName(o.getServiceName());
+    setErrorCause(ErrorCause.internal);
   }
 
   /**
@@ -189,6 +188,7 @@ public class ReportRequestInfo extends OperationInfo {
     Struct.Builder theStruct = Struct.newBuilder().putAllFields(values);
     return LogEntry
         .newBuilder()
+        .setTimestamp(Timestamps.fromEpoch(timestampMillis))
         .setStructPayload(theStruct)
         .setName(name)
         .setSeverity(severity);
