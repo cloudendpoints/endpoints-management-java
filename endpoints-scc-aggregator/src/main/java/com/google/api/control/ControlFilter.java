@@ -425,6 +425,12 @@ public class ControlFilter implements Filter {
     }
 
     @Override
+    public void sendError(int sc) throws IOException {
+      responseCode = sc;
+      super.sendError(sc);
+    }
+
+    @Override
     public void sendError(int sc, String msg) throws IOException {
       responseCode = sc;
       super.sendError(sc, msg);
@@ -439,6 +445,12 @@ public class ControlFilter implements Filter {
     @Override
     public String getContentType() {
       return contentType;
+    }
+
+    @Override
+    public void setStatus(int sc) {
+      this.responseCode = sc;
+      super.setStatus(sc);
     }
   }
 }
