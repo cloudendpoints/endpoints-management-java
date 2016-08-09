@@ -29,15 +29,15 @@ import static javax.servlet.http.HttpServletResponse.SC_REQUESTED_RANGE_NOT_SATI
 import static javax.servlet.http.HttpServletResponse.SC_SERVICE_UNAVAILABLE;
 import static javax.servlet.http.HttpServletResponse.SC_UNAUTHORIZED;
 
-import java.nio.charset.StandardCharsets;
-import java.util.Map;
-
 import com.google.api.LabelDescriptor;
 import com.google.api.LabelDescriptor.ValueType;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.io.BaseEncoding;
 import com.google.rpc.Code;
+
+import java.nio.charset.StandardCharsets;
+import java.util.Map;
 
 /**
  * KnownLabels enumerates the well-known labels and allows them to be added to the ReportRequest's
@@ -136,6 +136,9 @@ public enum KnownLabels {
     public void update(String name, ReportRequestInfo info, Map<String, String> labels) {
       if (!Strings.isNullOrEmpty(info.getLocation())) {
         labels.put(name, info.getLocation());
+      } else {
+        // Set the default to global, since Monarch will reject a request with an empty location.
+        labels.put(name, "global");
       }
     }
   }),

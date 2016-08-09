@@ -16,17 +16,17 @@
 
 package com.google.api.scc.model;
 
-import java.util.Map;
+import com.google.api.LabelDescriptor;
+import com.google.api.LabelDescriptor.ValueType;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Maps;
 
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
-import com.google.api.LabelDescriptor;
-import com.google.api.LabelDescriptor.ValueType;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Maps;
+import java.util.Map;
 
 
 /**
@@ -120,7 +120,11 @@ public class KnownLabelsTest {
               ImmutableMap.<String, String>of(KnownLabels.SVC_API_METHOD.getName(),
                   StructuredTest.TEST_METHOD)),
           new StructuredTest(KnownLabels.GCP_LOCATION, ImmutableMap.<String, String>of(
-              KnownLabels.GCP_LOCATION.getName(), StructuredTest.TEST_LOCATION))
+              KnownLabels.GCP_LOCATION.getName(), StructuredTest.TEST_LOCATION)),
+          new StructuredTest(
+              KnownLabels.GCP_LOCATION,
+              ImmutableMap.of(KnownLabels.GCP_LOCATION.getName(), "global"),
+              new ReportRequestInfo(new OperationInfo()))
       };
 
   static class StructuredTest {
