@@ -22,7 +22,6 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -32,7 +31,6 @@ import org.junit.runners.JUnit4;
 import com.google.api.servicecontrol.v1.Operation;
 import com.google.api.servicecontrol.v1.ReportRequest;
 import com.google.api.servicecontrol.v1.ReportRequest.Builder;
-import com.google.common.base.Ticker;
 
 /**
  * Tests the behavior in {@link ReportRequestAggregator}
@@ -170,20 +168,5 @@ public class ReportRequestAggregatorTest {
         ReportAggregationOptions.DEFAULT_NUM_ENTRIES, TEST_FLUSH_INTERVAL);
     return new ReportRequestAggregator(CACHING_NAME, options, /* default MetricKinds */ null,
         ticker);
-  }
-
-  static class FakeTicker extends Ticker {
-    private final AtomicLong nanos = new AtomicLong();
-
-    /** Advances the ticker value by {@code time} in {@code timeUnit}. */
-    public FakeTicker tick(long time, TimeUnit timeUnit) {
-      nanos.addAndGet(timeUnit.toNanos(time));
-      return this;
-    }
-
-    @Override
-    public long read() {
-      return nanos.getAndAdd(0);
-    }
   }
 }

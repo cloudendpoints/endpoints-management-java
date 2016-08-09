@@ -23,7 +23,6 @@ buildscript {
 
 apply plugin: 'java'
 apply plugin: 'maven'
-apply plugin: 'com.google.protobuf'
 
 def tmpSnapshotRepo = "http://104.197.230.53:8081/nexus/content/repositories/snapshots/"
 repositories {
@@ -69,6 +68,7 @@ dependencies {
 
   testCompile "junit:junit:${junitVersion}"
   testCompile "com.google.truth:truth:${truthVersion}"
+  testCompile "org.mockito:mockito-core:${mockitoVersion}"
 }
 
 archivesBaseName = 'endpoints-management-control'

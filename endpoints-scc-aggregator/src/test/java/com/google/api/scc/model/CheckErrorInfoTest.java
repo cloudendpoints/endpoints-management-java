@@ -46,6 +46,14 @@ public class CheckErrorInfoTest {
   }
 
   @Test
+  public void shouldBeServiceUnavailableIfResponseIsNull() {
+    CheckErrorInfo converted = CheckErrorInfo.convert(null);
+    assertEquals(CheckErrorInfo.SERVICE_STATUS_UNAVAILABLE, converted);
+    assertEquals(SC_OK, converted.getHttpCode());
+    assertEquals("", converted.fullMessage(TEST_PROJECT, TEST_DETAIL));
+  }
+
+  @Test
   public void shouldIncludeTheProjectIdInFullMessage() {
     CheckResponse deleted = CheckResponse
         .newBuilder()

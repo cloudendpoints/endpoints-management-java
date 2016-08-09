@@ -151,7 +151,10 @@ public enum CheckErrorInfo {
    * @return {@code CheckErrorInfo}
    */
   public static final CheckErrorInfo convert(@Nullable CheckResponse response) {
-    if (response == null || response.getCheckErrorsCount() == 0) {
+    if (response == null) {
+      return SERVICE_STATUS_UNAVAILABLE;
+    }
+    if (response.getCheckErrorsCount() == 0) {
       return OK;
     }
 

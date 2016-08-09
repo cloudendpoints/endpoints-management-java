@@ -21,7 +21,6 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.fail;
 
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -35,7 +34,6 @@ import com.google.api.servicecontrol.v1.CheckResponse;
 import com.google.api.servicecontrol.v1.MetricValue;
 import com.google.api.servicecontrol.v1.MetricValueSet;
 import com.google.api.servicecontrol.v1.Operation;
-import com.google.common.base.Ticker;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.hash.HashCode;
 import com.google.protobuf.Timestamp;
@@ -349,20 +347,5 @@ public class CheckRequestAggregatorTest {
         .setMetricName(name)
         .addMetricValues(MetricValue.newBuilder().setDoubleValue(value).setEndTime(endTime))
         .build();
-  }
-
-  private static class FakeTicker extends Ticker {
-    private final AtomicLong nanos = new AtomicLong();
-
-    /** Advances the ticker value by {@code time} in {@code timeUnit}. */
-    public FakeTicker tick(long time, TimeUnit timeUnit) {
-      nanos.addAndGet(timeUnit.toNanos(time));
-      return this;
-    }
-
-    @Override
-    public long read() {
-      return nanos.getAndAdd(0);
-    }
   }
 }

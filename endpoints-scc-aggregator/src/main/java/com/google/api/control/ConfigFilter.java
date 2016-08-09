@@ -33,6 +33,7 @@ import com.google.api.client.repackaged.com.google.common.base.Preconditions;
 import com.google.api.scc.model.MethodRegistry;
 import com.google.api.scc.model.MethodRegistry.Info;
 import com.google.api.scc.model.ReportingRule;
+import com.google.common.annotations.VisibleForTesting;
 
 /**
  * ConfigFilter used to load the {@code Service} and associated objects and make them available
@@ -40,10 +41,22 @@ import com.google.api.scc.model.ReportingRule;
 public class ConfigFilter implements Filter {
   private static final Logger log = Logger.getLogger(ConfigFilter.class.getName());
   private static final String ATTRIBUTE_ROOT = ConfigFilter.class.getName();
-  private static final String METHOD_INFO_ATTRIBUTE = ATTRIBUTE_ROOT + ".method_info";
-  private static final String SERVICE_ATTRIBUTE = ATTRIBUTE_ROOT + ".service";
-  private static final String REGISTRY_ATTRIBUTE = ATTRIBUTE_ROOT + ".registry";
-  private static final String REPORTING_ATTRIBUTE = ATTRIBUTE_ROOT + ".reporting";
+
+  @VisibleForTesting
+  static final String METHOD_INFO_ATTRIBUTE = ATTRIBUTE_ROOT + ".method_info";
+
+  @VisibleForTesting
+  static final String SERVICE_ATTRIBUTE = ATTRIBUTE_ROOT + ".service";
+
+  @VisibleForTesting
+  static final String SERVICE_NAME_ATTRIBUTE = ATTRIBUTE_ROOT + ".service_name";
+
+  @VisibleForTesting
+  static final String REGISTRY_ATTRIBUTE = ATTRIBUTE_ROOT + ".registry";
+
+  @VisibleForTesting
+  static final String REPORTING_ATTRIBUTE = ATTRIBUTE_ROOT + ".reporting";
+
   private Service theService;
   private Loader loader;
   private MethodRegistry registry;
@@ -89,6 +102,7 @@ public class ConfigFilter implements Filter {
     } else {
       HttpServletRequest httpRequest = (HttpServletRequest) request;
       httpRequest.setAttribute(SERVICE_ATTRIBUTE, theService);
+      httpRequest.setAttribute(SERVICE_NAME_ATTRIBUTE, theService.getName());
       httpRequest.setAttribute(REGISTRY_ATTRIBUTE, registry);
       httpRequest.setAttribute(REPORTING_ATTRIBUTE, rule);
       log.log(Level.FINE,  String.format("Added service %s, and associated attributes to the request", theService));
@@ -120,6 +134,14 @@ public class ConfigFilter implements Filter {
   public static Service getService(ServletRequest req) {
     HttpServletRequest httpRequest = (HttpServletRequest) req;
     return (Service) httpRequest.getAttribute(SERVICE_ATTRIBUTE);
+  }
+
+  /**
+   * @return the service name added or {@code null} if its not present
+   */
+  public static String getServiceName(ServletRequest req) {
+    HttpServletRequest httpRequest = (HttpServletRequest) req;
+    return (String) httpRequest.getAttribute(SERVICE_NAME_ATTRIBUTE);
   }
 
   /**

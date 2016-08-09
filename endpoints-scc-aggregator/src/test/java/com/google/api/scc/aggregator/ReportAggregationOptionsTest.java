@@ -23,13 +23,11 @@ import static org.junit.Assert.fail;
 
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
-import com.google.common.base.Ticker;
 import com.google.common.cache.Cache;
 
 /**
@@ -126,20 +124,5 @@ public class ReportAggregationOptionsTest {
 
   private static ConcurrentLinkedDeque<Long> testDeque() {
     return new ConcurrentLinkedDeque<Long>();
-  }
-
-  static class FakeTicker extends Ticker {
-    private final AtomicLong nanos = new AtomicLong();
-
-    /** Advances the ticker value by {@code time} in {@code timeUnit}. */
-    public FakeTicker tick(long time, TimeUnit timeUnit) {
-      nanos.addAndGet(timeUnit.toNanos(time));
-      return this;
-    }
-
-    @Override
-    public long read() {
-      return nanos.getAndAdd(0);
-    }
   }
 }

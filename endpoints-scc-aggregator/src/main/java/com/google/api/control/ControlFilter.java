@@ -16,22 +16,6 @@
 
 package com.google.api.control;
 
-import com.google.api.client.util.Clock;
-import com.google.api.scc.model.CheckErrorInfo;
-import com.google.api.scc.model.CheckRequestInfo;
-import com.google.api.scc.model.MethodRegistry;
-import com.google.api.scc.model.OperationInfo;
-import com.google.api.scc.model.ReportRequestInfo;
-import com.google.api.scc.model.ReportRequestInfo.ReportedPlatforms;
-import com.google.api.scc.model.ReportRequestInfo.ReportedProtocols;
-import com.google.api.scc.model.ReportingRule;
-import com.google.api.servicecontrol.v1.CheckRequest;
-import com.google.api.servicecontrol.v1.CheckResponse;
-import com.google.api.servicecontrol.v1.ReportRequest;
-import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Strings;
-import com.google.common.base.Ticker;
-
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -55,13 +39,28 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpServletResponseWrapper;
 
+import com.google.api.client.util.Clock;
+import com.google.api.scc.model.CheckErrorInfo;
+import com.google.api.scc.model.CheckRequestInfo;
+import com.google.api.scc.model.MethodRegistry;
+import com.google.api.scc.model.OperationInfo;
+import com.google.api.scc.model.ReportRequestInfo;
+import com.google.api.scc.model.ReportRequestInfo.ReportedPlatforms;
+import com.google.api.scc.model.ReportRequestInfo.ReportedProtocols;
+import com.google.api.scc.model.ReportingRule;
+import com.google.api.servicecontrol.v1.CheckRequest;
+import com.google.api.servicecontrol.v1.CheckResponse;
+import com.google.api.servicecontrol.v1.ReportRequest;
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Strings;
+import com.google.common.base.Ticker;
+
 /**
  * ControlFilter is a {@link Filter} that provides service control.
  *
  * Requests do not proceed unless the response to a call
- * {@link Client#check(com.google.api.servicecontrol.v1.CheckRequest)} succeeds. Successful calls
- * are 'reported' via a call to
- * {@link Client#report(com.google.api.servicecontrol.v1.ReportRequest)}
+ * {@link Client#check(com.google.api.servicecontrol.v1.CheckRequest)} succeeds. All calls are
+ * 'reported' via a call to {@link Client#report(com.google.api.servicecontrol.v1.ReportRequest)}
  */
 public class ControlFilter implements Filter {
   private static final Logger log = Logger.getLogger(ControlFilter.class.getName());
@@ -74,8 +73,8 @@ public class ControlFilter implements Filter {
   private Client client;
 
   @VisibleForTesting
-  public ControlFilter(@Nullable Client client, @Nullable String projectId,
-      @Nullable Ticker ticker, @Nullable Clock clock) {
+  public ControlFilter(@Nullable Client client, @Nullable String projectId, @Nullable Ticker ticker,
+      @Nullable Clock clock) {
     this.client = client;
     setProjectId(projectId);
     this.ticker = ticker == null ? Ticker.systemTicker() : ticker;
@@ -171,7 +170,7 @@ public class ControlFilter implements Filter {
       return;
     }
 
-    // Execute the check, and if there is an issue, terminate the request
+    // Perform the check
     HttpServletRequest httpRequest = (HttpServletRequest) request;
     AppStruct appInfo = new AppStruct();
     appInfo.httpMethod = httpRequest.getMethod();
@@ -181,40 +180,52 @@ public class ControlFilter implements Filter {
     CheckRequest checkRequest = checkInfo.asCheckRequest(clock);
     log.log(Level.FINE, String.format("Checking using %s", checkRequest));
     CheckResponse checkResponse = client.check(checkRequest);
+
+    // Handle check failures. This includes check transport failures, in which case
+    // the checkResponse is null.
     CheckErrorInfo errorInfo = CheckErrorInfo.convert(checkResponse);
-    HttpServletResponse httpResponse = (HttpServletResponse) response;
     if (errorInfo != CheckErrorInfo.OK) {
+      log.log(Level.WARNING,
+          String.format("the check did not succeed; the response %s", checkResponse));
+
       // 'Send' a report
       ReportRequest reportRequest =
           createReportRequest(info, checkInfo, appInfo, ConfigFilter.getReportRule(request), timer);
-      log.log(Level.FINE, String.format("sending the report request %s", reportRequest));
+      log.log(Level.FINEST, String.format("sending an error report request %s", reportRequest));
       client.report(reportRequest);
 
-      // For now, assume that any error information will just be the first error detail message
-      httpResponse.sendError(errorInfo.getHttpCode(),
-          errorInfo.fullMessage(projectId, checkResponse.getCheckErrors(0).getDetail()));
+      // 'fail open' if the check did not complete, and execute the rest of the chain
+      if (checkResponse == null) {
+        chain.doFilter(request, response);
+      } else {
+        // Assume that any error information will just be the first error when there is a check
+        // response
+        HttpServletResponse httpResponse = (HttpServletResponse) response;
+        httpResponse.sendError(errorInfo.getHttpCode(),
+            errorInfo.fullMessage(projectId, checkResponse.getCheckErrors(0).getDetail()));
+      }
       return;
     }
 
-    // Add the check response, then perform the rest of the request itself
-    log.log(Level.FINE, String.format("adding the check response %s", checkResponse));
-    timer.appStart();
+    // Execute the request in wrapper, capture the response, then write it to the output
+    GenericResponseWrapper wrapper = new GenericResponseWrapper((HttpServletResponse) response);
+    try {
+      timer.appStart();
+      chain.doFilter(request, wrapper);
+    } finally {
+      timer.end();
+      ServletOutputStream out = response.getOutputStream();
+      out.write(wrapper.getData());
+      out.close();
+    }
 
-    // Execute the request in wrapper, capture the data
-    GenericResponseWrapper wrapper = new GenericResponseWrapper(httpResponse);
-    chain.doFilter(request, wrapper);
-    timer.end();
+    // Send a report
     appInfo.responseCode = wrapper.getResponseCode();
     appInfo.responseSize =
         wrapper.getContentLength() != 0 ? wrapper.getContentLength() : wrapper.getData().length;
-    ServletOutputStream out = response.getOutputStream();
-    out.write(wrapper.getData());
-    out.close();
-
-    // Send a report
     ReportRequest reportRequest =
         createReportRequest(info, checkInfo, appInfo, ConfigFilter.getReportRule(request), timer);
-    log.log(Level.FINE, String.format("sending the report request %s", reportRequest));
+    log.log(Level.FINEST, String.format("sending a report request %s", reportRequest));
     client.report(reportRequest);
   }
 
@@ -239,7 +250,7 @@ public class ControlFilter implements Filter {
 
   private CheckRequestInfo createCheckInfo(HttpServletRequest request, String uri,
       MethodRegistry.Info info) {
-    String serviceName = ConfigFilter.getService(request).getName();
+    String serviceName = ConfigFilter.getServiceName(request);
     String apiKey = findApiKeyParam(request, info);
     if (Strings.isNullOrEmpty(apiKey)) {
       apiKey = findApiKeyHeader(request, info);
@@ -358,7 +369,7 @@ public class ControlFilter implements Filter {
    * FilterServletOutputStream is a ServletOutputStream that allows us to accurately count the
    * response size.
    */
-  private static class FilterServletOutputStream extends ServletOutputStream {
+  static class FilterServletOutputStream extends ServletOutputStream {
     private DataOutputStream stream;
 
     public FilterServletOutputStream(OutputStream output) {
