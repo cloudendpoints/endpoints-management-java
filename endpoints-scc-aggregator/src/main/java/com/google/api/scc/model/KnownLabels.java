@@ -72,7 +72,7 @@ public enum KnownLabels {
     @Override
     public void update(String name, ReportRequestInfo info, Map<String, String> labels) {
       if (info.getResponseCode() > 0) {
-        labels.put(name, String.format("%dXX", (info.getResponseCode() / 100)));
+        labels.put(name, String.format("%dxx", (info.getResponseCode() / 100)));
       }
     }
   }),
@@ -108,7 +108,7 @@ public enum KnownLabels {
     @Override
     public void update(String name, ReportRequestInfo info, Map<String, String> labels) {
       if (info.getResponseCode() > 0) {
-        labels.put(name, String.format("%dXX", (info.getResponseCode() / 100)));
+        labels.put(name, String.format("%dxx", (info.getResponseCode() / 100)));
       }
     }
   }),

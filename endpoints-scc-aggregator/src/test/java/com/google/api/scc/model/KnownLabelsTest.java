@@ -101,13 +101,13 @@ public class KnownLabelsTest {
 
           // Other labels
           new StructuredTest(KnownLabels.ERROR_TYPE,
-              ImmutableMap.<String, String>of(KnownLabels.ERROR_TYPE.getName(), "2XX"),
+              ImmutableMap.<String, String>of(KnownLabels.ERROR_TYPE.getName(), "2xx"),
               new ReportRequestInfo().setResponseCode(200)),
           new StructuredTest(KnownLabels.RESPONSE_CODE,
               ImmutableMap.<String, String>of(KnownLabels.RESPONSE_CODE.getName(), "200"),
               new ReportRequestInfo().setResponseCode(200)),
           new StructuredTest(KnownLabels.RESPONSE_CODE_CLASS,
-              ImmutableMap.<String, String>of(KnownLabels.RESPONSE_CODE_CLASS.getName(), "2XX"),
+              ImmutableMap.<String, String>of(KnownLabels.RESPONSE_CODE_CLASS.getName(), "2xx"),
               new ReportRequestInfo().setResponseCode(200)),
           new StructuredTest(KnownLabels.PROTOCOL,
               ImmutableMap.<String, String>of(KnownLabels.PROTOCOL.getName(), "UNKNOWN")),
