@@ -233,6 +233,7 @@ public class ControlFilter implements Filter {
         .setResponseCode(appInfo.responseCode)
         .setResponseSize(appInfo.responseSize)
         .setUrl(appInfo.url)
+        .setBackendTimeMillis(timer.getBackendTimeMillis())
         .asReportRequest(rules, clock);
   }
 
@@ -340,6 +341,16 @@ public class ControlFilter implements Filter {
         return NOT_STARTED;
       }
       return (appStart - start) / NANOS_PER_MILLIS;
+    }
+
+    long getBackendTimeMillis() {
+      if (appStart == NOT_STARTED) {
+        return NOT_STARTED;
+      }
+      if (end == NOT_STARTED) {
+        return NOT_STARTED;
+      }
+      return (end - appStart) / NANOS_PER_MILLIS;
     }
   }
 
