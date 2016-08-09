@@ -100,7 +100,7 @@ public enum KnownMetrics {
       "serviceruntime.googleapis.com/api/producer/by_consumer/request_overhead_latencies",
       MetricKind.DELTA, ValueType.DISTRIBUTION, addDistributionMetricForOverheadTimeMillis());
 
-  private static final int TIME_SCALE = 1;
+  private static final double TIME_SCALE = 1e-6;
   private static final double SIZE_SCALE = 1e6;
   private static final double DISTRIBUTION_GROWTH_FACTOR = 10.0;
   private static final int DISTRIBUTION_BUCKETS = 8;
