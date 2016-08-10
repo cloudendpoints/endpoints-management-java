@@ -73,7 +73,7 @@ public class Client {
     this.ticker = ticker;
     this.transport = transport;
     this.threads = threads;
-    this.scheduler = null; // the scheduler is a assigned when the start is invoked
+    this.scheduler = null; // the scheduler is assigned when start is invoked
   }
 
   /**
@@ -263,8 +263,6 @@ public class Client {
    * Builder provide structure to the construction of a {@link Client}
    */
   public static class Builder {
-    private static final String ALLOWED_SERVICE_CONTROL_UA = "ESP"; // either that or "ESF"; ESF
-                                                                    // is internal-only
     private Ticker ticker;
     private HttpTransport transport;
     private ThreadFactory factory;
