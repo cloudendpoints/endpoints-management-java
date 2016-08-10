@@ -23,6 +23,15 @@ import com.google.common.base.Ticker;
 
 public class FakeTicker extends Ticker {
   private final AtomicLong nanos = new AtomicLong();
+  private boolean autoTick;
+
+  public FakeTicker() {
+    this(false);
+  }
+
+  public FakeTicker(boolean autoTick) {
+    this.autoTick = autoTick;
+  }
 
   /** Advances the ticker value by {@code time} in {@code timeUnit}. */
   public FakeTicker tick(long time, TimeUnit timeUnit) {
@@ -32,6 +41,10 @@ public class FakeTicker extends Ticker {
 
   @Override
   public long read() {
-    return nanos.getAndAdd(0);
+    long res = nanos.getAndAdd(0);
+    if (autoTick) {
+      tick(1, TimeUnit.SECONDS);
+    }
+    return res;
   }
 }

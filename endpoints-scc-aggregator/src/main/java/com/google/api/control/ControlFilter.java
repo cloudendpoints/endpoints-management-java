@@ -67,6 +67,7 @@ public class ControlFilter implements Filter {
   private static final String REFERER = "referer";
   private static final String PROJECT_ID_PARAM = "endpoints.projectId";
   private static final String SERVICE_NAME_PARAM = "endpoints.serviceName";
+  private static final String DEFAULT_LOCATION = "global";
   private final Ticker ticker;
   private final Clock clock;
   private String projectId;
@@ -233,7 +234,7 @@ public class ControlFilter implements Filter {
       AppStruct appInfo, ReportingRule rules, LatencyTimer timer) {
     return new ReportRequestInfo(checkInfo)
         .setApiMethod(info.getSelector())
-        .setLocation("")
+        .setLocation(DEFAULT_LOCATION) // TODO: figure out to get this from the environment
         .setMethod(appInfo.httpMethod)
         .setOverheadTimeMillis(timer.getOverheadTimeMillis())
         .setPlatform(ReportedPlatforms.GAE) // TODO: fill this in correctly

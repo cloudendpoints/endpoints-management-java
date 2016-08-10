@@ -27,6 +27,7 @@ import static org.mockito.Mockito.when;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -56,6 +57,7 @@ import com.google.api.servicecontrol.v1.CheckError;
 import com.google.api.servicecontrol.v1.CheckError.Code;
 import com.google.api.servicecontrol.v1.CheckRequest;
 import com.google.api.servicecontrol.v1.CheckResponse;
+import com.google.api.servicecontrol.v1.MetricValueSet;
 import com.google.api.servicecontrol.v1.Operation;
 import com.google.api.servicecontrol.v1.ReportRequest;
 import com.google.common.base.Ticker;
@@ -63,6 +65,8 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.protobuf.Timestamp;
+
+import autovalue.shaded.com.google.common.common.collect.Sets;
 
 /**
  * Tests for {@code ControlFilter}.
@@ -98,8 +102,9 @@ public class ControlFilterTest {
   private ReportingRule rule;
   private CheckResponse checkResponse;
   private static final Timestamp REALLY_EARLY = Timestamps.fromEpoch(0);
-  private static final Map<String, String> OPERATION_LABELS = ImmutableMap.of(CheckRequestInfo.SCC_CALLER_IP, TEST_CLIENT_IP,
-      CheckRequestInfo.SCC_REFERER, REFERER, CheckRequestInfo.SCC_USER_AGENT, "ESP");
+  private static final Map<String, String> OPERATION_LABELS =
+      ImmutableMap.of(CheckRequestInfo.SCC_CALLER_IP, TEST_CLIENT_IP, CheckRequestInfo.SCC_REFERER,
+          REFERER, CheckRequestInfo.SCC_USER_AGENT, "ESP");
 
   @Before
   public void setUp() {
@@ -109,7 +114,7 @@ public class ControlFilterTest {
     chain = mock(FilterChain.class);
     client = mock(Client.class);
     testClock = new FakeClock();
-    testTicker = new FakeTicker();
+    testTicker = new FakeTicker(true);
     info = new MethodRegistry.Info(TEST_SELECTOR, null);
     capturedCheck = ArgumentCaptor.forClass(CheckRequest.class);
     capturedReport = ArgumentCaptor.forClass(ReportRequest.class);
@@ -148,6 +153,52 @@ public class ControlFilterTest {
   }
 
   @Test
+  public void shouldUseTheDefaultLocation() throws IOException, ServletException {
+    rule = ReportingRule.fromKnownInputs(null, null,
+        Sets.newHashSet(KnownLabels.GCP_LOCATION.getName()));
+    mockRequestAndResponse();
+    when(client.check(any(CheckRequest.class))).thenReturn(checkResponse);
+
+    ControlFilter f = new ControlFilter(client, TEST_PROJECT_ID, testTicker, testClock);
+    f.doFilter(request, response, chain);
+    verify(client, times(1)).report(capturedReport.capture());
+    ReportRequest aReport = capturedReport.getValue();
+    assertThat(aReport.getOperationsCount()).isEqualTo(1);
+    Operation op = aReport.getOperations(0);
+    Map<String, String> wantedLabels =
+        ImmutableMap.of(KnownLabels.GCP_LOCATION.getName(), "global");
+    assertThat(op.getLabelsMap()).isEqualTo(wantedLabels);
+    // TODO: Add more assertions
+  }
+
+  @Test
+  public void shouldSetBackendLatency() throws IOException, ServletException {
+    HashSet<String> wantMetricNames =
+        Sets.newHashSet(KnownMetrics.CONSUMER_BACKEND_LATENCIES.getName(),
+            KnownMetrics.PRODUCER_BACKEND_LATENCIES.getName(),
+            KnownMetrics.PRODUCER_BY_CONSUMER_BACKEND_LATENCIES.getName());
+    rule = ReportingRule.fromKnownInputs(null, wantMetricNames, null);
+    mockRequestAndResponse();
+    when(client.check(any(CheckRequest.class))).thenReturn(checkResponse);
+
+    ControlFilter f = new ControlFilter(client, TEST_PROJECT_ID, testTicker, testClock);
+    f.doFilter(request, response, chain);
+    verify(client, times(1)).report(capturedReport.capture());
+    ReportRequest aReport = capturedReport.getValue();
+    assertThat(aReport.getOperationsCount()).isEqualTo(1);
+    Operation op = aReport.getOperations(0);
+
+    // verify that the report includes the specified metrics
+    List<MetricValueSet> mvs = op.getMetricValueSetsList();
+    assertThat(mvs.size()).isEqualTo(3);
+    Set<String> gotMetricNames = Sets.newHashSet();
+    for (MetricValueSet s : mvs) {
+      gotMetricNames.add(s.getMetricName());
+    }
+    assertThat(gotMetricNames).isEqualTo(wantMetricNames);
+  }
+
+  @Test
   public void shouldUseTheClientIfConfiguredOk() throws IOException, ServletException {
     ControlFilter f = new ControlFilter(client, TEST_PROJECT_ID, testTicker, testClock);
     mockRequestAndResponse();
@@ -164,9 +215,9 @@ public class ControlFilterTest {
     assertThat(aReport.getOperationsCount()).isEqualTo(1);
     assertThat(aReport.getServiceName()).isEqualTo(TEST_SERVICE_NAME);
     Operation op = aReport.getOperations(0);
-    Map<String, String> wantedLabels = ImmutableMap.of(KnownLabels.RESPONSE_CODE_CLASS.getName(),
-        "2xx", KnownLabels.PROTOCOL.getName(), "HTTP", KnownLabels.REFERER.getName(),
-        "testReferer");
+    Map<String, String> wantedLabels =
+        ImmutableMap.of(KnownLabels.RESPONSE_CODE_CLASS.getName(), "2xx",
+            KnownLabels.PROTOCOL.getName(), "HTTP", KnownLabels.REFERER.getName(), "testReferer");
     assertThat(op.getLabelsMap()).isEqualTo(wantedLabels);
     // TODO: Add more assertions
   }
