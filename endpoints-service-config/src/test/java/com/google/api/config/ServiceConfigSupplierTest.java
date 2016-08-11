@@ -86,14 +86,12 @@ public final class ServiceConfigSupplierTest {
   public void testServiceVersionNotSet() throws IOException {
     when(mockEnvironment.getVariable("ENDPOINTS_SERVICE_NAME")).thenReturn(SERVICE_NAME);
     when(mockEnvironment.getVariable("ENDPOINTS_SERVICE_VERSION")).thenReturn(null);
-    try {
-      fetcher.get();
-      fail();
-    } catch (IllegalArgumentException exception) {
-      assertEquals(
-          "Environment variable 'ENDPOINTS_SERVICE_VERSION' is not set",
-          exception.getMessage());
-    }
+
+    String content = JsonFormat.printer().print(SERVICE);
+    testHttpTransport.setStatusCode(200);
+    testHttpTransport.setContent(content);
+
+    assertEquals(SERVICE, fetcher.get());
   }
 
   @Test
