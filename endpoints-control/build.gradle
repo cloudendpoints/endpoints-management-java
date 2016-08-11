@@ -54,7 +54,9 @@ dependencies {
   compile "com.google.code.findbugs:jsr305:${jsr305Version}"
   compile "com.google.endpoints:api-servicecontrol-v1:${grpcGoogleApiVersion}"
   compile "com.google.guava:guava:${guavaVersion}"
-  compile "com.google.http-client:google-http-client-jackson2:${httpClientVersion}"
+  compile("com.google.http-client:google-http-client-jackson2:${httpClientVersion}") {
+    exclude group: 'com.google.guava', module: 'guava-jdk5'
+  }
   compile "javax.servlet:servlet-api:${servletApiVersion}"
   compile "com.fasterxml.jackson.core:jackson-core:${jacksonVersion}"
   compile(group: 'com.google.api-client', name: 'google-api-client-appengine', version: "${googleApiClientAppEngineVersion}") {
