@@ -24,6 +24,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.reset;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -220,6 +221,43 @@ public class ControlFilterTest {
             KnownLabels.PROTOCOL.getName(), "HTTP", KnownLabels.REFERER.getName(), "testReferer");
     assertThat(op.getLabelsMap()).isEqualTo(wantedLabels);
     // TODO: Add more assertions
+  }
+
+  @Test
+  public void shouldSendTheDefaultApiKeyIfPresent() throws IOException, ServletException {
+    String[] defaultKeyNames = {"key", "api_key"};
+    String testApiKey = "defaultApiKey";
+    ControlFilter f = new ControlFilter(client, TEST_PROJECT_ID, testTicker, testClock);
+    for (String defaultKeyName : defaultKeyNames) {
+      mockRequestAndResponse();
+      when(request.getParameter(defaultKeyName)).thenReturn(testApiKey);
+      when(client.check(any(CheckRequest.class))).thenReturn(checkResponse);
+
+      f.doFilter(request, response, chain);
+      verify(client, times(1)).check(capturedCheck.capture());
+      verify(client, times(1)).report(capturedReport.capture());
+      CheckRequest aCheck = capturedCheck.getValue();
+      assertThat(aCheck.getOperation().getOperationId()).isNotNull();
+      CheckRequest.Builder comparedCheck = aCheck.toBuilder();
+      comparedCheck.getOperationBuilder().clearOperationId();
+      CheckRequest.Builder wantedCheck = wantedCheckRequest();
+
+      // Confirm that the consumer name includes the api key
+      wantedCheck.getOperationBuilder().setConsumerId("api_key:" + testApiKey);
+      assertThat(comparedCheck.build()).isEqualTo(wantedCheck.build());
+
+      ReportRequest aReport = capturedReport.getValue();
+      assertThat(aReport.getOperationsCount()).isEqualTo(1);
+      assertThat(aReport.getServiceName()).isEqualTo(TEST_SERVICE_NAME);
+      Operation op = aReport.getOperations(0);
+      Map<String, String> wantedLabels =
+          ImmutableMap.of(KnownLabels.RESPONSE_CODE_CLASS.getName(), "2xx",
+              KnownLabels.PROTOCOL.getName(), "HTTP", KnownLabels.REFERER.getName(), "testReferer");
+      assertThat(op.getLabelsMap()).isEqualTo(wantedLabels);
+      assertThat(op.getConsumerId()).isEqualTo("api_key:" + testApiKey);
+      reset(client);
+      reset(request);
+    }
   }
 
   @Test

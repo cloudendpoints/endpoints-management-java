@@ -54,6 +54,7 @@ import com.google.api.servicecontrol.v1.ReportRequest;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Strings;
 import com.google.common.base.Ticker;
+import com.google.common.collect.ImmutableList;
 
 /**
  * ControlFilter is a {@link Filter} that provides service control.
@@ -68,6 +69,7 @@ public class ControlFilter implements Filter {
   private static final String PROJECT_ID_PARAM = "endpoints.projectId";
   private static final String SERVICE_NAME_PARAM = "endpoints.serviceName";
   private static final String DEFAULT_LOCATION = "global";
+  private static final List<String> DEFAULT_API_KEYS = ImmutableList.of("key", "api_key");
   private final Ticker ticker;
   private final Clock clock;
   private String projectId;
@@ -164,7 +166,8 @@ public class ControlFilter implements Filter {
     LatencyTimer timer = new LatencyTimer(ticker);
     timer.start();
 
-    // Service Control is not required for this method, execute the rest of the filter chain
+    // Service Control is not required for this method, execute the rest of
+    // the filter chain
     MethodRegistry.Info info = ConfigFilter.getMethodInfo(request);
     if (info == null) {
       chain.doFilter(request, response);
@@ -182,7 +185,8 @@ public class ControlFilter implements Filter {
     log.log(Level.FINE, String.format("Checking using %s", checkRequest));
     CheckResponse checkResponse = client.check(checkRequest);
 
-    // Handle check failures. This includes check transport failures, in which case
+    // Handle check failures. This includes check transport failures, in
+    // which case
     // the checkResponse is null.
     CheckErrorInfo errorInfo = CheckErrorInfo.convert(checkResponse);
     if (errorInfo != CheckErrorInfo.OK) {
@@ -195,11 +199,13 @@ public class ControlFilter implements Filter {
       log.log(Level.FINEST, String.format("sending an error report request %s", reportRequest));
       client.report(reportRequest);
 
-      // 'fail open' if the check did not complete, and execute the rest of the chain
+      // 'fail open' if the check did not complete, and execute the rest
+      // of the chain
       if (checkResponse == null) {
         chain.doFilter(request, response);
       } else {
-        // Assume that any error information will just be the first error when there is a check
+        // Assume that any error information will just be the first
+        // error when there is a check
         // response
         HttpServletResponse httpResponse = (HttpServletResponse) response;
         httpResponse.sendError(errorInfo.getHttpCode(),
@@ -208,7 +214,8 @@ public class ControlFilter implements Filter {
       return;
     }
 
-    // Execute the request in wrapper, capture the response, then write it to the output
+    // Execute the request in wrapper, capture the response, then write it
+    // to the output
     GenericResponseWrapper wrapper = new GenericResponseWrapper((HttpServletResponse) response);
     try {
       timer.appStart();
@@ -232,13 +239,14 @@ public class ControlFilter implements Filter {
 
   private ReportRequest createReportRequest(MethodRegistry.Info info, CheckRequestInfo checkInfo,
       AppStruct appInfo, ReportingRule rules, LatencyTimer timer) {
+    // TODO: confirm how to fill in platform and location
     return new ReportRequestInfo(checkInfo)
         .setApiMethod(info.getSelector())
-        .setLocation(DEFAULT_LOCATION) // TODO: figure out to get this from the environment
+        .setLocation(DEFAULT_LOCATION)
         .setMethod(appInfo.httpMethod)
         .setOverheadTimeMillis(timer.getOverheadTimeMillis())
-        .setPlatform(ReportedPlatforms.GAE) // TODO: fill this in correctly
-        .setProducerProjectId(projectId) // TODO: confirm that this correct value to use here
+        .setPlatform(ReportedPlatforms.GAE)
+        .setProducerProjectId(projectId)
         .setProtocol(ReportedProtocols.HTTP)
         .setRequestSize(appInfo.requestSize)
         .setRequestTimeMillis(timer.getRequestTimeMillis())
@@ -255,6 +263,9 @@ public class ControlFilter implements Filter {
     String apiKey = findApiKeyParam(request, info);
     if (Strings.isNullOrEmpty(apiKey)) {
       apiKey = findApiKeyHeader(request, info);
+    }
+    if (Strings.isNullOrEmpty(apiKey)) {
+      apiKey = findDefaultApiKeyParam(request);
     }
 
     return new CheckRequestInfo(new OperationInfo()
@@ -276,7 +287,18 @@ public class ControlFilter implements Filter {
     if (params.isEmpty()) {
       return "";
     }
+
     for (String s : params) {
+      String value = request.getParameter(s);
+      if (value != null) {
+        return value;
+      }
+    }
+    return "";
+  }
+
+  private String findDefaultApiKeyParam(HttpServletRequest request) {
+    for (String s : DEFAULT_API_KEYS) {
       String value = request.getParameter(s);
       if (value != null) {
         return value;
