@@ -53,19 +53,26 @@ import com.google.common.util.concurrent.ThreadFactoryBuilder;
 public class Client {
   private static final Logger log = Logger.getLogger(Client.class.getName());
   private static final String CLIENT_APPLICATION_NAME = "Service Control Client";
+  public static final SchedulerFactory DEFAULT_SCHEDULER_FACTORY = new SchedulerFactory() {
+    @Override
+    public Scheduler create(Ticker ticker) {
+      return new Scheduler(ticker);
+    }};
   private final CheckRequestAggregator checkAggregator;
   private final ReportRequestAggregator reportAggregator;
   private final Ticker ticker;
+  private final ThreadFactory threads;
+  private final SchedulerFactory schedulers;
+  private final Servicecontrol transport;
   private boolean running;
   private boolean stopped;
-  private Servicecontrol transport;
-  private ThreadFactory threads;
   private Scheduler scheduler;
   private String serviceName;
+  private Thread schedulerThread;
 
   public Client(String serviceName, CheckAggregationOptions checkOptions,
       ReportAggregationOptions reportOptions, Servicecontrol transport, ThreadFactory threads,
-      @Nullable Ticker ticker) {
+      SchedulerFactory schedulers, @Nullable Ticker ticker) {
     ticker = ticker == null ? Ticker.systemTicker() : ticker;
     this.checkAggregator = new CheckRequestAggregator(serviceName, checkOptions, null, ticker);
     this.reportAggregator = new ReportRequestAggregator(serviceName, reportOptions, null, ticker);
@@ -73,7 +80,9 @@ public class Client {
     this.ticker = ticker;
     this.transport = transport;
     this.threads = threads;
-    this.scheduler = null; // the scheduler is assigned when start is invoked
+    this.schedulers = schedulers;
+    this.scheduler  = null; // the scheduler is assigned when start is invoked
+    this.schedulerThread = null;
   }
 
   /**
@@ -96,13 +105,19 @@ public class Client {
     log.log(Level.INFO, String.format("starting %s", this));
     this.stopped = false;
     this.running = true;
-    Thread t = threads.newThread(new Runnable() {
-      @Override
-      public void run() {
-        scheduleFlushes();
-      }
-    });
-    t.start();
+    try {
+      schedulerThread = threads.newThread(new Runnable() {
+        @Override
+        public void run() {
+          scheduleFlushes();
+        }
+      });
+      schedulerThread.start();
+    } catch (RuntimeException e) {
+      log.log(Level.WARNING, "no scheduler thread, schedule.run will be invoked by report(...)", e);
+      schedulerThread = null;
+      initializeFlushing();
+    }
   }
 
   /**
@@ -124,8 +139,11 @@ public class Client {
               String.format("direct send of a report request failed because of %s", e));
         }
       }
-
       this.stopped = true;  // the scheduler thread will set running to false
+      if (isRunningSchedulerDirectly()) {
+        resetIfStopped();
+      }
+      this.scheduler = null;
     }
   }
 
@@ -143,6 +161,7 @@ public class Client {
     Preconditions.checkState(running, "Cannot check if it's not running");
     CheckResponse resp = checkAggregator.check(req);
     if (resp != null) {
+      log.log(Level.FINER, String.format("using cached check response for %s: %s", req, resp));
       return resp;
     }
 
@@ -178,13 +197,20 @@ public class Client {
             String.format("direct send of a report request %s failed because of %s", req, e));
       }
     }
+
+    if (isRunningSchedulerDirectly()) {
+      try {
+        scheduler.run(false /* don't block */);
+      } catch (InterruptedException e) {
+        log.log(Level.SEVERE,
+            String.format("direct run of scheduler failed because of %s", e));
+      }
+    }
   }
 
   private void scheduleFlushes() {
     try {
-      this.scheduler = new Scheduler(ticker);
-      flushAndScheduleChecks();
-      flushAndScheduleReports();
+      initializeFlushing();
       this.scheduler.run(); // if caching is configured, this blocks until stop is called
       log.log(Level.INFO, String.format("scheduler %s has no further tasks and will exit", this));
       this.scheduler = null;
@@ -195,6 +221,18 @@ public class Client {
       log.log(Level.SEVERE, String.format("scheduler %s failed and exited", this), e);
       this.stopped = true;
     }
+  }
+
+  private boolean isRunningSchedulerDirectly() {
+    return running && schedulerThread == null;
+  }
+
+  private synchronized void initializeFlushing() {
+    log.info("creating a scheduler to control flushing");
+    this.scheduler = schedulers.create(ticker);
+    log.info("scheduling the initial check and report");
+    flushAndScheduleChecks();
+    flushAndScheduleReports();
   }
 
   private synchronized boolean resetIfStopped() {
@@ -211,16 +249,25 @@ public class Client {
 
   private void flushAndScheduleChecks() {
     if (resetIfStopped()) {
+      log.log(Level.FINE, "did not schedule check flush: client is stopped");
       return;
     }
     int interval = checkAggregator.getFlushIntervalMillis();
     if (interval < 0) {
+      log.log(Level.FINE, "did not schedule check flush: caching is disabled");
       return; // cache is disabled, so no flushing it
     }
+
+    if (isRunningSchedulerDirectly()) {
+      log.log(Level.FINE, "did not schedule check flush: no scheduler thread is running");
+      return;
+    }
+
     log.log(Level.FINE, "flushing the check aggregator");
     for (CheckRequest req : checkAggregator.flush()) {
       try {
-        transport.services().check(serviceName, req).execute();
+        CheckResponse resp = transport.services().check(serviceName, req).execute();
+        checkAggregator.addResponse(req, resp);
       } catch (IOException e) {
         log.log(Level.SEVERE,
             String.format("direct send of a check request %s failed because of %s", req, e));
@@ -236,14 +283,17 @@ public class Client {
 
   private void flushAndScheduleReports() {
     if (resetIfStopped()) {
+      log.log(Level.FINE, "did not schedule report flush: client is stopped");
       return;
     }
     int interval = reportAggregator.getFlushIntervalMillis();
     if (interval < 0) {
+      log.log(Level.FINE, "did not schedule report flush: cache is disabled");
       return; // cache is disabled, so no flushing it
     }
-    log.log(Level.FINE, "flushing the report aggregator");
-    for (ReportRequest req : reportAggregator.flush()) {
+    ReportRequest[] flushed = reportAggregator.flush();
+    log.log(Level.FINE, String.format("flushing %d reports from the report aggregator", flushed.length));
+    for (ReportRequest req : flushed) {
       try {
         transport.services().report(serviceName, req).execute();
       } catch (IOException e) {
@@ -269,6 +319,7 @@ public class Client {
     private String serviceName;
     private CheckAggregationOptions checkOptions;
     private ReportAggregationOptions reportOptions;
+    private SchedulerFactory schedulerFactory = DEFAULT_SCHEDULER_FACTORY;
 
     public Builder(String serviceName) {
       this.serviceName = serviceName;
@@ -296,6 +347,11 @@ public class Client {
 
     public Builder setFactory(ThreadFactory factory) {
       this.factory = factory;
+      return this;
+    }
+
+    public Builder setSchedulerFactory(SchedulerFactory f) {
+      this.schedulerFactory = f;
       return this;
     }
 
@@ -334,14 +390,26 @@ public class Client {
           new Servicecontrol.Builder(h, c)
               .setHttpRequestInitializer(addUserAgent)
           .setApplicationName(CLIENT_APPLICATION_NAME)
-          .build(), f, ticker);
+              .build(),
+          f, schedulerFactory, ticker);
     }
+  }
+
+  /**
+   * SchedulerFactory defines a method for creating {@link Scheduler} instances
+   */
+  interface SchedulerFactory {
+    /**
+     * @param ticker obtains time updates from a time source.
+     * @return a {@ link Scheduler}
+     */
+    Scheduler create(Ticker ticker);
   }
 
   /**
    * Scheduler uses a {@code PriorityQueue} to maintain a series of {@link Runnable}
    */
-  private static class Scheduler {
+  static class Scheduler {
     private static final int NANOS_PER_MILLIS = 1000000;
     private PriorityQueue<ScheduledEvent> queue;
     private Ticker ticker;
@@ -364,7 +432,7 @@ public class Client {
       }
     }
 
-    public void run() throws InterruptedException {
+    public void run(boolean block) throws InterruptedException {
       while (!this.queue.isEmpty()) {
         boolean delay = true;
         ScheduledEvent next = null;
@@ -382,6 +450,9 @@ public class Client {
           }
         }
         if (delay) {
+          if (!block) {
+            return;
+          }
           long gapMillis = gap / NANOS_PER_MILLIS;
           log.log(Level.FINE, String.format("Scheduler on %s will sleep for %d millis", Thread.currentThread(), gapMillis));
           Thread.sleep(gapMillis);
@@ -390,6 +461,10 @@ public class Client {
           next.getScheduledAction().run();
         }
       }
+    }
+
+    public void run() throws InterruptedException {
+      run(true);
     }
   }
 

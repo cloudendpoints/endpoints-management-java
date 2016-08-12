@@ -28,6 +28,7 @@ import static org.mockito.Mockito.when;
 
 import java.io.IOException;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -48,6 +49,7 @@ import com.google.api.services.servicecontrol.v1.Servicecontrol;
 import com.google.api.services.servicecontrol.v1.Servicecontrol.Services;
 import com.google.api.services.servicecontrol.v1.Servicecontrol.Services.Check;
 import com.google.api.services.servicecontrol.v1.Servicecontrol.Services.Report;
+import com.google.common.base.Ticker;
 
 /**
  * Tests for {@code Client}.
@@ -56,10 +58,10 @@ import com.google.api.services.servicecontrol.v1.Servicecontrol.Services.Report;
 public class ClientTest {
   private static final String TEST_OPERATION_NAME = "aTestOperation";
   private static final String TEST_CONSUMER_ID = "testConsumerId";
-  private static final FakeTicker TEST_TICKER = new FakeTicker();
   private static final String TEST_SERVICE_NAME = "testServiceName";
   private CheckAggregationOptions checkOptions;
   private ReportAggregationOptions reportOptions;
+  private FakeTicker testTicker;
   private Servicecontrol transport;
   private ThreadFactory threads;
   private Client client;
@@ -67,20 +69,25 @@ public class ClientTest {
   private Services services;
   private Check checkStub;
   private Report reportStub;
+  private Client.SchedulerFactory schedulers;
 
   @Before
   public void setUp() throws IOException {
+    testTicker = new FakeTicker();
     checkStub = mock(Check.class);
     reportStub = mock(Report.class);
     services = mock(Services.class);
     transport = mock(Servicecontrol.class);
     threads = mock(ThreadFactory.class);
     aThread = mock(Thread.class);
+    schedulers = mock(Client.SchedulerFactory.class);
     checkOptions = new CheckAggregationOptions();
     reportOptions = new ReportAggregationOptions();
+
     client =
-        new Client(TEST_SERVICE_NAME, checkOptions, reportOptions, transport, threads, TEST_TICKER);
+        new Client(TEST_SERVICE_NAME, checkOptions, reportOptions, transport, threads, schedulers, testTicker);
     when(threads.newThread(any(Runnable.class))).thenReturn(aThread);
+    when(schedulers.create(any(Ticker.class))).thenReturn(new Client.Scheduler(testTicker));
     when(transport.services()).thenReturn(services);
     when(services.check(eq(TEST_SERVICE_NAME), any(CheckRequest.class))).thenReturn(checkStub);
     when(services.report(eq(TEST_SERVICE_NAME), any(ReportRequest.class))).thenReturn(reportStub);
@@ -162,6 +169,49 @@ public class ClientTest {
     client.report(aReport);
     verify(services, never()).report(TEST_SERVICE_NAME, aReport);
     verify(reportStub, never()).execute();
+  }
+
+  @Test
+  public void startCreatesASchedulerEvenWhenSchedulerThreadCreationFails() throws IOException {
+    reset(threads);
+    when(threads.newThread(any(Runnable.class))).thenThrow(RuntimeException.class);
+    client.start();
+    verify(schedulers, times(1)).create(testTicker);
+  }
+
+  @Test
+  public void checkSucceedsThoughSchedulerThreadCreationFailed() throws IOException {
+    reset(threads);
+    when(threads.newThread(any(Runnable.class))).thenThrow(RuntimeException.class);
+    client.start();
+    CheckRequest aCheck = newTestCheck();
+    client.check(aCheck);
+    verify(services, times(1)).check(TEST_SERVICE_NAME, aCheck);
+    verify(checkStub, times(1)).execute();
+  }
+
+  @Test
+  public void reportSucceedsThoughSchedulerThreadCreationFailed() throws IOException {
+    reset(threads);
+    when(threads.newThread(any(Runnable.class))).thenThrow(RuntimeException.class);
+    client.start();
+    ReportRequest aReport = newTestReport();
+    client.report(aReport);
+    verify(services, never()).report(TEST_SERVICE_NAME, aReport);
+    verify(reportStub, never()).execute();
+  }
+
+  @Test
+  public void reportsAreFlushedEvenThoughSchedulerThreadCreationFailed() throws IOException {
+    reset(threads);
+    when(threads.newThread(any(Runnable.class))).thenThrow(RuntimeException.class);
+    client.start();
+    ReportRequest aReport = newTestReport();
+    client.report(aReport);
+    testTicker.tick(1, TimeUnit.MINUTES); // longer than the default flush timeout
+    client.report(aReport);
+    verify(services, times(1)).report(eq(TEST_SERVICE_NAME), any(ReportRequest.class));
+    verify(reportStub, times(1)).execute();
   }
 
   private ReportRequest newTestReport() {
