@@ -178,12 +178,12 @@ public class CheckRequestAggregator {
       return;
     }
     String signature = sign(req).toString();
+    long now = ticker.read();
+    int quotaScale = 0; // WIP
     synchronized (cache) {
-      long now = ticker.read();
-      int quotaScale = 0; // WIP
-      CachedItem item = cache.asMap().get(signature);
+      CachedItem item = cache.getIfPresent(signature);
       if (item == null) {
-        cache.put(signature, new CachedItem(resp, serviceName, now, quotaScale));
+        cache.put(signature, new CachedItem(resp, req, kinds, now, quotaScale));
       } else {
         item.lastCheckTimestamp = now;
         item.response = resp;
@@ -226,13 +226,11 @@ public class CheckRequestAggregator {
       return null; // send the request now if importance is not LOW
     }
     String signature = sign(req).toString();
-    synchronized (cache) {
-      CachedItem item = cache.asMap().get(signature);
-      if (item == null) {
-        return null; // signal caller to send the response
-      } else {
-        return handleCachedResponse(req, item);
-      }
+    CachedItem item = cache.getIfPresent(signature);
+    if (item == null) {
+      return null; // signal caller to send the response
+    } else {
+      return handleCachedResponse(req, item);
     }
   }
 
@@ -242,29 +240,27 @@ public class CheckRequestAggregator {
   }
 
   private CheckResponse handleCachedResponse(CheckRequest req, CachedItem item) {
-    synchronized (cache) {
-      if (item.response.getCheckErrorsCount() > 0) {
-        if (isCurrent(item)) {
-          return item.response;
-        }
-
-        // Not current
-        item.lastCheckTimestamp = ticker.read();
-        return null; // signal the caller to make a new check request
-      } else {
-        item.updateRequest(req, kinds);
-        if (isCurrent(item)) {
-          return item.response;
-        }
-        if (item.isFlushing) {
-          log.warning("latest check request has not completed");
-        }
-
-        // Not current
-        item.isFlushing = true;
-        item.lastCheckTimestamp = ticker.read();
-        return null; // signal the caller to make a new check request
+    if (item.response.getCheckErrorsCount() > 0) {
+      if (isCurrent(item)) {
+        return item.response;
       }
+
+      // Not current
+      item.lastCheckTimestamp = ticker.read();
+      return null; // signal the caller to make a new check request
+    } else {
+      if (isCurrent(item)) {
+        return item.response;
+      }
+      item.updateRequest(req, kinds);
+      if (item.isFlushing) {
+        log.warning("latest check request has not completed");
+      }
+
+      // Not current
+      item.isFlushing = true;
+      item.lastCheckTimestamp = ticker.read();
+      return null; // signal the caller to make a new check request
     }
   }
 
@@ -299,7 +295,7 @@ public class CheckRequestAggregator {
   /**
    * CachedItem holds items cached along with a {@link CheckRequest}
    *
-   * {@code CachedItem} is thread compatible
+   * {@code CachedItem} is thread safe
    */
   private static class CachedItem {
     boolean isFlushing;
@@ -312,33 +308,31 @@ public class CheckRequestAggregator {
 
     /**
      * @param response the cached {@code CheckResponse}
-     * @param serviceName the name of the service whose request are being aggregated
+     * @param request caused {@code response}
+     * @param kinds the kinds of metrics
      * @param lastCheckTimestamp the last time the {@code CheckRequest} for tracked by this item was
      *        checked
      * @param quotaScale WIP, used to track quota
      */
-    CachedItem(CheckResponse response, String serviceName, long lastCheckTimestamp,
-        int quotaScale) {
+    CachedItem(CheckResponse response, CheckRequest request, Map<String, MetricKind> kinds,
+        long lastCheckTimestamp, int quotaScale) {
       this.response = response;
-      this.serviceName = serviceName;
+      this.serviceName = request.getServiceName();
       this.lastCheckTimestamp = lastCheckTimestamp;
       this.quotaScale = quotaScale;
+      this.aggregator = new OperationAggregator(request.getOperation(), kinds);
     }
 
-    public String getServiceName() {
-      return serviceName;
-    }
-
-    public void updateRequest(CheckRequest req, Map<String, MetricKind> kinds) {
-      if (aggregator == null) {
-        aggregator = new OperationAggregator(req.getOperation(), kinds);
+    public synchronized void updateRequest(CheckRequest req, Map<String, MetricKind> kinds) {
+      if (this.aggregator == null) {
+        this.aggregator = new OperationAggregator(req.getOperation(), kinds);
       } else {
         aggregator.add(req.getOperation());
       }
     }
 
-    public CheckRequest extractRequest() {
-      if (aggregator == null) {
+    public synchronized CheckRequest extractRequest() {
+      if (this.aggregator == null) {
         return null;
       }
       Operation op = this.aggregator.asOperation();

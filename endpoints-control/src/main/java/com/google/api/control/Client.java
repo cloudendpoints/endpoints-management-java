@@ -16,15 +16,6 @@
 
 package com.google.api.control;
 
-import java.io.IOException;
-import java.security.GeneralSecurityException;
-import java.util.PriorityQueue;
-import java.util.concurrent.ThreadFactory;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
-import javax.annotation.Nullable;
-
 import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
 import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
 import com.google.api.client.http.HttpHeaders;
@@ -43,16 +34,30 @@ import com.google.api.servicecontrol.v1.ReportRequest;
 import com.google.api.services.servicecontrol.v1.Servicecontrol;
 import com.google.api.services.servicecontrol.v1.ServicecontrolScopes;
 import com.google.common.base.Preconditions;
+import com.google.common.base.Stopwatch;
 import com.google.common.base.Ticker;
 import com.google.common.collect.Queues;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+
+import java.io.IOException;
+import java.security.GeneralSecurityException;
+import java.util.PriorityQueue;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import javax.annotation.Nullable;
 
 /**
  * Client is a package-level facade that encapsulates all service control functionality.
  */
 public class Client {
+  private static final int NANOS_PER_MILLIS = 1000000;
   private static final Logger log = Logger.getLogger(Client.class.getName());
   private static final String CLIENT_APPLICATION_NAME = "Service Control Client";
+  public static final int DO_NOT_LOG_STATS = -1;
   public static final SchedulerFactory DEFAULT_SCHEDULER_FACTORY = new SchedulerFactory() {
     @Override
     public Scheduler create(Ticker ticker) {
@@ -68,11 +73,13 @@ public class Client {
   private boolean stopped;
   private Scheduler scheduler;
   private String serviceName;
+  private Statistics statistics;
   private Thread schedulerThread;
+  private int statsLogFrequency;
 
   public Client(String serviceName, CheckAggregationOptions checkOptions,
       ReportAggregationOptions reportOptions, Servicecontrol transport, ThreadFactory threads,
-      SchedulerFactory schedulers, @Nullable Ticker ticker) {
+      SchedulerFactory schedulers, int statsLogFrequency, @Nullable Ticker ticker) {
     ticker = ticker == null ? Ticker.systemTicker() : ticker;
     this.checkAggregator = new CheckRequestAggregator(serviceName, checkOptions, null, ticker);
     this.reportAggregator = new ReportRequestAggregator(serviceName, reportOptions, null, ticker);
@@ -83,6 +90,8 @@ public class Client {
     this.schedulers = schedulers;
     this.scheduler  = null; // the scheduler is assigned when start is invoked
     this.schedulerThread = null;
+    this.statsLogFrequency = statsLogFrequency;
+    this.statistics = new Statistics();
   }
 
   /**
@@ -159,9 +168,15 @@ public class Client {
    */
   public @Nullable CheckResponse check(CheckRequest req) {
     Preconditions.checkState(running, "Cannot check if it's not running");
+    statistics.totalChecks.incrementAndGet();
+    Stopwatch w = Stopwatch.createStarted(ticker);
     CheckResponse resp = checkAggregator.check(req);
+    statistics.totalCheckCacheLookupTimeMillis.addAndGet(w.elapsed(TimeUnit.MILLISECONDS));
     if (resp != null) {
-      log.log(Level.FINER, String.format("using cached check response for %s: %s", req, resp));
+      statistics.checkHits.incrementAndGet();
+      if (log.isLoggable(Level.FINER)) {
+        log.log(Level.FINER, String.format("using cached check response for %s: %s", req, resp));
+      }
       return resp;
     }
 
@@ -169,7 +184,9 @@ public class Client {
     // Instead they should fail open so here just simply log the error and return None to indicate
     // that no response was obtained.
     try {
+      w.reset().start();
       resp = transport.services().check(serviceName, req).execute();
+      statistics.totalCheckTransportTimeMillis.addAndGet(w.elapsed(TimeUnit.MILLISECONDS));
       checkAggregator.addResponse(req, resp);
       return resp;
     } catch (IOException e) {
@@ -189,9 +206,17 @@ public class Client {
    */
   public void report(ReportRequest req) {
     Preconditions.checkState(running, "Cannot report if it's not running");
-    if (!reportAggregator.report(req)) {
+    statistics.totalReports.incrementAndGet();
+    statistics.reportedOperations.addAndGet(req.getOperationsCount());
+    Stopwatch w = Stopwatch.createStarted(ticker);
+    boolean reported = reportAggregator.report(req);
+    statistics.totalReportCacheUpdateTimeMillis.addAndGet(w.elapsed(TimeUnit.MILLISECONDS));
+    if (!reported) {
       try {
+        statistics.directReports.incrementAndGet();
+        w.reset().start();
         transport.services().report(serviceName, req).execute();
+        statistics.totalTransportedReportTimeMillis.addAndGet(w.elapsed(TimeUnit.MILLISECONDS));
       } catch (IOException e) {
         log.log(Level.SEVERE,
             String.format("direct send of a report request %s failed because of %s", req, e));
@@ -205,6 +230,16 @@ public class Client {
         log.log(Level.SEVERE,
             String.format("direct run of scheduler failed because of %s", e));
       }
+    }
+    logStatistics();
+  }
+
+  private void logStatistics() {
+    if (statsLogFrequency < 1) {
+      return;
+    }
+    if (statistics.totalReports.get() % statsLogFrequency == 0) {
+      log.info(statistics.toString());
     }
   }
 
@@ -264,10 +299,16 @@ public class Client {
     }
 
     log.log(Level.FINE, "flushing the check aggregator");
+    Stopwatch w = Stopwatch.createUnstarted(ticker);
     for (CheckRequest req : checkAggregator.flush()) {
       try {
+        statistics.recachedChecks.incrementAndGet();
+        w.reset().start();
         CheckResponse resp = transport.services().check(serviceName, req).execute();
+        statistics.totalCheckTransportTimeMillis.addAndGet(w.elapsed(TimeUnit.MILLISECONDS));
+        w.reset().start();
         checkAggregator.addResponse(req, resp);
+        statistics.totalCheckCacheUpdateTimeMillis.addAndGet(w.elapsed(TimeUnit.MILLISECONDS));
       } catch (IOException e) {
         log.log(Level.SEVERE,
             String.format("direct send of a check request %s failed because of %s", req, e));
@@ -292,10 +333,18 @@ public class Client {
       return; // cache is disabled, so no flushing it
     }
     ReportRequest[] flushed = reportAggregator.flush();
-    log.log(Level.FINE, String.format("flushing %d reports from the report aggregator", flushed.length));
+    if (log.isLoggable(Level.FINE)) {
+      log.log(Level.FINE,
+          String.format("flushing %d reports from the report aggregator", flushed.length));
+    }
+    statistics.flushedReports.addAndGet(flushed.length);
+    Stopwatch w = Stopwatch.createUnstarted(ticker);
     for (ReportRequest req : flushed) {
       try {
+        statistics.flushedOperations.addAndGet(req.getOperationsCount());
+        w.reset().start();
         transport.services().report(serviceName, req).execute();
+        statistics.totalTransportedReportTimeMillis.addAndGet(w.elapsed(TimeUnit.MILLISECONDS));
       } catch (IOException e) {
         log.log(Level.SEVERE,
             String.format("direct send of a report request failed because of %s", e));
@@ -313,6 +362,7 @@ public class Client {
    * Builder provide structure to the construction of a {@link Client}
    */
   public static class Builder {
+    private int statsLogFrequency;
     private Ticker ticker;
     private HttpTransport transport;
     private ThreadFactory factory;
@@ -321,8 +371,8 @@ public class Client {
     private ReportAggregationOptions reportOptions;
     private SchedulerFactory schedulerFactory = DEFAULT_SCHEDULER_FACTORY;
 
-    public Builder(String serviceName) {
-      this.serviceName = serviceName;
+    public Builder(String name) {
+      this.serviceName = name;
     }
 
     public Builder setTicker(Ticker ticker) {
@@ -330,13 +380,18 @@ public class Client {
       return this;
     }
 
-    public Builder setCheckOptions(CheckAggregationOptions checkOptions) {
-      this.checkOptions = checkOptions;
+    public Builder setStatsLogFrequency(int frequency) {
+      this.statsLogFrequency = frequency;
       return this;
     }
 
-    public Builder setReportOptions(ReportAggregationOptions reportOptions) {
-      this.reportOptions = reportOptions;
+    public Builder setCheckOptions(CheckAggregationOptions options) {
+      this.checkOptions = options;
+      return this;
+    }
+
+    public Builder setReportOptions(ReportAggregationOptions options) {
+      this.reportOptions = options;
       return this;
     }
 
@@ -380,8 +435,7 @@ public class Client {
       HttpRequestInitializer addUserAgent = new HttpRequestInitializer() {
         @Override
         public void initialize(HttpRequest request) throws IOException {
-          HttpHeaders hdr = new HttpHeaders().setUserAgent(
-              KnownLabels.USER_AGENT);
+          HttpHeaders hdr = new HttpHeaders().setUserAgent(KnownLabels.USER_AGENT);
           request.setHeaders(hdr);
           nestedInitializer.initialize(request);
         }
@@ -391,7 +445,110 @@ public class Client {
               .setHttpRequestInitializer(addUserAgent)
           .setApplicationName(CLIENT_APPLICATION_NAME)
               .build(),
-          f, schedulerFactory, ticker);
+          f, schedulerFactory, statsLogFrequency, ticker);
+    }
+  }
+
+  /**
+   * Statistics contains information about the performance of a {@code Client}.
+   */
+  static class Statistics {
+    // counts
+    AtomicLong checkHits = new AtomicLong();
+
+    AtomicLong directReports = new AtomicLong();
+    AtomicLong flushedOperations = new AtomicLong();
+    AtomicLong flushedReports = new AtomicLong();
+    AtomicLong recachedChecks = new AtomicLong();
+    AtomicLong reportedOperations = new AtomicLong();
+    AtomicLong totalChecks = new AtomicLong();
+    AtomicLong totalReports = new AtomicLong();
+
+    // latencies
+    AtomicLong totalCheckCacheLookupTimeMillis = new AtomicLong();
+    AtomicLong totalCheckCacheUpdateTimeMillis = new AtomicLong();
+    AtomicLong totalCheckTransportTimeMillis = new AtomicLong();
+    AtomicLong totalTransportedReportTimeMillis = new AtomicLong();
+    AtomicLong totalReportCacheUpdateTimeMillis = new AtomicLong();
+
+    public double checkHitsPercent() {
+      return divide(100 * checkHits.get(), totalChecks.get());
+    }
+
+    public double flushedReportsPercent() {
+      return divide(100 * flushedReports.get(), totalReports.get());
+    }
+
+    public long directChecks() {
+      return totalChecks.get() - checkHits.get();
+    }
+
+    public long totalChecksTransported() {
+      return directChecks() + recachedChecks.get();
+    }
+
+    public long totalReportsTransported() {
+      return directReports.get() + flushedReports.get();
+    }
+
+    public double meanTransportedReportTimeMillis() {
+      return divide(totalTransportedReportTimeMillis.get(), totalReportsTransported());
+    }
+
+    public double meanReportCacheUpdateTimeMillis() {
+      long count = totalReports.get() - directReports.get();
+      return divide(totalReportCacheUpdateTimeMillis.get(), count);
+    }
+
+    public double meanTransportedCheckTimeMillis() {
+      return divide(totalCheckTransportTimeMillis.get(), totalChecksTransported());
+    }
+
+    public double meanCheckCacheLookupTimeMillis() {
+      return divide(totalCheckCacheLookupTimeMillis, totalChecks);
+    }
+
+    public double meanCheckCacheUpdateTimeMillis() {
+      return divide(totalCheckCacheUpdateTimeMillis.get(), totalChecksTransported());
+    }
+
+    private static double divide(AtomicLong dividend, AtomicLong divisor) {
+      return divide(dividend.get(), divisor.get());
+    }
+
+    private static double divide(long dividend, long divisor) {
+      if (divisor == 0) {
+        return 0;
+      }
+      return 1.0 * dividend / divisor;
+    }
+
+    @Override
+    public String toString() {
+      final String nl = "\n  "; // Use a consistent space to make the output valid YAML
+      return "statistics:"
+          + nl + "totalChecks:" + totalChecks.get()
+          + nl + "checkHits:" + checkHits.get()
+          + nl + "checkHitsPercent:" + checkHitsPercent()
+          + nl + "recachedChecks:" + recachedChecks.get()
+          + nl + "totalChecksTransported:" + totalChecksTransported()
+          + nl + "totalTransportedCheckTimeMillis:" + totalCheckTransportTimeMillis.get()
+          + nl + "meanTransportedCheckTimeMillis:" + meanTransportedCheckTimeMillis()
+          + nl + "totalCheckCacheLookupTimeMillis:" + totalCheckCacheLookupTimeMillis.get()
+          + nl + "meanCheckCacheLookupTimeMillis:" + meanCheckCacheLookupTimeMillis()
+          + nl + "totalCheckCacheUpdateTimeMillis:" + totalCheckCacheUpdateTimeMillis.get()
+          + nl + "meanCheckCacheUpdateTimeMillis:" + meanCheckCacheUpdateTimeMillis()
+          + nl + "totalReports:" + totalReports.get()
+          + nl + "flushedReports:" + flushedReports.get()
+          + nl + "directReports:" + directReports.get()
+          + nl + "flushedReportsPercent:" + flushedReportsPercent()
+          + nl + "totalReportsTransported:" + totalReportsTransported()
+          + nl + "totalTransportedReportTimeMillis:" + totalTransportedReportTimeMillis.get()
+          + nl + "meanTransportedReportTimeMillis:" + meanTransportedReportTimeMillis()
+          + nl + "totalReportCacheUpdateTimeMillis:" + totalReportCacheUpdateTimeMillis.get()
+          + nl + "meanReportCacheUpdateTimeMillis:" + meanReportCacheUpdateTimeMillis()
+          + nl + "flushedOperations:" + flushedOperations.get()
+          + nl + "reportedOperations:" + reportedOperations.get();
     }
   }
 
@@ -410,7 +567,6 @@ public class Client {
    * Scheduler uses a {@code PriorityQueue} to maintain a series of {@link Runnable}
    */
   static class Scheduler {
-    private static final int NANOS_PER_MILLIS = 1000000;
     private PriorityQueue<ScheduledEvent> queue;
     private Ticker ticker;
 
@@ -523,10 +679,10 @@ public class Client {
         return false;
       }
       ScheduledEvent other = (ScheduledEvent) obj;
-      if (priority != other.priority) {
+      if (tickerTime != other.tickerTime) {
         return false;
       }
-      if (tickerTime != other.tickerTime) {
+      if (priority != other.priority) {
         return false;
       }
       return true;

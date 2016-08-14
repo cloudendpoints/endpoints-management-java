@@ -194,7 +194,7 @@ public class ReportRequestAggregator {
     synchronized (cache) {
       for (Map.Entry<String, Operation> entry : bySignature.entrySet()) {
         String signature = entry.getKey();
-        OperationAggregator agg = cache.asMap().get(signature);
+        OperationAggregator agg = cache.getIfPresent(signature);
         if (agg == null) {
           cache.put(signature, new OperationAggregator(entry.getValue(), kinds));
         } else {

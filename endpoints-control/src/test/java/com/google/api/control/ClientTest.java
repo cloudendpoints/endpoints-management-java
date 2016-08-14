@@ -85,7 +85,8 @@ public class ClientTest {
     reportOptions = new ReportAggregationOptions();
 
     client =
-        new Client(TEST_SERVICE_NAME, checkOptions, reportOptions, transport, threads, schedulers, testTicker);
+        new Client(TEST_SERVICE_NAME, checkOptions, reportOptions, transport, threads, schedulers,
+            1 /* ensure stats dumping code is touched */, testTicker);
     when(threads.newThread(any(Runnable.class))).thenReturn(aThread);
     when(schedulers.create(any(Ticker.class))).thenReturn(new Client.Scheduler(testTicker));
     when(transport.services()).thenReturn(services);

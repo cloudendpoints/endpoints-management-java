@@ -35,17 +35,17 @@ public class CheckAggregationOptions {
   /**
    * The default aggregation cache size.
    */
-  public static final int DEFAULT_NUM_ENTRIES = 10000;
+  public static final int DEFAULT_NUM_ENTRIES = 1000;
 
   /**
    * The default response expiration interval.
    */
-  public static final int DEFAULT_RESPONSE_EXPIRATION_MILLIS = 1000;
+  public static final int DEFAULT_RESPONSE_EXPIRATION_MILLIS = 4000;
 
   /**
    * The default flush cache entry interval.
    */
-  public static final int DEFAULT_FLUSH_CACHE_ENTRY_INTERVAL_MILLIS = 500;
+  public static final int DEFAULT_FLUSH_CACHE_ENTRY_INTERVAL_MILLIS = 2000;
 
   private final int numEntries;
   private final int flushCacheEntryIntervalMillis;

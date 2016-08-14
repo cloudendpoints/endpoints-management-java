@@ -31,9 +31,6 @@ import com.google.common.base.Ticker;
  * {@code GoogleAppEngineControlFilter} is a {@code ControlFilter} where the control client is
  * configured for use on GoogleAppEngine.
  *
- * TODO: maybe move this into its own project com.google.endpoints
- * control-appengine ?.  Then endpoints users can pull that lib.
- *
  * {@link ControlFilter#createClient(String)} is overridden to specify Google App Engine default
  * values
  */
@@ -57,6 +54,7 @@ public class GoogleAppEngineControlFilter extends ControlFilter {
   protected Client createClient(String configServiceName)
       throws GeneralSecurityException, IOException {
     return new Client.Builder(configServiceName)
+        .setStatsLogFrequency(statsLogFrequency())
         .setHttpTransport(UrlFetchTransport.getDefaultInstance())
         .setFactory(ThreadManager.backgroundThreadFactory())
         .build();

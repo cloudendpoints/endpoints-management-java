@@ -16,6 +16,24 @@
 
 package com.google.api.control;
 
+import com.google.api.client.util.Clock;
+import com.google.api.control.model.CheckErrorInfo;
+import com.google.api.control.model.CheckRequestInfo;
+import com.google.api.control.model.MethodRegistry;
+import com.google.api.control.model.OperationInfo;
+import com.google.api.control.model.ReportRequestInfo;
+import com.google.api.control.model.ReportRequestInfo.ReportedPlatforms;
+import com.google.api.control.model.ReportRequestInfo.ReportedProtocols;
+import com.google.api.control.model.ReportingRule;
+import com.google.api.servicecontrol.v1.CheckRequest;
+import com.google.api.servicecontrol.v1.CheckResponse;
+import com.google.api.servicecontrol.v1.ReportRequest;
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Stopwatch;
+import com.google.common.base.Strings;
+import com.google.common.base.Ticker;
+import com.google.common.collect.ImmutableList;
+
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -24,6 +42,8 @@ import java.io.PrintWriter;
 import java.security.GeneralSecurityException;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -39,23 +59,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpServletResponseWrapper;
 
-import com.google.api.client.util.Clock;
-import com.google.api.control.model.CheckErrorInfo;
-import com.google.api.control.model.CheckRequestInfo;
-import com.google.api.control.model.MethodRegistry;
-import com.google.api.control.model.OperationInfo;
-import com.google.api.control.model.ReportRequestInfo;
-import com.google.api.control.model.ReportingRule;
-import com.google.api.control.model.ReportRequestInfo.ReportedPlatforms;
-import com.google.api.control.model.ReportRequestInfo.ReportedProtocols;
-import com.google.api.servicecontrol.v1.CheckRequest;
-import com.google.api.servicecontrol.v1.CheckResponse;
-import com.google.api.servicecontrol.v1.ReportRequest;
-import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Strings;
-import com.google.common.base.Ticker;
-import com.google.common.collect.ImmutableList;
-
 /**
  * ControlFilter is a {@link Filter} that provides service control.
  *
@@ -68,12 +71,15 @@ public class ControlFilter implements Filter {
   private static final String REFERER = "referer";
   private static final String PROJECT_ID_PARAM = "endpoints.projectId";
   private static final String SERVICE_NAME_PARAM = "endpoints.serviceName";
+  private static final String STATS_LOG_FREQUENCY_PARAM = "endpoints.statsLogFrequency";
   private static final String DEFAULT_LOCATION = "global";
   private static final List<String> DEFAULT_API_KEYS = ImmutableList.of("key", "api_key");
   private final Ticker ticker;
   private final Clock clock;
   private String projectId;
   private Client client;
+  private int statsLogFrequency = Client.DO_NOT_LOG_STATS;
+  private Statistics statistics;
 
   @VisibleForTesting
   public ControlFilter(@Nullable Client client, @Nullable String projectId, @Nullable Ticker ticker,
@@ -82,6 +88,7 @@ public class ControlFilter implements Filter {
     setProjectId(projectId);
     this.ticker = ticker == null ? Ticker.systemTicker() : ticker;
     this.clock = clock == null ? Clock.SYSTEM : clock;
+    this.statistics = new Statistics();
   }
 
   public ControlFilter() {
@@ -94,6 +101,15 @@ public class ControlFilter implements Filter {
     if (!Strings.isNullOrEmpty(configProjectId)) {
       setProjectId(configProjectId);
     }
+    String statsFrequencyText = filterConfig.getInitParameter(STATS_LOG_FREQUENCY_PARAM);
+    try {
+      if (!Strings.isNullOrEmpty(statsFrequencyText)) {
+        statsLogFrequency = Integer.parseInt(statsFrequencyText);
+      }
+    } catch (NumberFormatException e) {
+      log.log(Level.WARNING, String.format("ignored invalid debug stat value %s", statsFrequencyText));
+    }
+
     String configServiceName = filterConfig.getInitParameter(SERVICE_NAME_PARAM);
     if (!Strings.isNullOrEmpty(configServiceName)) {
       try {
@@ -126,6 +142,10 @@ public class ControlFilter implements Filter {
     this.projectId = projectId;
   }
 
+  protected int statsLogFrequency() {
+    return statsLogFrequency;
+  }
+
   /**
    * A template method for constructing clients.
    *
@@ -139,12 +159,12 @@ public class ControlFilter implements Filter {
    *
    * @param configServiceName the service name to use in constructing the client
    * @return a {@link Client}
-   * @throws GeneralSecurityException indicates that client was not created successufully
+   * @throws GeneralSecurityException indicates that client was not created successfully
    * @throws IOException indicates that the client was not created successfully
    */
   protected Client createClient(String configServiceName)
       throws GeneralSecurityException, IOException {
-    return new Client.Builder(configServiceName).build();
+    return new Client.Builder(configServiceName).setStatsLogFrequency(statsLogFrequency()).build();
   }
 
   @Override
@@ -164,7 +184,6 @@ public class ControlFilter implements Filter {
 
     // Start tracking the latency
     LatencyTimer timer = new LatencyTimer(ticker);
-    timer.start();
 
     // Service Control is not required for this method, execute the rest of
     // the filter chain
@@ -174,6 +193,10 @@ public class ControlFilter implements Filter {
       return;
     }
 
+    // Internal stats tracking
+    Stopwatch creationTimer = Stopwatch.createUnstarted(ticker);
+    Stopwatch overallTimer = Stopwatch.createStarted(ticker);
+
     // Perform the check
     HttpServletRequest httpRequest = (HttpServletRequest) request;
     AppStruct appInfo = new AppStruct();
@@ -181,8 +204,13 @@ public class ControlFilter implements Filter {
     appInfo.requestSize = httpRequest.getContentLength();
     appInfo.url = httpRequest.getRequestURI();
     CheckRequestInfo checkInfo = createCheckInfo(httpRequest, appInfo.url, info);
+    creationTimer.reset().start();
     CheckRequest checkRequest = checkInfo.asCheckRequest(clock);
-    log.log(Level.FINE, String.format("Checking using %s", checkRequest));
+    statistics.totalChecks.incrementAndGet();
+    statistics.totalCheckCreationTime.addAndGet(creationTimer.elapsed(TimeUnit.MILLISECONDS));
+    if (log.isLoggable(Level.FINE)) {
+      log.log(Level.FINE, String.format("checking using %s", checkRequest));
+    }
     CheckResponse checkResponse = client.check(checkRequest);
 
     // Handle check failures. This includes check transport failures, in
@@ -196,7 +224,9 @@ public class ControlFilter implements Filter {
       // 'Send' a report
       ReportRequest reportRequest =
           createReportRequest(info, checkInfo, appInfo, ConfigFilter.getReportRule(request), timer);
-      log.log(Level.FINEST, String.format("sending an error report request %s", reportRequest));
+      if (log.isLoggable(Level.FINEST)) {
+        log.log(Level.FINEST, String.format("sending an error report request %s", reportRequest));
+      }
       client.report(reportRequest);
 
       // 'fail open' if the check did not complete, and execute the rest
@@ -211,6 +241,9 @@ public class ControlFilter implements Filter {
         httpResponse.sendError(errorInfo.getHttpCode(),
             errorInfo.fullMessage(projectId, checkResponse.getCheckErrors(0).getDetail()));
       }
+      statistics.totalFiltered.incrementAndGet();
+      statistics.totalFilteredTime.addAndGet(overallTimer.elapsed(TimeUnit.MILLISECONDS));
+      logStatistics();
       return;
     }
 
@@ -231,10 +264,18 @@ public class ControlFilter implements Filter {
     appInfo.responseCode = wrapper.getResponseCode();
     appInfo.responseSize =
         wrapper.getContentLength() != 0 ? wrapper.getContentLength() : wrapper.getData().length;
+    creationTimer.reset().start();
     ReportRequest reportRequest =
         createReportRequest(info, checkInfo, appInfo, ConfigFilter.getReportRule(request), timer);
-    log.log(Level.FINEST, String.format("sending a report request %s", reportRequest));
+    statistics.totalReports.incrementAndGet();
+    statistics.totalReportCreationTime.addAndGet(creationTimer.elapsed(TimeUnit.MILLISECONDS));
+    if (log.isLoggable(Level.FINEST)) {
+      log.log(Level.FINEST, String.format("sending a report request %s", reportRequest));
+    }
     client.report(reportRequest);
+    statistics.totalFiltered.incrementAndGet();
+    statistics.totalFilteredTime.addAndGet(overallTimer.elapsed(TimeUnit.MILLISECONDS));
+    logStatistics();
   }
 
   private ReportRequest createReportRequest(MethodRegistry.Info info, CheckRequestInfo checkInfo,
@@ -321,6 +362,15 @@ public class ControlFilter implements Filter {
     return "";
   }
 
+  private void logStatistics() {
+    if (statsLogFrequency < 1) {
+      return;
+    }
+    if (statistics.totalFiltered.get() % statsLogFrequency == 0) {
+      log.info(statistics.toString());
+    }
+  }
+
   private static class AppStruct {
     String httpMethod;
     long requestSize;
@@ -333,58 +383,69 @@ public class ControlFilter implements Filter {
     }
   }
 
-  private static class LatencyTimer {
-    private static final int NANOS_PER_MILLIS = 1000000;
-    private static final long NOT_STARTED = -1L;
-    private Ticker ticker;
-    private long start = NOT_STARTED;
-    private long appStart = NOT_STARTED;
-    private long end = NOT_STARTED;
+  private static class Statistics {
+    AtomicLong totalChecks = new AtomicLong();
+    AtomicLong totalReports = new AtomicLong();
+    AtomicLong totalCheckCreationTime = new AtomicLong();
+    AtomicLong totalReportCreationTime = new AtomicLong();
+    AtomicLong totalFilteredTime = new AtomicLong();
+    AtomicLong totalFiltered = new AtomicLong();
 
-    private LatencyTimer(Ticker ticker) {
-      this.ticker = ticker;
+    @Override
+    public String toString() {
+      final String nl = "\n  "; // Use a consistent space to make the output valid YAML
+      return "filter_statistics:"
+          + nl + "totalFiltered:" + totalFiltered.get()
+          + nl + "totalFilteredTime:" + totalFilteredTime.get()
+          + nl + "meanFilteredTime:" + divide(totalFilteredTime, totalFiltered)
+          + nl + "totalChecks:" + totalChecks.get()
+          + nl + "totalCheckCreationTime:" + totalCheckCreationTime.get()
+          + nl + "meanCheckCreationTime:" + divide(totalCheckCreationTime, totalChecks)
+          + nl + "totalReports:" + totalReports
+          + nl + "totalReportCreationTime:" + totalReportCreationTime.get()
+          + nl + "meanReportCreationTime:" + divide(totalReportCreationTime, totalReports);
     }
 
-    void start() {
-      start = ticker.read();
+    private static double divide(AtomicLong dividend, AtomicLong divisor) {
+      if (divisor.get() == 0) {
+        return 0;
+      }
+      return 1.0 * dividend.get() / divisor.get();
+    }
+  }
+
+  private static class LatencyTimer {
+    private static final long NOT_STARTED = -1L;
+    private final Stopwatch stopwatch;
+    private long overheadTimeMillis = NOT_STARTED;
+    private long backendTimeMillis;
+
+    private LatencyTimer(Ticker ticker) {
+      stopwatch = Stopwatch.createStarted(ticker);
     }
 
     void appStart() {
-      appStart = ticker.read();
+      overheadTimeMillis = stopwatch.elapsed(TimeUnit.MILLISECONDS);
+      stopwatch.reset().start();
     }
 
     void end() {
-      end = ticker.read();
+      backendTimeMillis = stopwatch.elapsed(TimeUnit.MILLISECONDS);
     }
 
     long getRequestTimeMillis() {
-      if (start == NOT_STARTED) {
+      if (overheadTimeMillis == 0 && backendTimeMillis == 0) {
         return NOT_STARTED;
       }
-      if (end == NOT_STARTED) {
-        return NOT_STARTED;
-      }
-      return (end - start) / NANOS_PER_MILLIS;
+      return overheadTimeMillis + backendTimeMillis;
     }
 
     long getOverheadTimeMillis() {
-      if (start == NOT_STARTED) {
-        return NOT_STARTED;
-      }
-      if (appStart == NOT_STARTED) {
-        return NOT_STARTED;
-      }
-      return (appStart - start) / NANOS_PER_MILLIS;
+      return overheadTimeMillis > 0 ? overheadTimeMillis : NOT_STARTED;
     }
 
     long getBackendTimeMillis() {
-      if (appStart == NOT_STARTED) {
-        return NOT_STARTED;
-      }
-      if (end == NOT_STARTED) {
-        return NOT_STARTED;
-      }
-      return (end - appStart) / NANOS_PER_MILLIS;
+      return backendTimeMillis > 0 ? backendTimeMillis : NOT_STARTED;
     }
   }
 
