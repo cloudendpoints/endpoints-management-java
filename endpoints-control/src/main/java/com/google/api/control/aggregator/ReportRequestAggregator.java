@@ -128,6 +128,8 @@ public class ReportRequestAggregator {
    * Clears this instances cache of aggregated operations.
    *
    * Is intended to be called by the driver before shutdown.
+   *
+   * @return the remaining aggregated {code ReportRequest}s
    */
   public ReportRequest[] clear() {
     if (cache == null) {

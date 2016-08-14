@@ -257,6 +257,7 @@ public enum KnownLabels {
    * Determines if {@code d} matches this {@code KnownLabel} instance.
    *
    * @param d a {@code LabelDescriptor}
+   * @return {@code true} if {@code d} matches
    */
   public boolean matches(LabelDescriptor d) {
     return name.equals(d.getKey()) && d.getValueType() == this.type;

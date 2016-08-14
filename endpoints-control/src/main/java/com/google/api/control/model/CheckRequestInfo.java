@@ -70,7 +70,7 @@ public class CheckRequestInfo extends OperationInfo {
    * @param clock is used to determine the current timestamp
    *
    * @return a {@link CheckRequest}
-   * @throws {@link IllegalStateException} if any required values are not set when this is called.
+   * @throws java.lang.IllegalStateException if any required values are not set when this is called.
    */
   public CheckRequest asCheckRequest(Clock clock) {
     Preconditions.checkState(!Strings.isNullOrEmpty(getServiceName()),

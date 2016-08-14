@@ -147,6 +147,7 @@ public enum KnownMetrics {
    * Determines if {@code d} matches this {@code KnownMetric} instance.
    *
    * @param d a {@code LabelDescriptor}
+   * @return {@code true} if {@code d} matches
    */
   public boolean matches(MetricDescriptor d) {
     return name.equals(d.getName()) && d.getMetricKind() == kind && d.getValueType() == type;

@@ -31,8 +31,8 @@ import javax.servlet.http.HttpServletRequest;
 import com.google.api.Service;
 import com.google.api.client.repackaged.com.google.common.base.Preconditions;
 import com.google.api.control.model.MethodRegistry;
-import com.google.api.control.model.ReportingRule;
 import com.google.api.control.model.MethodRegistry.Info;
+import com.google.api.control.model.ReportingRule;
 import com.google.common.annotations.VisibleForTesting;
 
 /**
@@ -121,6 +121,7 @@ public class ConfigFilter implements Filter {
   }
 
   /**
+   * @param req a {@code ServletRequest}
    * @return the {@code MethodRegistry} added or {@code null} if its not present
    */
   public static MethodRegistry getRegistry(ServletRequest req) {
@@ -129,6 +130,7 @@ public class ConfigFilter implements Filter {
   }
 
   /**
+   * @param req a {@code ServletRequest}
    * @return the {@code Service} added or {@code null} if its not present
    */
   public static Service getService(ServletRequest req) {
@@ -137,6 +139,7 @@ public class ConfigFilter implements Filter {
   }
 
   /**
+   * @param req a {@code ServletRequest}
    * @return the service name added or {@code null} if its not present
    */
   public static String getServiceName(ServletRequest req) {
@@ -145,6 +148,7 @@ public class ConfigFilter implements Filter {
   }
 
   /**
+   * @param req a {@code ServletRequest}
    * @return the {@code ReportingRule} added or {@code null} if its not present
    */
   public static ReportingRule getReportRule(ServletRequest req) {
@@ -153,6 +157,7 @@ public class ConfigFilter implements Filter {
   }
 
   /**
+   * @param req a {@code ServletRequest}
    * @return the {@code MethodRegistry.Info} specifying the service method information or
    *         {@code null} if its not present
    */

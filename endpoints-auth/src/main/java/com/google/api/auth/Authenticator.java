@@ -155,11 +155,12 @@ public class Authenticator {
   }
 
   /**
-   * Create an instance of {@link Authenticator} using the service configuration
-   * fetched from Google Service Management APIs.
+   * Create an instance of {@link Authenticator} using the service configuration fetched from Google
+   * Service Management APIs.
    *
-   * @throws {@link IllegalArgumentException} if the authentication message is
-   * not defined in the fetched service config.
+   * @return an {@code Authenticator}
+   * @throws java.lang.IllegalArgumentException if the authentication message is not defined in the
+   *         fetched service config.
    */
   public static Authenticator create() {
     ServiceConfigFetcher fetcher = ServiceConfigFetcher.create();

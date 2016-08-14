@@ -30,8 +30,8 @@ public final class Signing {
   /**
    * Updates {@code h} with the contents of {@code labels}.
    *
-   * {@code labels} can be any Map<String, String>, but will typically be labels, but will typically
-   * be the labels of one of the model protobufs.
+   * {@code labels} can be any Map&lt;String, String&gt;, but intended to be used for the labels of
+   * one of the model protobufs.
    *
    * @param h a {@link Hasher}
    * @param labels some labels

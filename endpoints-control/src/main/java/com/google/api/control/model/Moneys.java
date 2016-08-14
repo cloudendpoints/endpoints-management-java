@@ -43,7 +43,7 @@ public final class Moneys {
    * Determine if an instance of {@code Money} is valid.
    *
    * @param value an instance of {@code Money}
-   * @throws IllegalArgumentException if money is invalid
+   * @throws java.lang.IllegalArgumentException if money is invalid
    */
   public static void checkValid(Money value) {
     String currencyCode = value.getCurrencyCode();
@@ -69,8 +69,9 @@ public final class Moneys {
    * @param b an instance of {@code Money}
    * @param allowOverflow indicates that overflow is allowed
    *
-   * @throws IllegalArgumentException if the two instances cannot be summed
-   * @throws ArithmeticError if overflow occurs when it's not allowed
+   * @return a {@code Money} representing the sum
+   * @throws java.lang.IllegalArgumentException if the two instances cannot be summed
+   * @throws java.lang.ArithmeticException if overflow occurs when it's not allowed
    */
   public static Money add(Money a, Money b, boolean allowOverflow) {
     if (!a.getCurrencyCode().equals(b.getCurrencyCode())) {
@@ -127,8 +128,9 @@ public final class Moneys {
    * @param a an instance of {@code Money}
    * @param b an instance of {@code Money}
    *
-   * @throws IllegalArgumentException if the two instances cannot be summed
-   * @throws ArithmeticError if overflow occurs when it's not allowed
+   * @return a {@code Money} representing the sum
+   * @throws java.lang.IllegalArgumentException if the two instances cannot be summed
+   * @throws java.lang.ArithmeticException if overflow occurs when it's not allowed
    */
   public static Money add(Money a, Money b) {
     return add(a, b, false);

@@ -75,6 +75,7 @@ public final class MetricValues {
    * prior and latest. For all other kinds, it's sufficient to return the metric with the latest end
    * time.
    *
+   * @param kind the {@code MetricKind}
    * @param prior a {@code MetricValue} instance
    * @param latest a {@code MetricValue}, expected to be a later version of {@code prior}
    *

@@ -110,6 +110,7 @@ public class ReportRequestInfo extends OperationInfo {
    *
    * @param rules ReportingRules
    * @param clock Clock
+   * @return the corresponding {@code ReportRequest}
    */
   public ReportRequest asReportRequest(ReportingRule rules, Clock clock) {
     Preconditions.checkState(!Strings.isNullOrEmpty(getServiceName()),
@@ -141,6 +142,10 @@ public class ReportRequestInfo extends OperationInfo {
 
   /**
    * Make a {@code LogEntry} from the instance.
+   *
+   * @param name the name of log
+   * @param timestampMillis the timestamp of the log in milliseconds
+   * @return the corresponding {@code LogEntry.Builder}
    */
   public LogEntry.Builder asLogEntry(String name, long timestampMillis) {
     Value.Builder vb = Value.newBuilder();
