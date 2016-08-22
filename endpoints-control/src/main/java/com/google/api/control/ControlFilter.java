@@ -105,6 +105,7 @@ public class ControlFilter implements Filter {
     try {
       if (!Strings.isNullOrEmpty(statsFrequencyText)) {
         statsLogFrequency = Integer.parseInt(statsFrequencyText);
+        log.log(Level.WARNING, String.format("will log stats every %d reports", statsLogFrequency));
       }
     } catch (NumberFormatException e) {
       log.log(Level.WARNING, String.format("ignored invalid debug stat value %s", statsFrequencyText));

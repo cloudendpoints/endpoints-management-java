@@ -54,7 +54,6 @@ import javax.annotation.Nullable;
  * Client is a package-level facade that encapsulates all service control functionality.
  */
 public class Client {
-  private static final int NANOS_PER_MILLIS = 1000000;
   private static final Logger log = Logger.getLogger(Client.class.getName());
   private static final String CLIENT_APPLICATION_NAME = "Service Control Client";
   public static final int DO_NOT_LOG_STATS = -1;
@@ -265,6 +264,7 @@ public class Client {
   private synchronized void initializeFlushing() {
     log.info("creating a scheduler to control flushing");
     this.scheduler = schedulers.create(ticker);
+    this.scheduler.setStatistics(statistics);
     log.info("scheduling the initial check and report");
     flushAndScheduleChecks();
     flushAndScheduleReports();
@@ -463,6 +463,8 @@ public class Client {
     AtomicLong reportedOperations = new AtomicLong();
     AtomicLong totalChecks = new AtomicLong();
     AtomicLong totalReports = new AtomicLong();
+    AtomicLong totalSchedulerRuns = new AtomicLong();
+    AtomicLong totalSchedulerSkips = new AtomicLong();
 
     // latencies
     AtomicLong totalCheckCacheLookupTimeMillis = new AtomicLong();
@@ -470,6 +472,8 @@ public class Client {
     AtomicLong totalCheckTransportTimeMillis = new AtomicLong();
     AtomicLong totalTransportedReportTimeMillis = new AtomicLong();
     AtomicLong totalReportCacheUpdateTimeMillis = new AtomicLong();
+    AtomicLong totalSchedulerSkiptimeMillis = new AtomicLong();
+    AtomicLong totalSchedulerRuntimeMillis = new AtomicLong();
 
     public double checkHitsPercent() {
       return divide(100 * checkHits.get(), totalChecks.get());
@@ -548,7 +552,13 @@ public class Client {
           + nl + "totalReportCacheUpdateTimeMillis:" + totalReportCacheUpdateTimeMillis.get()
           + nl + "meanReportCacheUpdateTimeMillis:" + meanReportCacheUpdateTimeMillis()
           + nl + "flushedOperations:" + flushedOperations.get()
-          + nl + "reportedOperations:" + reportedOperations.get();
+          + nl + "reportedOperations:" + reportedOperations.get()
+          + nl + "totalSchedulerRuns:" + totalSchedulerRuns.get()
+          + nl + "totalSchedulerRuntimeMillis:" + totalSchedulerRuntimeMillis.get()
+          + nl + "meanSchedulerRuntimeMillis:" + divide(totalSchedulerRuntimeMillis, totalSchedulerRuns)
+          + nl + "totalSchedulerSkips:" + totalSchedulerSkips.get()
+          + nl + "totalSchedulerSkiptimeMillis:" + totalSchedulerSkiptimeMillis.get()
+          + nl + "meanSchedulerSkiptimeMillis:" + divide(totalSchedulerSkiptimeMillis, totalSchedulerSkips);
     }
   }
 
@@ -569,6 +579,7 @@ public class Client {
   static class Scheduler {
     private PriorityQueue<ScheduledEvent> queue;
     private Ticker ticker;
+    private Statistics statistics;
 
     Scheduler(Ticker ticker) {
       this.queue = Queues.newPriorityQueue();
@@ -581,7 +592,7 @@ public class Client {
      * @param priority the priority at which to give running {@code r}
      */
     public void enter(Runnable r, long deltaMillis, int priority) {
-      long later = (deltaMillis * NANOS_PER_MILLIS) + ticker.read();
+      long later = TimeUnit.MILLISECONDS.toNanos(deltaMillis) + ticker.read();
       ScheduledEvent event = new ScheduledEvent(r, later, priority);
       synchronized (this) {
         queue.add(event);
@@ -606,21 +617,45 @@ public class Client {
           }
         }
         if (delay) {
+          long gapMillis = TimeUnit.NANOSECONDS.toMillis(gap);
+          if (statistics != null) {
+            statistics.totalSchedulerSkips.incrementAndGet();
+            statistics.totalSchedulerSkiptimeMillis.addAndGet(gapMillis);
+          }
           if (!block) {
+            if (log.isLoggable(Level.FINE)) {
+              log.log(Level.FINE,
+                  String.format("Scheduler on %s was not blocking, next event is in %d",
+                      Thread.currentThread(), gapMillis));
+            }
             return;
           }
-          long gapMillis = gap / NANOS_PER_MILLIS;
-          log.log(Level.FINE, String.format("Scheduler on %s will sleep for %d millis", Thread.currentThread(), gapMillis));
+          if (log.isLoggable(Level.FINE)) {
+            log.log(Level.FINE, String.format("Scheduler on %s will sleep for %d millis",
+                Thread.currentThread(), gapMillis));
+          }
           Thread.sleep(gapMillis);
         } else {
-          log.log(Level.FINE, String.format("Scheduler on %s will run an event", Thread.currentThread()));
+          if (log.isLoggable(Level.FINE)) {
+            log.log(Level.FINE,
+                String.format("Scheduler on %s will run an event", Thread.currentThread()));
+          }
+          Stopwatch w = Stopwatch.createStarted(ticker);
           next.getScheduledAction().run();
+          if (statistics != null) {
+            statistics.totalSchedulerRuns.incrementAndGet();
+            statistics.totalSchedulerRuntimeMillis.addAndGet(w.elapsed(TimeUnit.MILLISECONDS));
+          }
         }
       }
     }
 
     public void run() throws InterruptedException {
       run(true);
+    }
+
+    public void setStatistics(Statistics statistics) {
+      this.statistics = statistics;
     }
   }
 

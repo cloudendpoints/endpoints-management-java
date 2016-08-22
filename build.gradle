@@ -20,7 +20,7 @@ allprojects {
   apply plugin: 'signing'
 
   group = 'com.google.endpoints'
-  version = "0.0.20-SNAPSHOT"
+  version = "0.0.21-SNAPSHOT"
   def tmpSnapshotRepo = "http://104.197.230.53:8081/nexus/content/repositories/snapshots/"
 
   signing {

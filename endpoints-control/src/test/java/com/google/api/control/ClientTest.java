@@ -26,15 +26,6 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.io.IOException;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.TimeUnit;
-
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
-
 import com.google.api.control.aggregator.CheckAggregationOptions;
 import com.google.api.control.aggregator.FakeTicker;
 import com.google.api.control.aggregator.ReportAggregationOptions;
@@ -50,6 +41,15 @@ import com.google.api.services.servicecontrol.v1.Servicecontrol.Services;
 import com.google.api.services.servicecontrol.v1.Servicecontrol.Services.Check;
 import com.google.api.services.servicecontrol.v1.Servicecontrol.Services.Report;
 import com.google.common.base.Ticker;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
+
+import java.io.IOException;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Tests for {@code Client}.
