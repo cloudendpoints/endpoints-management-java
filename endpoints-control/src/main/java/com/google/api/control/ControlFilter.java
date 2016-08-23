@@ -215,14 +215,15 @@ public class ControlFilter implements Filter {
     CheckResponse checkResponse = client.check(checkRequest);
 
     // Handle check failures. This includes check transport failures, in
-    // which case
-    // the checkResponse is null.
+    // which case the checkResponse is null.
     CheckErrorInfo errorInfo = CheckErrorInfo.convert(checkResponse);
     if (errorInfo != CheckErrorInfo.OK) {
       log.log(Level.WARNING,
           String.format("the check did not succeed; the response %s", checkResponse));
 
-      // 'Send' a report
+      // 'Send' a report, end the latency timer to collect correct overhead and backend stats for
+      // error requests
+      timer.end();
       ReportRequest reportRequest =
           createReportRequest(info, checkInfo, appInfo, ConfigFilter.getReportRule(request), timer);
       if (log.isLoggable(Level.FINEST)) {
@@ -236,8 +237,7 @@ public class ControlFilter implements Filter {
         chain.doFilter(request, response);
       } else {
         // Assume that any error information will just be the first
-        // error when there is a check
-        // response
+        // error when there is a check response
         HttpServletResponse httpResponse = (HttpServletResponse) response;
         httpResponse.sendError(errorInfo.getHttpCode(),
             errorInfo.fullMessage(projectId, checkResponse.getCheckErrors(0).getDetail()));
@@ -248,8 +248,7 @@ public class ControlFilter implements Filter {
       return;
     }
 
-    // Execute the request in wrapper, capture the response, then write it
-    // to the output
+    // Execute the request in wrapper, capture the response, then write it to the output
     GenericResponseWrapper wrapper = new GenericResponseWrapper((HttpServletResponse) response);
     try {
       timer.appStart();
@@ -432,6 +431,11 @@ public class ControlFilter implements Filter {
 
     void end() {
       backendTimeMillis = stopwatch.elapsed(TimeUnit.MILLISECONDS);
+      if (overheadTimeMillis == NOT_STARTED) {
+        // end without appStart means that all time is overhead.
+        overheadTimeMillis = backendTimeMillis;
+        backendTimeMillis = 0;
+      }
     }
 
     long getRequestTimeMillis() {

@@ -101,7 +101,7 @@ public enum KnownMetrics {
       MetricKind.DELTA, ValueType.DISTRIBUTION, addDistributionMetricForOverheadTimeMillis());
 
   private static final double TIME_SCALE = 1e-6;
-  private static final double SIZE_SCALE = 1e6;
+  private static final double SIZE_SCALE = 1;
   private static final double DISTRIBUTION_GROWTH_FACTOR = 10.0;
   private static final int DISTRIBUTION_BUCKETS = 8;
   private static final double MILLIS_PER_SEC = 1000.0;

@@ -18,25 +18,9 @@ package com.google.api.control.model;
 
 import static org.junit.Assert.fail;
 
-import java.io.IOException;
-import java.net.URL;
-import java.nio.charset.Charset;
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
-
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
-
 import com.google.api.Service;
 import com.google.api.Service.Builder;
 import com.google.api.client.util.Strings;
-import com.google.api.control.model.Distributions;
-import com.google.api.control.model.KnownMetrics;
-import com.google.api.control.model.OperationInfo;
-import com.google.api.control.model.ReportRequestInfo;
-import com.google.api.control.model.ReportingRule;
-import com.google.api.control.model.Timestamps;
 import com.google.api.servicecontrol.v1.Distribution;
 import com.google.api.servicecontrol.v1.LogEntry;
 import com.google.api.servicecontrol.v1.MetricValue;
@@ -51,6 +35,16 @@ import com.google.protobuf.Struct;
 import com.google.protobuf.Timestamp;
 import com.google.protobuf.Value;
 import com.google.protobuf.util.JsonFormat;
+
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
+
+import java.io.IOException;
+import java.net.URL;
+import java.nio.charset.Charset;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 /**
  * ReportingRequestInfoTest tests the behavior in {@code ReportRequestInfo}.
@@ -121,7 +115,7 @@ public class ReportRequestInfoTest {
   }
 
   private static final Distribution newTestExponentialDistribution() {
-    return Distributions.createExponential(8, 10, 1000000.0);
+    return Distributions.createExponential(8, 10, 1.0);
   }
 
   private static final Service fromUrl(URL u) throws IOException {

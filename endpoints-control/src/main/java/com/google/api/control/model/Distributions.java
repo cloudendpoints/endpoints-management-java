@@ -16,12 +16,6 @@
 
 package com.google.api.control.model;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
 import com.google.api.servicecontrol.v1.Distribution;
 import com.google.api.servicecontrol.v1.Distribution.BucketOptionCase;
 import com.google.api.servicecontrol.v1.Distribution.Builder;
@@ -31,6 +25,12 @@ import com.google.api.servicecontrol.v1.Distribution.LinearBuckets;
 import com.google.common.collect.Sets;
 import com.google.common.math.DoubleMath;
 import com.google.common.primitives.Doubles;
+
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Utility methods for working with {@link Distribution} instances.
@@ -296,8 +296,10 @@ public final class Distributions {
       index = Math.min(buckets.getNumFiniteBuckets() + 1, index);
     }
     long newCount = distribution.getBucketCounts(index) + 1;
-    log.log(Level.FINE, "Updating explicit bucket {0} to {1} for {2}",
-        new Object[] {index, newCount, value});
+    if (log.isLoggable(Level.FINE)) {
+      log.log(Level.FINE, "Updating explicit bucket {0} to {1} for {2}",
+          new Object[] {index, newCount, value});
+    }
     distribution.setBucketCounts(index, newCount);
   }
 
@@ -318,8 +320,10 @@ public final class Distributions {
       index += 1;
     }
     long newCount = distribution.getBucketCounts(index) + 1;
-    log.log(Level.FINE, "Updating explicit bucket {0} to {1} for {2}",
-        new Object[] {index, newCount, value});
+    if (log.isLoggable(Level.FINE)) {
+      log.log(Level.FINE, "Updating explicit bucket {0} to {1} for {2}",
+          new Object[] {index, newCount, value});
+    }
     distribution.setBucketCounts(index, newCount);
   }
 }
