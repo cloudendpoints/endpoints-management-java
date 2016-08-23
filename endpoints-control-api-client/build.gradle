@@ -21,19 +21,11 @@ buildscript {
   dependencies { classpath 'com.google.protobuf:protobuf-gradle-plugin:0.7.7' }
 }
 
-apply plugin: 'java'
-apply plugin: 'maven'
-apply plugin: 'signing'
-
-def tmpSnapshotRepo = "http://104.197.230.53:8081/nexus/content/repositories/snapshots/"
-repositories {
-  mavenCentral()
-  mavenLocal()
-  maven {
-    // Private maven repo.  Temporary, until googleapis-common-protos is published
-    url tmpSnapshotRepo
-  }
-}
+configureMaven(
+  project,
+  'Endpoints Management - API service client',
+  'Contains the generated http client for the service control service'
+)
 
 dependencies {
   compile("com.google.api-client:google-api-client-protobuf:${googleApiClientProtobufVersion}") {
@@ -46,7 +38,3 @@ dependencies {
   }
   compile "com.google.endpoints:api-servicecontrol-v1:${grpcGoogleApiVersion}"
 }
-
-archivesBaseName = 'endpoints-management-api-client'
-def projectName = 'Endpoints Management - API service client'
-def projectDescription = 'Contains the generated http client for the service control service'

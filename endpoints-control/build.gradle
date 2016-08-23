@@ -21,18 +21,11 @@ buildscript {
   dependencies { classpath 'com.google.protobuf:protobuf-gradle-plugin:0.7.7' }
 }
 
-apply plugin: 'java'
-apply plugin: 'maven'
-
-def tmpSnapshotRepo = "http://104.197.230.53:8081/nexus/content/repositories/snapshots/"
-repositories {
-  mavenCentral()
-  mavenLocal()
-  maven {
-    // Private maven repo.  Temporary, until googleapis-common-protos is published
-    url tmpSnapshotRepo
-  }
-}
+configureMaven(
+  project,
+  'Endpoints API Management',
+  'Provide access control for managed services'
+)
 
 test {
   testLogging {
@@ -69,7 +62,3 @@ dependencies {
   testCompile "com.google.truth:truth:${truthVersion}"
   testCompile "org.mockito:mockito-core:${mockitoVersion}"
 }
-
-archivesBaseName = 'endpoints-management-control'
-def projectName = 'Endpoints API Management'
-def projectDescription = 'Provide access control for managed services'

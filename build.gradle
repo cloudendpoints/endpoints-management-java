@@ -16,39 +16,23 @@
 
 allprojects {
   apply plugin: 'java'
+  apply plugin: 'eclipse'
   apply plugin: 'maven'
   apply plugin: 'signing'
 
   group = 'com.google.endpoints'
-  version = "0.0.23-SNAPSHOT"
-  def tmpSnapshotRepo = "http://104.197.230.53:8081/nexus/content/repositories/snapshots/"
-
-  signing {
-    required false
-    sign configurations.archives
-  }
-
-  javadoc.failOnError = false
+  version = "0.0.24-SNAPSHOT"
 }
 
 subprojects {
+  def tmpSnapshotRepo = "http://104.197.230.53:8081/nexus/content/repositories/snapshots/"
   repositories {
     mavenLocal()
     mavenCentral()
-  }
-
-  task javadocJar(type: Jar) {
-    classifier = 'javadoc'
-    from javadoc
-  }
-
-  task sourcesJar(type: Jar) {
-    classifier = 'sources'
-    from sourceSets.main.allSource
-  }
-
-  artifacts {
-    archives javadocJar, sourcesJar
+    maven {
+      // Private maven repo.  Temporary until launch
+      url tmpSnapshotRepo
+    }
   }
 
   compileJava {
@@ -62,65 +46,86 @@ subprojects {
     sourceCompatibility = project.sourceCompatibility
     targetCompatibility = project.targetCompatibility
   }
+}
 
-  def projectName
-  def projectDescription
-  uploadArchives {
-    repositories {
-      mavenDeployer {
-        def tmpSnapshotRepo = "http://104.197.230.53:8081/nexus/content/repositories/snapshots/"
-        beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+def configureMaven(project, projectName, projectDescription) {
+  configure(project) {
+    task javadocJar(type: Jar) {
+      classifier = 'javadoc'
+      from javadoc
+    }
 
-        String stagingUrl
-          if (rootProject.hasProperty('repositoryId')) {
-            stagingUrl = 'https://oss.sonatype.org/service/local/staging/deployByRepositoryId/' +
-                rootProject.repositoryId
-          } else {
-            stagingUrl = 'https://oss.sonatype.org/service/local/staging/deploy/maven2/'
-          }
-        def configureAuth = {
-          if (rootProject.hasProperty('ossrhUsername') && rootProject.hasProperty('ossrhPassword')) {
-            authentication(userName: rootProject.ossrhUsername, password: rootProject.ossrhPassword)
-          }
-        }
-        repository(url: stagingUrl, configureAuth)
-        snapshotRepository(url: tmpSnapshotRepo) {
-          authentication(userName: privateOssrhUsername, password: privateOssrhPassword)
-        }
+    task sourcesJar(type: Jar) {
+      classifier = 'sources'
+      from sourceSets.main.allSource
+    }
 
-        pom.project {
-          name projectName
-          description projectDescription
-          packaging 'jar'
-          url 'https://cloud.google.com/endpoints/docs/frameworks/java'
+    artifacts {
+      archives javadocJar, sourcesJar
+    }
 
-          scm {
-            connection 'scm:git:https://github.com/cloudendpoints/endpoints-management-java'
-            developerConnection 'scm:git:https://github.com/cloudendpoints/endpoints-management-java'
-            url 'scm:git:https://github.com/cloudendpoints/endpoints-management-java'
-          }
+    signing {
+      required false
+      sign configurations.archives
+    }
 
-          licenses {
-            license {
-              name 'The Apache License, Version 2.0'
-              url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+    uploadArchives {
+      repositories {
+        mavenDeployer {
+          def tmpSnapshotRepo = "http://104.197.230.53:8081/nexus/content/repositories/snapshots/"
+          beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+
+          String stagingUrl
+            if (rootProject.hasProperty('repositoryId')) {
+              stagingUrl = 'https://oss.sonatype.org/service/local/staging/deployByRepositoryId/' +
+                  rootProject.repositoryId
+            } else {
+              stagingUrl = 'https://oss.sonatype.org/service/local/staging/deploy/maven2/'
+            }
+          def configureAuth = {
+            if (rootProject.hasProperty('ossrhUsername') && rootProject.hasProperty('ossrhPassword')) {
+              authentication(userName: rootProject.ossrhUsername, password: rootProject.ossrhPassword)
             }
           }
+          repository(url: stagingUrl, configureAuth)
+          snapshotRepository(url: tmpSnapshotRepo) {
+            authentication(userName: privateOssrhUsername, password: privateOssrhPassword)
+          }
 
-          developers {
-            developer {
-              id 'temiola@google.com'
-              name 'Tim Emiola'
-              email 'temiola@google.com'
-              organization = "Google, Inc."
-              organizationUrl "https://www.google.com"
+          pom.project {
+            name projectName
+            description projectDescription
+            packaging 'jar'
+            url 'https://cloud.google.com/endpoints/docs/frameworks/java'
+
+            scm {
+              connection 'scm:git:https://github.com/cloudendpoints/endpoints-management-java'
+              developerConnection 'scm:git:https://github.com/cloudendpoints/endpoints-management-java'
+              url 'scm:git:https://github.com/cloudendpoints/endpoints-management-java'
             }
-            developer {
-              id 'yangguan@google.com'
-              name 'Yang Guan'
-              email 'yangguan@google.com'
-              organization = "Google, Inc."
-              organizationUrl "https://www.google.com"
+
+            licenses {
+              license {
+                name 'The Apache License, Version 2.0'
+                url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+              }
+            }
+
+            developers {
+              developer {
+                id 'temiola@google.com'
+                name 'Tim Emiola'
+                email 'temiola@google.com'
+                organization = "Google, Inc."
+                organizationUrl "https://www.google.com"
+              }
+              developer {
+                id 'yangguan@google.com'
+                name 'Yang Guan'
+                email 'yangguan@google.com'
+                organization = "Google, Inc."
+                organizationUrl "https://www.google.com"
+              }
             }
           }
         }

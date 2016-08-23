@@ -14,15 +14,16 @@
  * limitations under the License.
  */
 
-apply plugin: "eclipse"
+configureMaven(
+  project,
+  'Endpoints API Management - Authentication',
+  'Enables authentication by multiple authentication providers'
+)
 
 configurations {
   integrationTestCompile.extendsFrom testCompile
   integrationTestRuntime.extendsFrom testRuntime
 }
-
-archivesBaseName = 'endpoints-management-auth'
-
 
 dependencies {
   compile project(":endpoints-service-config")
@@ -66,7 +67,3 @@ task integrationTest(type: Test) {
 
 check.dependsOn integrationTest
 integrationTest.mustRunAfter test
-
-archivesBaseName = 'endpoints-management-auth'
-def projectName = 'Endpoints API Management - Authentication'
-def projectDescription = 'Enables authentication by multiple authentication providers'

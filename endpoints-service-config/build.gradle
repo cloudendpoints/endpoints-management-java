@@ -14,7 +14,11 @@
  * limitations under the License.
  */
 
-apply plugin: 'eclipse'
+configureMaven(
+  project,
+  'Endpoints API Management - Service Configuration',
+  'Handles service configuration via the service management API'
+)
 
 dependencies {
   compile "com.google.api.grpc:googleapis-common-protos:$googleapisCommonProtosVersion"
@@ -26,7 +30,3 @@ dependencies {
   testCompile "org.mockito:mockito-core:$mockitoVersion"
   testCompile "junit:junit:$junitVersion"
 }
-
-archivesBaseName = 'endpoints-management-config'
-def projectName = 'Endpoints API Management - Service Configuration'
-def projectDescription = 'Handles service configuration via the service management API'

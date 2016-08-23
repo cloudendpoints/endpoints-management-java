@@ -14,25 +14,11 @@
  * limitations under the License.
  */
 
-buildscript {
-  repositories {
-    mavenCentral()
-  }
-  dependencies { classpath 'com.google.protobuf:protobuf-gradle-plugin:0.7.7' }
-}
-
-apply plugin: 'java'
-apply plugin: 'maven'
-
-def tmpSnapshotRepo = "http://104.197.230.53:8081/nexus/content/repositories/snapshots/"
-repositories {
-  mavenCentral()
-  mavenLocal()
-  maven {
-    // Private maven repo. Used internally, should be removed before going public
-    url tmpSnapshotRepo
-  }
-}
+configureMaven(
+  project,
+  'Endpoints API Management on GAE',
+  'Provide access control to managed services on Google App Engine'
+)
 
 dependencies {
   compile "com.google.appengine:appengine-api-1.0-sdk:$appengineSdkVersion"
@@ -46,7 +32,3 @@ dependencies {
   }
   compile project(":endpoints-control")
 }
-
-archivesBaseName = 'endpoints-management-control-appengine'
-def projectName = 'Endpoints API Management on GAE'
-def projectDescription = 'Provide access control access to managed services on Google App Engine'

@@ -13,7 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-apply plugin: "eclipse"
+
+configureMaven(
+  project,
+  'Endpoints API Management - Framework Auth Integration',
+  'Enables use of endpoints-management-auth with endpoints-framework'
+)
 
 dependencies {
   compile group: "com.google.endpoints", name: "endpoints-framework", version: "2.0.0-beta.2"
@@ -23,7 +28,3 @@ dependencies {
   testCompile group: "org.mockito", name: "mockito-core", version: "${mockitoVersion}"
   testCompile group: "org.springframework", name: "spring-test", version: "${springTestVersion}"
 }
-
-archivesBaseName = "endpoints-framework-auth"
-def projectName = "Endpoints API Management - Framework Auth Integration"
-def projectDescription = "Enables use of endpoints-management-auth with endpoints-framework"
