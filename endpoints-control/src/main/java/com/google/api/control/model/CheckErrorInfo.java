@@ -16,15 +16,15 @@
 
 package com.google.api.control.model;
 
-import java.util.Map;
-
-import javax.annotation.Nullable;
-import javax.servlet.http.HttpServletResponse;
-
 import com.google.api.servicecontrol.v1.CheckError;
 import com.google.api.servicecontrol.v1.CheckResponse;
 import com.google.common.base.Strings;
 import com.google.common.collect.Maps;
+
+import java.util.Map;
+
+import javax.annotation.Nullable;
+import javax.servlet.http.HttpServletResponse;
 
 /**
  * CheckErrorInfo translates the {@code CheckError} received in a {@code CheckResponse} to HTTP
@@ -86,7 +86,13 @@ public enum CheckErrorInfo {
       "Project {project_id} has billing disabled. Please enable it", false),
 
   UNKNOWN(CheckError.Code.UNRECOGNIZED, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
-      "Request blocked due to unsupported block reason {detail}", false);
+      "Request blocked due to unsupported block reason {detail}", false),
+
+  API_KEY_NOT_PROVIDED(CheckError.Code.UNRECOGNIZED, HttpServletResponse.SC_UNAUTHORIZED,
+      "Method doesn't allow callers without established identity."
+          + " Please use an API key or other form of API consumer identity to call this API.",
+      true);
+
 
   private final CheckError.Code code;
   private final int httpCode;
@@ -128,6 +134,13 @@ public enum CheckErrorInfo {
     projectId = Strings.nullToEmpty(projectId);
     detail = Strings.nullToEmpty(detail);
     return message.replaceAll("\\{project_id\\}", projectId).replaceAll("\\{detail\\}", detail);
+  }
+
+  /**
+   * @return the unexpanded error message
+   */
+  public String getMessage() {
+    return this.message;
   }
 
   /**

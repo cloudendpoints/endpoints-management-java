@@ -21,32 +21,15 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.reset;
-
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import javax.servlet.FilterChain;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
-import org.mockito.ArgumentCaptor;
 
 import com.google.api.client.util.Clock;
 import com.google.api.control.ControlFilter.FilterServletOutputStream;
 import com.google.api.control.aggregator.FakeTicker;
+import com.google.api.control.model.CheckErrorInfo;
 import com.google.api.control.model.CheckRequestInfo;
 import com.google.api.control.model.FakeClock;
 import com.google.api.control.model.KnownLabels;
@@ -66,6 +49,24 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.protobuf.Timestamp;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
+import org.mockito.ArgumentCaptor;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import javax.servlet.FilterChain;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 import autovalue.shaded.com.google.common.common.collect.Sets;
 
@@ -117,6 +118,7 @@ public class ControlFilterTest {
     testClock = new FakeClock();
     testTicker = new FakeTicker(true);
     info = new MethodRegistry.Info(TEST_SELECTOR, null);
+    info.setAllowUnregisteredCalls(true);
     capturedCheck = ArgumentCaptor.forClass(CheckRequest.class);
     capturedReport = ArgumentCaptor.forClass(ReportRequest.class);
 
@@ -291,10 +293,56 @@ public class ControlFilterTest {
     assertThat(aReport.getServiceName()).isEqualTo(TEST_SERVICE_NAME);
     Operation op = aReport.getOperations(0);
     Map<String, String> wantedLabels =
-        ImmutableMap.of(KnownLabels.RESPONSE_CODE_CLASS.getName(), "5xx",
+        ImmutableMap.of(KnownLabels.RESPONSE_CODE_CLASS.getName(), "4xx",
             KnownLabels.PROTOCOL.getName(), "HTTP", KnownLabels.REFERER.getName(), "testReferer");
     assertThat(op.getLabelsMap()).isEqualTo(wantedLabels);
   }
+
+  @Test
+  public void shouldSendAReportButNotInvokeTheChainIfTheCheckFailsOnBadApiKey()
+      throws IOException, ServletException {
+    String testApiKey = "defaultApiKey";
+    ControlFilter f = new ControlFilter(client, TEST_PROJECT_ID, testTicker, testClock);
+
+    // Fail because the project got deleted
+    CheckResponse deleted = CheckResponse
+        .newBuilder()
+        .addCheckErrors(CheckError.newBuilder().setCode(Code.API_KEY_EXPIRED))
+        .build();
+    mockRequestAndResponse();
+    when(request.getParameter("key")).thenReturn(testApiKey);
+    when(client.check(any(CheckRequest.class))).thenReturn(deleted);
+
+    f.doFilter(request, response, chain);
+    verify(request, times(1)).getAttribute(ConfigFilter.METHOD_INFO_ATTRIBUTE);
+    verify(response, times(1)).sendError(HttpServletResponse.SC_BAD_REQUEST,
+        CheckErrorInfo.API_KEY_EXPIRED.getMessage());
+    verify(client, times(1)).check(capturedCheck.capture());
+    verify(client, times(1)).report(capturedReport.capture());
+    verify(chain, never()).doFilter(request, response);
+
+    // Confirm that the consumer name includes the api key
+    CheckRequest aCheck = capturedCheck.getValue();
+    CheckRequest.Builder comparedCheck = aCheck.toBuilder();
+    comparedCheck.getOperationBuilder().clearOperationId();
+    CheckRequest.Builder wantedCheck = wantedCheckRequest();
+    wantedCheck.getOperationBuilder().setConsumerId("api_key:" + testApiKey);
+    assertThat(comparedCheck.build()).isEqualTo(wantedCheck.build());
+
+    // verify the report
+    ReportRequest aReport = capturedReport.getValue();
+    assertThat(aReport.getOperationsCount()).isEqualTo(1);
+    assertThat(aReport.getServiceName()).isEqualTo(TEST_SERVICE_NAME);
+    Operation op = aReport.getOperations(0);
+    Map<String, String> wantedLabels =
+        ImmutableMap.of(KnownLabels.RESPONSE_CODE_CLASS.getName(), "4xx",
+            KnownLabels.PROTOCOL.getName(), "HTTP", KnownLabels.REFERER.getName(), "testReferer");
+    assertThat(op.getLabelsMap()).isEqualTo(wantedLabels);
+
+    // confirm that the report uses a consumer id derived from the project
+    assertThat(op.getConsumerId()).isEqualTo("project:" + TEST_PROJECT_ID);
+  }
+
 
   @Test
   public void shouldSendAReportAndInvokeTheChainIfTheCheckErrors()
@@ -319,7 +367,7 @@ public class ControlFilterTest {
     assertThat(aReport.getServiceName()).isEqualTo(TEST_SERVICE_NAME);
     Operation op = aReport.getOperations(0);
     Map<String, String> wantedLabels =
-        ImmutableMap.of(KnownLabels.RESPONSE_CODE_CLASS.getName(), "5xx",
+        ImmutableMap.of(KnownLabels.RESPONSE_CODE_CLASS.getName(), "2xx",
             KnownLabels.PROTOCOL.getName(), "HTTP", KnownLabels.REFERER.getName(), "testReferer");
     assertThat(op.getLabelsMap()).isEqualTo(wantedLabels);
   }
@@ -329,6 +377,73 @@ public class ControlFilterTest {
     ControlFilter f = new ControlFilter(client, TEST_PROJECT_ID, testTicker, testClock);
     f.destroy();
     verify(client, times(1)).stop();
+  }
+
+  @Test
+  public void shouldSendAReportButNotInvokeTheChainWhenNeededApiKeyIsNotProvided()
+      throws IOException, ServletException {
+    ControlFilter f = new ControlFilter(client, TEST_PROJECT_ID, testTicker, testClock);
+
+    // Fail because the api key is needed but no provided
+    mockRequestAndResponse();
+    info.setAllowUnregisteredCalls(false);
+
+    f.doFilter(request, response, chain);
+    verify(request, times(1)).getAttribute(ConfigFilter.METHOD_INFO_ATTRIBUTE);
+    verify(response, times(1)).sendError(HttpServletResponse.SC_UNAUTHORIZED,
+        CheckErrorInfo.API_KEY_NOT_PROVIDED.fullMessage("", ""));
+    verify(client, never()).check(any(CheckRequest.class));
+    verify(client, times(1)).report(capturedReport.capture());
+    verify(chain, never()).doFilter(request, response);
+
+    // verify the report
+    ReportRequest aReport = capturedReport.getValue();
+    assertThat(aReport.getOperationsCount()).isEqualTo(1);
+    assertThat(aReport.getServiceName()).isEqualTo(TEST_SERVICE_NAME);
+    Operation op = aReport.getOperations(0);
+    Map<String, String> wantedLabels =
+        ImmutableMap.of(KnownLabels.RESPONSE_CODE_CLASS.getName(), "4xx",
+            KnownLabels.PROTOCOL.getName(), "HTTP", KnownLabels.REFERER.getName(), "testReferer");
+    assertThat(op.getLabelsMap()).isEqualTo(wantedLabels);
+  }
+
+  @Test
+  public void shouldSucceedWhenANeededApiKeyIsPresent() throws IOException, ServletException {
+    String[] defaultKeyNames = {"key", "api_key"};
+    String testApiKey = "defaultApiKey";
+    ControlFilter f = new ControlFilter(client, TEST_PROJECT_ID, testTicker, testClock);
+    info.setAllowUnregisteredCalls(false); // the means that the API key is necessary
+
+    for (String defaultKeyName : defaultKeyNames) {
+      mockRequestAndResponse();
+      when(request.getParameter(defaultKeyName)).thenReturn(testApiKey);
+      when(client.check(any(CheckRequest.class))).thenReturn(checkResponse);
+
+      f.doFilter(request, response, chain);
+      verify(client, times(1)).check(capturedCheck.capture());
+      verify(client, times(1)).report(capturedReport.capture());
+      CheckRequest aCheck = capturedCheck.getValue();
+      assertThat(aCheck.getOperation().getOperationId()).isNotNull();
+      CheckRequest.Builder comparedCheck = aCheck.toBuilder();
+      comparedCheck.getOperationBuilder().clearOperationId();
+      CheckRequest.Builder wantedCheck = wantedCheckRequest();
+
+      // Confirm that the consumer name includes the api key
+      wantedCheck.getOperationBuilder().setConsumerId("api_key:" + testApiKey);
+      assertThat(comparedCheck.build()).isEqualTo(wantedCheck.build());
+
+      ReportRequest aReport = capturedReport.getValue();
+      assertThat(aReport.getOperationsCount()).isEqualTo(1);
+      assertThat(aReport.getServiceName()).isEqualTo(TEST_SERVICE_NAME);
+      Operation op = aReport.getOperations(0);
+      Map<String, String> wantedLabels =
+          ImmutableMap.of(KnownLabels.RESPONSE_CODE_CLASS.getName(), "2xx",
+              KnownLabels.PROTOCOL.getName(), "HTTP", KnownLabels.REFERER.getName(), "testReferer");
+      assertThat(op.getLabelsMap()).isEqualTo(wantedLabels);
+      assertThat(op.getConsumerId()).isEqualTo("api_key:" + testApiKey);
+      reset(client);
+      reset(request);
+    }
   }
 
   private void assertThatCheckHasExpectedValues(CheckRequest aCheck) {

@@ -167,7 +167,7 @@ public class MethodRegistry {
     }
 
     Info newInfo = getOrCreateInfo(optionsSelector);
-    newInfo.setAllowRegisteredCalls(true);
+    newInfo.setAllowUnregisteredCalls(true);
     for (String u : allUrls) {
       register(OPTIONS_VERB, u, newInfo);
     }
@@ -212,7 +212,7 @@ public class MethodRegistry {
         log.log(Level.WARNING,
             String.format("bad usage selector: no HTTP rule for %s", r.getSelector()));
       } else {
-        info.setAllowRegisteredCalls(r.getAllowUnregisteredCalls());
+        info.setAllowUnregisteredCalls(r.getAllowUnregisteredCalls());
       }
     }
   }
@@ -290,7 +290,7 @@ public class MethodRegistry {
 
     private final Optional<AuthInfo> authInfo;
 
-    private boolean allowRegisteredCalls;
+    private boolean allowUnregisteredCalls;
     private String selector;
     private String backendAddress;
     private String bodyFieldPath;
@@ -360,12 +360,12 @@ public class MethodRegistry {
       return this.authInfo;
     }
 
-    public boolean isAllowRegisteredCalls() {
-      return allowRegisteredCalls;
+    public boolean shouldAllowUnregisteredCalls() {
+      return allowUnregisteredCalls;
     }
 
-    public void setAllowRegisteredCalls(boolean allowRegisteredCalls) {
-      this.allowRegisteredCalls = allowRegisteredCalls;
+    public void setAllowUnregisteredCalls(boolean allowRegisteredCalls) {
+      this.allowUnregisteredCalls = allowRegisteredCalls;
     }
 
     public String getSelector() {

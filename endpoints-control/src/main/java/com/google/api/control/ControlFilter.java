@@ -189,7 +189,12 @@ public class ControlFilter implements Filter {
     // Service Control is not required for this method, execute the rest of
     // the filter chain
     MethodRegistry.Info info = ConfigFilter.getMethodInfo(request);
+    HttpServletRequest httpRequest = (HttpServletRequest) request;
     if (info == null) {
+      if (log.isLoggable(Level.FINE)) {
+        log.log(Level.FINE, String.format("no method corresponds to %s - skipping service control",
+            httpRequest.getRequestURI()));
+      }
       chain.doFilter(request, response);
       return;
     }
@@ -199,30 +204,42 @@ public class ControlFilter implements Filter {
     Stopwatch overallTimer = Stopwatch.createStarted(ticker);
 
     // Perform the check
-    HttpServletRequest httpRequest = (HttpServletRequest) request;
     AppStruct appInfo = new AppStruct();
     appInfo.httpMethod = httpRequest.getMethod();
     appInfo.requestSize = httpRequest.getContentLength();
     appInfo.url = httpRequest.getRequestURI();
     CheckRequestInfo checkInfo = createCheckInfo(httpRequest, appInfo.url, info);
-    creationTimer.reset().start();
-    CheckRequest checkRequest = checkInfo.asCheckRequest(clock);
-    statistics.totalChecks.incrementAndGet();
-    statistics.totalCheckCreationTime.addAndGet(creationTimer.elapsed(TimeUnit.MILLISECONDS));
-    if (log.isLoggable(Level.FINE)) {
-      log.log(Level.FINE, String.format("checking using %s", checkRequest));
+    CheckErrorInfo errorInfo;
+    CheckResponse checkResponse = null;
+    if (Strings.isNullOrEmpty(checkInfo.getApiKey()) && !info.shouldAllowUnregisteredCalls()) {
+      errorInfo = CheckErrorInfo.API_KEY_NOT_PROVIDED;
+      if (log.isLoggable(Level.FINE)) {
+        log.log(Level.FINE, String.format("no api key was provided"));
+      }
+    } else {
+      creationTimer.reset().start();
+      CheckRequest checkRequest = checkInfo.asCheckRequest(clock);
+      statistics.totalChecks.incrementAndGet();
+      statistics.totalCheckCreationTime.addAndGet(creationTimer.elapsed(TimeUnit.MILLISECONDS));
+      if (log.isLoggable(Level.FINE)) {
+        log.log(Level.FINE, String.format("checking using %s", checkRequest));
+      }
+      checkResponse = client.check(checkRequest);
+      errorInfo = CheckErrorInfo.convert(checkResponse);
     }
-    CheckResponse checkResponse = client.check(checkRequest);
 
     // Handle check failures. This includes check transport failures, in
     // which case the checkResponse is null.
-    CheckErrorInfo errorInfo = CheckErrorInfo.convert(checkResponse);
     if (errorInfo != CheckErrorInfo.OK) {
       log.log(Level.WARNING,
           String.format("the check did not succeed; the response %s", checkResponse));
 
-      // 'Send' a report, end the latency timer to collect correct overhead and backend stats for
-      // error requests
+      // ensure the report request is created with updated api_key validity, as this determines
+      // the consumer id
+      checkInfo.setApiKeyValid(!errorInfo.isApiKeyError());
+      appInfo.responseCode = errorInfo.getHttpCode();
+
+      // 'Send' a report, end the latency timer to collect correct overhead and backend latencies
       timer.end();
       ReportRequest reportRequest =
           createReportRequest(info, checkInfo, appInfo, ConfigFilter.getReportRule(request), timer);
@@ -231,13 +248,15 @@ public class ControlFilter implements Filter {
       }
       client.report(reportRequest);
 
-      // 'fail open' if the check did not complete, and execute the rest
-      // of the chain
-      if (checkResponse == null) {
+      if (errorInfo == CheckErrorInfo.API_KEY_NOT_PROVIDED) {
+        // a needed API key was not provided
+        HttpServletResponse httpResponse = (HttpServletResponse) response;
+        httpResponse.sendError(errorInfo.getHttpCode(), errorInfo.getMessage());
+      } else if (checkResponse == null) {
+        // the check did not complete: 'fail open'
         chain.doFilter(request, response);
       } else {
-        // Assume that any error information will just be the first
-        // error when there is a check response
+        // the checked failed: assume that any error information will be in the first check error
         HttpServletResponse httpResponse = (HttpServletResponse) response;
         httpResponse.sendError(errorInfo.getHttpCode(),
             errorInfo.fullMessage(projectId, checkResponse.getCheckErrors(0).getDetail()));
