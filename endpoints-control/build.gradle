@@ -26,6 +26,7 @@ configureMaven(
   'Endpoints API Management',
   'Provide access control for managed services'
 )
+archivesBaseName = archivesBaseName = 'endpoints-management-control'
 
 test {
   testLogging {

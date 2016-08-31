@@ -19,6 +19,7 @@ configureMaven(
   'Endpoints API Management on GAE',
   'Provide access control to managed services on Google App Engine'
 )
+archivesBaseName = 'endpoints-management-control-appengine'
 
 dependencies {
   compile "com.google.appengine:appengine-api-1.0-sdk:$appengineSdkVersion"

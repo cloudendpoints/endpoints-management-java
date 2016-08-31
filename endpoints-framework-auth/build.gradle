@@ -19,6 +19,7 @@ configureMaven(
   'Endpoints API Management - Framework Auth Integration',
   'Enables use of endpoints-management-auth with endpoints-framework'
 )
+archivesBaseName = "endpoints-framework-auth"
 
 dependencies {
   compile group: "com.google.endpoints", name: "endpoints-framework", version: "2.0.0-beta.2"
