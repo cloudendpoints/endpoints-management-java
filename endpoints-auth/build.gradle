@@ -19,6 +19,7 @@ configureMaven(
   'Endpoints API Management - Authentication',
   'Enables authentication by multiple authentication providers'
 )
+archivesBaseName = 'endpoints-management-auth'
 
 configurations {
   integrationTestCompile.extendsFrom testCompile

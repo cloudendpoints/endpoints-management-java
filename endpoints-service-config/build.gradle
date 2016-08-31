@@ -19,6 +19,7 @@ configureMaven(
   'Endpoints API Management - Service Configuration',
   'Handles service configuration via the service management API'
 )
+archivesBaseName = 'endpoints-management-config'
 
 dependencies {
   compile "com.google.api.grpc:googleapis-common-protos:$googleapisCommonProtosVersion"
