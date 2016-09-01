@@ -1,3 +1,5 @@
+![Travis CI Status](https://travis-ci.org/cloudendpoints/endpoints-management-java.svg?branch=master)
+
 Google Endpoints API Management
 ===============================
 
