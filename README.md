@@ -1,30 +1,24 @@
-Google Service Control - Java
-=============================
+Google Endpoints API Management
+===============================
 
-Google Service Control for Java (Endpoints-Service-Control-Java) allows services to interact with
-the Google Service Manager
+Google Endpoints API Management manages the 'control plane' of an API by providing support for authentication, billing, monitoring and quota control.
 
-Quickstart
-----------
+It achieves this by
 
-_TODO: this section needs fixing on one the group is confirmed_
+- allowing HTTP servers to control access to their APIs using the Google Service Management and Google Service Control APIs
+- providing built-in, standards-compliant support for third-party authentication
+- doing this with minimal performance impact via the use of advanced caching and aggregation algorithms
+- making this easy to integrate via a servlet filters
 
-If you are using Maven, add this to your pom.xml file
-```xml
-<dependency>
-  <groupId>endpoints.servicecontrol</groupId>
-  <artifactId>scc</artifactId>
-  <version>0.1.0</version>
-</dependency>
-```
-If you are using Gradle, add this to your dependencies
-```Groovy
-compile 'endpoints.servicecontrol:scc:0.1.0'
-```
-If you are using SBT, add this to your dependencies
-```Scala
-libraryDependencies += "endpoints.servicecontrol" % "scc" % "0.1.0"
-```
+The main documents for consuming Endpoints can be found at
+https://cloud.google.com/endpoints/docs/frameworks/java
+
+## Installing to local maven
+
+To install test versions to Maven for easier dependency management, simply run:
+
+    gradle install
+
 
 Java Versions
 -------------
@@ -43,17 +37,18 @@ Versioning
 
 This library follows [Semantic Versioning](http://semver.org/).
 
-It is currently in major version zero (``0.y.z``), which means that anything
-may change at any time and the public API should not be considered
-stable.
 
 Repository Structure
 --------------------
 
-TBD
+This repository provides several artifacts, all in the `com.google.endpoints` group:
 
-This repository contains the following java packages.
-
+1.  `endpoints-management-auth`: Enables authentication by multiple authentication providers
+2.  `endpoints-control-api-client`: A basic client library for accessing the service control API
+3.  `endpoints-control-appengine`: Provides a servlet filter that simplifies integrating service management on Google App Engine
+4.  `endpoints-control`: Provide access control for managed services
+5.  `endpoints-framework-auth`: Enables use of endpoints-management-auth with endpoints-framework
+6.  `endpoints-service-config`: Handles service configuration via the service management API
 
 License
 -------
