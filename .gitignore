@@ -38,3 +38,6 @@ Thumbs.db
 obj/
 
 *~
+
+# Temporary file for checkstyle
+.checkstyle
