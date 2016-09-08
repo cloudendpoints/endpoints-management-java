@@ -16,11 +16,6 @@
 
 package com.google.api.control.aggregator;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 import com.google.api.MetricDescriptor.MetricKind;
 import com.google.api.control.model.Timestamps;
 import com.google.api.servicecontrol.v1.MetricValue;
@@ -29,6 +24,11 @@ import com.google.api.servicecontrol.v1.Operation;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Container that implements operation aggregation.

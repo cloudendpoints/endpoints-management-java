@@ -16,14 +16,6 @@
 
 package com.google.api.control.aggregator;
 
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.ConcurrentLinkedDeque;
-
-import javax.annotation.Nullable;
-
 import com.google.api.MetricDescriptor.MetricKind;
 import com.google.api.servicecontrol.v1.Operation;
 import com.google.api.servicecontrol.v1.Operation.Importance;
@@ -38,6 +30,14 @@ import com.google.common.collect.Maps;
 import com.google.common.hash.HashCode;
 import com.google.common.hash.Hasher;
 import com.google.common.hash.Hashing;
+
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.ConcurrentLinkedDeque;
+
+import javax.annotation.Nullable;
 
 /**
  * A container that aggregates service control {@link ReportRequest}s.

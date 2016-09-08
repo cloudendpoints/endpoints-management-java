@@ -16,8 +16,6 @@
 
 package com.google.api.control.model;
 
-import java.util.Map;
-
 import com.google.api.client.util.Clock;
 import com.google.api.servicecontrol.v1.LogEntry;
 import com.google.api.servicecontrol.v1.Operation;
@@ -28,6 +26,8 @@ import com.google.common.collect.Maps;
 import com.google.logging.type.LogSeverity;
 import com.google.protobuf.Struct;
 import com.google.protobuf.Value;
+
+import java.util.Map;
 
 /**
  * Holds information about a {@code ReportRequest} to be obtained from the HTTP layer.

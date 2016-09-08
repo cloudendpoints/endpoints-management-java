@@ -16,10 +16,10 @@
 
 package com.google.api.control.aggregator;
 
+import com.google.common.base.Ticker;
+
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
-
-import com.google.common.base.Ticker;
 
 public class FakeTicker extends Ticker {
   private final AtomicLong nanos = new AtomicLong();

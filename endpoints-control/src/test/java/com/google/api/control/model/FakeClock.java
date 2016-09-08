@@ -16,10 +16,10 @@
 
 package com.google.api.control.model;
 
+import com.google.api.client.util.Clock;
+
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
-
-import com.google.api.client.util.Clock;
 
 public class FakeClock implements Clock {
   private final AtomicLong millis = new AtomicLong();

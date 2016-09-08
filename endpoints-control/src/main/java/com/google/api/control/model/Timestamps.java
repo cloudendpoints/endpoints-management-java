@@ -16,10 +16,10 @@
 
 package com.google.api.control.model;
 
-import java.util.Comparator;
-
 import com.google.api.client.util.Clock;
 import com.google.protobuf.Timestamp;
+
+import java.util.Comparator;
 
 public final class Timestamps {
   private static final int MILLIS_PER_SECOND = 1000;

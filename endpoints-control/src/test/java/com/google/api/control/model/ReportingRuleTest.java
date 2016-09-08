@@ -18,26 +18,23 @@ package com.google.api.control.model;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import com.google.api.Service;
+import com.google.api.Service.Builder;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.io.Resources;
+import com.google.protobuf.util.JsonFormat;
+
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
+
 import java.io.IOException;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
-
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
-
-import com.google.api.Service;
-import com.google.api.Service.Builder;
-import com.google.api.control.model.KnownLabels;
-import com.google.api.control.model.KnownMetrics;
-import com.google.api.control.model.ReportingRule;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.io.Resources;
-import com.google.protobuf.util.JsonFormat;
 
 /**
  * ReportingRuleTest tests the behavior in {@code ReportingRule}.

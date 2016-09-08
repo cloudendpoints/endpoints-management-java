@@ -18,20 +18,19 @@ package com.google.api.control.aggregator;
 
 import static org.junit.Assert.assertEquals;
 
-import java.util.Map;
-
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
-
 import com.google.api.MetricDescriptor.MetricKind;
-import com.google.api.control.aggregator.OperationAggregator;
 import com.google.api.servicecontrol.v1.LogEntry;
 import com.google.api.servicecontrol.v1.MetricValue;
 import com.google.api.servicecontrol.v1.MetricValueSet;
 import com.google.api.servicecontrol.v1.Operation;
 import com.google.common.collect.ImmutableMap;
 import com.google.protobuf.Timestamp;
+
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
+
+import java.util.Map;
 
 /**
  * Tests the behavior of {@link OperationAggregator}

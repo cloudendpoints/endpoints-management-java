@@ -16,7 +16,8 @@
 
 package com.google.api.control.model;
 
-import java.util.Map;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.truth.Truth;
 
 import org.junit.Rule;
 import org.junit.Test;
@@ -24,10 +25,7 @@ import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
-import com.google.api.control.model.PathTemplate;
-import com.google.api.control.model.ValidationException;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.truth.Truth;
+import java.util.Map;
 
 /**
  * Tests for {@link PathTemplate}.

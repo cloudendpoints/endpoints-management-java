@@ -16,11 +16,11 @@
 
 package com.google.api.control.model;
 
-import java.util.Stack;
-
 import com.google.common.annotations.Beta;
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
+
+import java.util.Stack;
 
 /**
  * Exception thrown if there is a validation problem with a path template, http config, or related
