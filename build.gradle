@@ -15,18 +15,37 @@
  */
 
 allprojects {
+  apply plugin: 'checkstyle'
+  apply plugin: 'eclipse'
   apply plugin: 'jacoco'
   apply plugin: 'java'
-  apply plugin: 'eclipse'
   apply plugin: 'maven'
   apply plugin: 'signing'
 
   group = 'com.google.endpoints'
   version = "1.0.0-beta.7"
 
+  checkstyle {
+    configFile = rootProject.file("config/checkstyle/checkstyle.xml")
+    toolVersion = "6.19"
+  }
+
   jacocoTestReport {
     reports {
       xml.enabled true
+    }
+  }
+
+  // force checkstyle tasks to fail on warnings
+  tasks.withType(Checkstyle).each { checkstyleTask ->
+    checkstyleTask.doLast {
+      reports.all { report ->
+        def outputFile = report.destination
+        if (outputFile.exists() && outputFile.text.contains("<error ")) {
+          outputs.upToDateWhen { false }
+          throw new GradleException("There were checkstyle warnings! For more info check $outputFile")
+        }
+      }
     }
   }
 }
