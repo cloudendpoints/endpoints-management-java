@@ -18,8 +18,6 @@ package com.google.api.control.model;
 
 import static org.junit.Assert.assertEquals;
 
-import com.google.api.control.model.OperationInfo;
-import com.google.api.control.model.Timestamps;
 import com.google.api.servicecontrol.v1.Operation;
 import com.google.api.servicecontrol.v1.Operation.Importance;
 import com.google.protobuf.Timestamp;

@@ -18,9 +18,6 @@ package com.google.api.control.model;
 
 import com.google.api.LabelDescriptor;
 import com.google.api.LabelDescriptor.ValueType;
-import com.google.api.control.model.KnownLabels;
-import com.google.api.control.model.OperationInfo;
-import com.google.api.control.model.ReportRequestInfo;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 

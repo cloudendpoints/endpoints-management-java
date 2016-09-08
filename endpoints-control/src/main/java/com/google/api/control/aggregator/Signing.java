@@ -16,10 +16,10 @@
 
 package com.google.api.control.aggregator;
 
+import com.google.common.hash.Hasher;
+
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
-
-import com.google.common.hash.Hasher;
 
 /**
  * Provides functions that support the creation of signatures.

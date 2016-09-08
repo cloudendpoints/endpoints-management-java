@@ -19,14 +19,13 @@ package com.google.api.control.model;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
 import static org.junit.Assert.assertEquals;
 
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
-
-import com.google.api.control.model.CheckErrorInfo;
 import com.google.api.servicecontrol.v1.CheckError;
 import com.google.api.servicecontrol.v1.CheckError.Code;
 import com.google.api.servicecontrol.v1.CheckResponse;
+
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 
 /**
  * CheckErrorInfoTest tests the behavior in {@code CheckErrorInfo}

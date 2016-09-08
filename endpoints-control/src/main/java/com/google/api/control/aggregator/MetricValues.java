@@ -16,10 +16,6 @@
 
 package com.google.api.control.aggregator;
 
-import java.nio.charset.StandardCharsets;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
 import com.google.api.MetricDescriptor.MetricKind;
 import com.google.api.control.model.Distributions;
 import com.google.api.control.model.Moneys;
@@ -29,6 +25,10 @@ import com.google.api.servicecontrol.v1.MetricValue.Builder;
 import com.google.common.hash.HashCode;
 import com.google.common.hash.Hasher;
 import com.google.common.hash.Hashing;
+
+import java.nio.charset.StandardCharsets;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Provide functions that enable aggregation of {@link MetricValue}s.

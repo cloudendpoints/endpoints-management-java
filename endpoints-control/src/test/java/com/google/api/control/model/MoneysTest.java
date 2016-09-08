@@ -19,12 +19,11 @@ package com.google.api.control.model;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
+import com.google.type.Money;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
-
-import com.google.api.control.model.Moneys;
-import com.google.type.Money;
 
 /**
  * Tests the behavior in Moneys.

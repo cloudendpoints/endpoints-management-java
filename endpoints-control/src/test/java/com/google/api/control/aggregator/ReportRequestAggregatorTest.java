@@ -21,18 +21,16 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import java.util.concurrent.TimeUnit;
+import com.google.api.servicecontrol.v1.Operation;
+import com.google.api.servicecontrol.v1.ReportRequest;
+import com.google.api.servicecontrol.v1.ReportRequest.Builder;
 
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
-import com.google.api.control.aggregator.ReportAggregationOptions;
-import com.google.api.control.aggregator.ReportRequestAggregator;
-import com.google.api.servicecontrol.v1.Operation;
-import com.google.api.servicecontrol.v1.ReportRequest;
-import com.google.api.servicecontrol.v1.ReportRequest.Builder;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Tests the behavior in {@link ReportRequestAggregator}

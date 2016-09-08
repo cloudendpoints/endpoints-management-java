@@ -16,10 +16,10 @@
 
 package com.google.api.control;
 
-import java.io.IOException;
-
 import com.google.api.Service;
 import com.google.api.config.ServiceConfigFetcher;
+
+import java.io.IOException;
 
 /**
  * ServiceManagementConfigFilter is a {@link ConfigFilter} where the service definition is loaded

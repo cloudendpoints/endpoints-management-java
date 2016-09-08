@@ -20,15 +20,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.fail;
 
-import java.util.concurrent.TimeUnit;
-
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
-
-import com.google.api.control.aggregator.CheckAggregationOptions;
-import com.google.api.control.aggregator.CheckRequestAggregator;
 import com.google.api.servicecontrol.v1.CheckError;
 import com.google.api.servicecontrol.v1.CheckError.Code;
 import com.google.api.servicecontrol.v1.CheckRequest;
@@ -39,6 +30,13 @@ import com.google.api.servicecontrol.v1.Operation;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.hash.HashCode;
 import com.google.protobuf.Timestamp;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
+
+import java.util.concurrent.TimeUnit;
 
 /**
  * CheckRequestAggregatorTest tests the behavior in CheckRequestAggregator

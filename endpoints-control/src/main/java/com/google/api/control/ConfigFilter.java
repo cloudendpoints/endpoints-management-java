@@ -16,6 +16,13 @@
 
 package com.google.api.control;
 
+import com.google.api.Service;
+import com.google.api.client.repackaged.com.google.common.base.Preconditions;
+import com.google.api.control.model.MethodRegistry;
+import com.google.api.control.model.MethodRegistry.Info;
+import com.google.api.control.model.ReportingRule;
+import com.google.common.annotations.VisibleForTesting;
+
 import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -27,13 +34,6 @@ import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
-
-import com.google.api.Service;
-import com.google.api.client.repackaged.com.google.common.base.Preconditions;
-import com.google.api.control.model.MethodRegistry;
-import com.google.api.control.model.MethodRegistry.Info;
-import com.google.api.control.model.ReportingRule;
-import com.google.common.annotations.VisibleForTesting;
 
 /**
  * ConfigFilter used to load the {@code Service} and associated objects and make them available

@@ -16,13 +16,11 @@
 
 package com.google.api.control.model;
 
+import com.google.common.truth.Truth;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
-
-import com.google.api.control.model.PathTemplate;
-import com.google.api.control.model.ResourceName;
-import com.google.common.truth.Truth;
 
 /**
  * Tests for {@link ResourceName}. As resource names are mostly a wrapper around path

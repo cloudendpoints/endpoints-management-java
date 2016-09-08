@@ -16,14 +16,6 @@
 
 package com.google.api.control.aggregator;
 
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Map;
-import java.util.concurrent.ConcurrentLinkedDeque;
-import java.util.logging.Logger;
-
-import javax.annotation.Nullable;
-
 import com.google.api.MetricDescriptor.MetricKind;
 import com.google.api.servicecontrol.v1.CheckRequest;
 import com.google.api.servicecontrol.v1.CheckResponse;
@@ -39,6 +31,14 @@ import com.google.common.collect.Lists;
 import com.google.common.hash.HashCode;
 import com.google.common.hash.Hasher;
 import com.google.common.hash.Hashing;
+
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Map;
+import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.logging.Logger;
+
+import javax.annotation.Nullable;
 
 /**
  * Caches and aggregates {@link CheckRequest}s.

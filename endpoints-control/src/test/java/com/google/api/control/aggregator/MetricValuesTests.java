@@ -20,16 +20,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.fail;
 
-import java.util.HashMap;
-import java.util.Map;
-
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
-
 import com.google.api.MetricDescriptor.MetricKind;
-import com.google.api.control.aggregator.MetricValues;
 import com.google.api.control.model.Distributions;
 import com.google.api.servicecontrol.v1.Distribution;
 import com.google.api.servicecontrol.v1.MetricValue;
@@ -40,6 +31,14 @@ import com.google.common.hash.Hasher;
 import com.google.common.hash.Hashing;
 import com.google.protobuf.Timestamp;
 import com.google.type.Money;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Tests {@link MetricValues}

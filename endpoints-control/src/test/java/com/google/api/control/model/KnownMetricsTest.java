@@ -18,9 +18,6 @@ package com.google.api.control.model;
 
 import com.google.api.MetricDescriptor;
 import com.google.api.MetricDescriptor.MetricKind;
-import com.google.api.control.model.Distributions;
-import com.google.api.control.model.KnownMetrics;
-import com.google.api.control.model.ReportRequestInfo;
 import com.google.api.servicecontrol.v1.Distribution;
 import com.google.api.servicecontrol.v1.MetricValue;
 import com.google.api.servicecontrol.v1.MetricValueSet;

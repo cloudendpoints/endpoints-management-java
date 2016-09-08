@@ -20,10 +20,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 import com.google.api.client.util.Clock;
-import com.google.api.control.model.CheckRequestInfo;
-import com.google.api.control.model.KnownLabels;
-import com.google.api.control.model.OperationInfo;
-import com.google.api.control.model.Timestamps;
 import com.google.api.servicecontrol.v1.CheckRequest;
 import com.google.api.servicecontrol.v1.Operation;
 import com.google.api.servicecontrol.v1.Operation.Builder;

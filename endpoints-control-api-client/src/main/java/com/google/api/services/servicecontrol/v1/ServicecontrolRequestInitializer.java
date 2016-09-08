@@ -16,11 +16,10 @@
 
 package com.google.api.services.servicecontrol.v1;
 
-import java.io.IOException;
-
-import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
 import com.google.api.client.googleapis.services.AbstractGoogleClientRequest;
 import com.google.api.client.googleapis.services.CommonGoogleClientRequestInitializer;
+
+import java.io.IOException;
 
 
 /**

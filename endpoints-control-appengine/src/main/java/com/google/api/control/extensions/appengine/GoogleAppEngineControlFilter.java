@@ -16,9 +16,6 @@
 
 package com.google.api.control.extensions.appengine;
 
-import java.io.IOException;
-import java.security.GeneralSecurityException;
-
 import com.google.api.client.extensions.appengine.http.UrlFetchTransport;
 import com.google.api.client.util.Clock;
 import com.google.api.control.Client;
@@ -26,6 +23,9 @@ import com.google.api.control.ControlFilter;
 import com.google.appengine.api.ThreadManager;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Ticker;
+
+import java.io.IOException;
+import java.security.GeneralSecurityException;
 
 /**
  * {@code GoogleAppEngineControlFilter} is a {@code ControlFilter} where the control client is

@@ -26,6 +26,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import autovalue.shaded.com.google.common.common.collect.Sets;
 import com.google.api.client.util.Clock;
 import com.google.api.control.ControlFilter.FilterServletOutputStream;
 import com.google.api.control.aggregator.FakeTicker;
@@ -67,8 +68,6 @@ import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
-import autovalue.shaded.com.google.common.common.collect.Sets;
 
 /**
  * Tests for {@code ControlFilter}.
