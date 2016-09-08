@@ -16,7 +16,6 @@
 
 package com.google.api.control.model;
 
-import autovalue.shaded.com.google.common.common.collect.Sets;
 import com.google.api.LabelDescriptor;
 import com.google.api.LogDescriptor;
 import com.google.api.Logging.LoggingDestination;
@@ -26,6 +25,7 @@ import com.google.api.Monitoring;
 import com.google.api.Monitoring.MonitoringDestination;
 import com.google.api.Service;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 
 import java.util.Arrays;
 import java.util.List;
