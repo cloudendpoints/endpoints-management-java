@@ -57,29 +57,19 @@ public class KnownMetricsTest {
   private static final StructuredTest[] ALL_TESTS = {
       new StructuredTest(KnownMetrics.CONSUMER_REQUEST_SIZES, KnownMetrics.newSizeDistribution()),
       new StructuredTest(KnownMetrics.PRODUCER_REQUEST_SIZES, KnownMetrics.newSizeDistribution()),
-      new StructuredTest(KnownMetrics.PRODUCER_BY_CONSUMER_REQUEST_SIZES,
-          KnownMetrics.newSizeDistribution()),
       new StructuredTest(KnownMetrics.CONSUMER_RESPONSE_SIZES, KnownMetrics.newSizeDistribution()),
       new StructuredTest(KnownMetrics.PRODUCER_RESPONSE_SIZES, KnownMetrics.newSizeDistribution()),
-      new StructuredTest(KnownMetrics.PRODUCER_BY_CONSUMER_RESPONSE_SIZES,
-          KnownMetrics.newSizeDistribution()),
       new StructuredTest(KnownMetrics.CONSUMER_TOTAL_LATENCIES,
           KnownMetrics.newTimeDistribution(), true),
       new StructuredTest(KnownMetrics.PRODUCER_TOTAL_LATENCIES,
-          KnownMetrics.newTimeDistribution(), true),
-      new StructuredTest(KnownMetrics.PRODUCER_BY_CONSUMER_TOTAL_LATENCIES,
           KnownMetrics.newTimeDistribution(), true),
       new StructuredTest(KnownMetrics.CONSUMER_BACKEND_LATENCIES,
           KnownMetrics.newTimeDistribution(), true),
       new StructuredTest(KnownMetrics.PRODUCER_BACKEND_LATENCIES,
           KnownMetrics.newTimeDistribution(), true),
-      new StructuredTest(KnownMetrics.PRODUCER_BY_CONSUMER_BACKEND_LATENCIES,
-          KnownMetrics.newTimeDistribution(), true),
       new StructuredTest(KnownMetrics.CONSUMER_REQUEST_OVERHEAD_LATENCIES,
           KnownMetrics.newTimeDistribution(), true),
       new StructuredTest(KnownMetrics.PRODUCER_REQUEST_OVERHEAD_LATENCIES,
-          KnownMetrics.newTimeDistribution(), true),
-      new StructuredTest(KnownMetrics.PRODUCER_BY_CONSUMER_REQUEST_OVERHEAD_LATENCIES,
           KnownMetrics.newTimeDistribution(), true),
       new StructuredTest(KnownMetrics.CONSUMER_REQUEST_COUNT, MetricValueSet
           .newBuilder()
@@ -90,12 +80,6 @@ public class KnownMetricsTest {
           MetricValueSet
               .newBuilder()
               .setMetricName(KnownMetrics.PRODUCER_REQUEST_COUNT.getName())
-              .addMetricValues(MetricValue.newBuilder().setInt64Value(1L))
-              .build()),
-      new StructuredTest(KnownMetrics.PRODUCER_BY_CONSUMER_REQUEST_COUNT,
-          MetricValueSet
-              .newBuilder()
-              .setMetricName(KnownMetrics.PRODUCER_BY_CONSUMER_REQUEST_COUNT.getName())
               .addMetricValues(MetricValue.newBuilder().setInt64Value(1L))
               .build()),
       new StructuredTest(KnownMetrics.CONSUMER_REQUEST_ERROR_COUNT),
@@ -112,14 +96,6 @@ public class KnownMetricsTest {
           MetricValueSet
               .newBuilder()
               .setMetricName(KnownMetrics.PRODUCER_REQUEST_ERROR_COUNT.getName())
-              .addMetricValues(MetricValue.newBuilder().setInt64Value(1L))
-              .build()),
-      new StructuredTest(KnownMetrics.PRODUCER_BY_CONSUMER_ERROR_COUNT),
-      new StructuredTest(new ReportRequestInfo().setResponseCode(400),
-          KnownMetrics.PRODUCER_BY_CONSUMER_ERROR_COUNT,
-          MetricValueSet
-              .newBuilder()
-              .setMetricName(KnownMetrics.PRODUCER_BY_CONSUMER_ERROR_COUNT.getName())
               .addMetricValues(MetricValue.newBuilder().setInt64Value(1L))
               .build()),
       };

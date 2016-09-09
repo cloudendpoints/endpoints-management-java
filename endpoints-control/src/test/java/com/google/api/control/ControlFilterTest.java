@@ -177,8 +177,7 @@ public class ControlFilterTest {
   public void shouldSetBackendLatency() throws IOException, ServletException {
     HashSet<String> wantMetricNames =
         Sets.newHashSet(KnownMetrics.CONSUMER_BACKEND_LATENCIES.getName(),
-            KnownMetrics.PRODUCER_BACKEND_LATENCIES.getName(),
-            KnownMetrics.PRODUCER_BY_CONSUMER_BACKEND_LATENCIES.getName());
+            KnownMetrics.PRODUCER_BACKEND_LATENCIES.getName());
     rule = ReportingRule.fromKnownInputs(null, wantMetricNames, null);
     mockRequestAndResponse();
     when(client.check(any(CheckRequest.class))).thenReturn(checkResponse);
@@ -192,7 +191,7 @@ public class ControlFilterTest {
 
     // verify that the report includes the specified metrics
     List<MetricValueSet> mvs = op.getMetricValueSetsList();
-    assertThat(mvs.size()).isEqualTo(3);
+    assertThat(mvs.size()).isEqualTo(2);
     Set<String> gotMetricNames = Sets.newHashSet();
     for (MetricValueSet s : mvs) {
       gotMetricNames.add(s.getMetricName());
