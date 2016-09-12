@@ -29,44 +29,48 @@ import com.google.api.servicecontrol.v1.Operation;
  */
 public enum KnownMetrics {
   CONSUMER_REQUEST_COUNT("serviceruntime.googleapis.com/api/consumer/request_count",
-      MetricKind.DELTA, ValueType.INT64, add1ToInt64Metric()),
+      MetricKind.DELTA, ValueType.INT64, add1ToInt64Metric(), Mark.CONSUMER),
 
   PRODUCER_REQUEST_COUNT("serviceruntime.googleapis.com/api/producer/request_count",
       MetricKind.DELTA, ValueType.INT64, add1ToInt64Metric()),
 
   CONSUMER_REQUEST_SIZES("serviceruntime.googleapis.com/api/consumer/request_sizes",
-      MetricKind.DELTA, ValueType.DISTRIBUTION, addDistributionMetricForRequestSize()),
+      MetricKind.DELTA, ValueType.DISTRIBUTION, addDistributionMetricForRequestSize(),
+      Mark.CONSUMER),
 
   PRODUCER_REQUEST_SIZES("serviceruntime.googleapis.com/api/producer/request_sizes",
       MetricKind.DELTA, ValueType.DISTRIBUTION, addDistributionMetricForRequestSize()),
 
   CONSUMER_RESPONSE_SIZES("serviceruntime.googleapis.com/api/consumer/response_sizes",
-      MetricKind.DELTA, ValueType.DISTRIBUTION, addDistributionMetricForResponseSize()),
+      MetricKind.DELTA, ValueType.DISTRIBUTION, addDistributionMetricForResponseSize(),
+      Mark.CONSUMER),
 
   PRODUCER_RESPONSE_SIZES("serviceruntime.googleapis.com/api/producer/response_sizes",
       MetricKind.DELTA, ValueType.DISTRIBUTION, addDistributionMetricForResponseSize()),
 
   CONSUMER_REQUEST_ERROR_COUNT("serviceruntime.googleapis.com/api/consumer/error_count",
-      MetricKind.DELTA, ValueType.INT64, add1ToInt64MetricIfError()),
+      MetricKind.DELTA, ValueType.INT64, add1ToInt64MetricIfError(), Mark.CONSUMER),
 
   PRODUCER_REQUEST_ERROR_COUNT("serviceruntime.googleapis.com/api/producer/error_count",
       MetricKind.DELTA, ValueType.INT64, add1ToInt64MetricIfError()),
 
   CONSUMER_TOTAL_LATENCIES("serviceruntime.googleapis.com/api/consumer/total_latencies",
-      MetricKind.DELTA, ValueType.DISTRIBUTION, addDistributionMetricForRequestTimeMillis()),
+      MetricKind.DELTA, ValueType.DISTRIBUTION, addDistributionMetricForRequestTimeMillis(),
+      Mark.CONSUMER),
 
   PRODUCER_TOTAL_LATENCIES("serviceruntime.googleapis.com/api/producer/total_latencies",
       MetricKind.DELTA, ValueType.DISTRIBUTION, addDistributionMetricForRequestTimeMillis()),
 
   CONSUMER_BACKEND_LATENCIES("serviceruntime.googleapis.com/api/consumer/backend_latencies",
-      MetricKind.DELTA, ValueType.DISTRIBUTION, addDistributionMetricForBackendTimeMillis()),
+      MetricKind.DELTA, ValueType.DISTRIBUTION, addDistributionMetricForBackendTimeMillis(),
+      Mark.CONSUMER),
 
   PRODUCER_BACKEND_LATENCIES("serviceruntime.googleapis.com/api/producer/backend_latencies",
       MetricKind.DELTA, ValueType.DISTRIBUTION, addDistributionMetricForBackendTimeMillis()),
 
   CONSUMER_REQUEST_OVERHEAD_LATENCIES(
       "serviceruntime.googleapis.com/api/consumer/request_overhead_latencies", MetricKind.DELTA,
-      ValueType.DISTRIBUTION, addDistributionMetricForOverheadTimeMillis()),
+      ValueType.DISTRIBUTION, addDistributionMetricForOverheadTimeMillis(), Mark.CONSUMER),
 
   PRODUCER_REQUEST_OVERHEAD_LATENCIES(
       "serviceruntime.googleapis.com/api/producer/request_overhead_latencies", MetricKind.DELTA,
@@ -82,12 +86,18 @@ public enum KnownMetrics {
   private MetricKind kind;
   private ValueType type;
   private Update updater;
+  private Mark mark;
 
   private KnownMetrics(String name, MetricKind kind, ValueType type, Update updater) {
+    this(name, kind, type, updater, Mark.PRODUCER);
+  }
+
+  private KnownMetrics(String name, MetricKind kind, ValueType type, Update updater, Mark mark) {
     this.name = name;
     this.type = type;
     this.kind = kind;
-    this.updater = updater;
+    this.updater = mark == Mark.CONSUMER ? consumerMetric(updater) : updater;
+    this.mark = mark;
   }
 
   /**
@@ -197,6 +207,22 @@ public enum KnownMetrics {
     };
   }
 
+  /**
+   * This wraps an existing {@link Update} to only write if an API key is valid, indicating a
+   * registered consumer. This will prevent consumer metrics from appearing in the producer's
+   * consumer graph when a request is unregistered.
+   */
+  private static Update consumerMetric(final Update delegate) {
+    return new Update() {
+      @Override
+      public void update(String name, ReportRequestInfo info, Operation.Builder op) {
+        if (info.isApiKeyValid()) {
+          delegate.update(name, info, op);
+        }
+      }
+    };
+  }
+
   private static void addInt64MetricValue(String name, long value, Operation.Builder op) {
     op.addMetricValueSets(MetricValueSet.newBuilder().setMetricName(name).addMetricValues(
         MetricValue.newBuilder().setInt64Value(value).build()));
@@ -273,5 +299,9 @@ public enum KnownMetrics {
     Distribution d = Distributions.addSample(value, newSizeDistribution());
     op.addMetricValueSets(MetricValueSet.newBuilder().setMetricName(name).addMetricValues(
         MetricValue.newBuilder().setDistributionValue(d).build()));
+  }
+
+  private enum Mark {
+    PRODUCER, CONSUMER;
   }
 }
