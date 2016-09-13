@@ -55,6 +55,7 @@ public class ReportRequestInfoTest {
   private static final String TEST_OPERATION_NAME = "anOperationName";
   private static final String TEST_OPERATION_ID = "anOperationId";
   private static final String TEST_SERVICE_NAME = "aServiceName";
+  private static final String TEST_API_KEY = "test_api_key";
   private static FakeClock TEST_CLOCK = new FakeClock();
   static {
     TEST_CLOCK.tick(2L, TimeUnit.SECONDS);
@@ -138,6 +139,7 @@ public class ReportRequestInfoTest {
   private static Operation.Builder newBaseOperation(String logName, int responseCode) {
     Operation.Builder res = Operation
         .newBuilder()
+        .setConsumerId("api_key:" + TEST_API_KEY)
         .setImportance(Importance.LOW)
         .setOperationId(TEST_OPERATION_ID)
         .setOperationName(TEST_OPERATION_NAME)
@@ -150,18 +152,21 @@ public class ReportRequestInfoTest {
   }
 
   private static ReportRequestInfo newBaseInfo() {
-    return new ReportRequestInfo(newTestOperationInfo())
+    return (ReportRequestInfo) new ReportRequestInfo(newTestOperationInfo())
         .setMethod("GET")
         .setRequestTimeMillis(TEST_LATENCY)
         .setOverheadTimeMillis(TEST_LATENCY)
         .setBackendTimeMillis(TEST_LATENCY)
         .setRequestSize(TEST_SIZE)
-        .setResponseSize(TEST_SIZE);
+        .setResponseSize(TEST_SIZE)
+        .setApiKey(TEST_API_KEY)
+        .setApiKeyValid(true);
   }
 
   private static LogEntry.Builder newTestLogEntry(String name, int responseCode) {
     Value.Builder vb = Value.newBuilder();
     Map<String, Value> values = Maps.newHashMap();
+    values.put("api_key", vb.setStringValue(TEST_API_KEY).build());
     values.put("http_method", vb.setStringValue("GET").build());
     values.put("timestamp",
         vb.setNumberValue(TEST_CLOCK.currentTimeMillis()).build());
