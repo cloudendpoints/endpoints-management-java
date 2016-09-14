@@ -56,11 +56,13 @@ public class ReportRequestInfoTest {
   private static final String TEST_OPERATION_ID = "anOperationId";
   private static final String TEST_SERVICE_NAME = "aServiceName";
   private static final String TEST_API_KEY = "test_api_key";
-  private static FakeClock TEST_CLOCK = new FakeClock();
+  private static final FakeClock TEST_CLOCK = new FakeClock();
+
   static {
     TEST_CLOCK.tick(2L, TimeUnit.SECONDS);
   }
-  private static Timestamp REALLY_EARLY = Timestamps.now(TEST_CLOCK);
+
+  private static final Timestamp REALLY_EARLY = Timestamps.now(TEST_CLOCK);
   private static final long TEST_LATENCY = 7L;
   private static final long TEST_SIZE = 11L;
   private static final URL BASE_LOGGING_SERVICE_JSON =

@@ -49,6 +49,7 @@ public class ValidationException extends IllegalArgumentException {
   public static void pushCurrentThreadValidationContext(String context) {
     pushCurrentThreadValidationContext(Suppliers.ofInstance(context));
   }
+
   /**
    * Clears the validation context.
    */

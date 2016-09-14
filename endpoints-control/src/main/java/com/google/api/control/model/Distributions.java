@@ -74,7 +74,7 @@ public final class Distributions {
         .setNumFiniteBuckets(numFiniteBuckets).setScale(scale).build();
     Builder builder = Distribution.newBuilder().setExponentialBuckets(buckets);
     for (int i = 0; i < numFiniteBuckets + 2; i++) {
-      builder.addBucketCounts(0l);
+      builder.addBucketCounts(0L);
     }
     return builder.build();
   }
@@ -99,7 +99,7 @@ public final class Distributions {
         .setNumFiniteBuckets(numFiniteBuckets).build();
     Builder builder = Distribution.newBuilder().setLinearBuckets(buckets);
     for (int i = 0; i < numFiniteBuckets + 2; i++) {
-      builder.addBucketCounts(0l);
+      builder.addBucketCounts(0L);
     }
     return builder.build();
   }
@@ -122,7 +122,7 @@ public final class Distributions {
     ExplicitBuckets buckets = ExplicitBuckets.newBuilder().addAllBounds(allBounds).build();
     Builder builder = Distribution.newBuilder().setExplicitBuckets(buckets);
     for (int i = 0; i < allBounds.size() + 1; i++) {
-      builder.addBucketCounts(0l);
+      builder.addBucketCounts(0L);
     }
     return builder.build();
   }

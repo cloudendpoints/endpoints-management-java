@@ -25,6 +25,7 @@ import com.google.api.control.model.Distributions;
 import com.google.api.servicecontrol.v1.Distribution;
 import com.google.api.servicecontrol.v1.MetricValue;
 import com.google.api.servicecontrol.v1.MetricValue.Builder;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.hash.HashCode;
 import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hasher;
@@ -51,12 +52,9 @@ public class MetricValuesTests {
       Money.newBuilder().setCurrencyCode("JPY").setUnits(1).setNanos(1).build();
   private static final Timestamp EARLY = Timestamp.newBuilder().setNanos(1).setSeconds(100).build();
   private static final Timestamp LATER = Timestamp.newBuilder().setNanos(2).setSeconds(100).build();
-  private static Map<String, String> testLabels;
-  {
-    testLabels = new HashMap<String, String>();
-    testLabels.put("key1", "value1");
-    testLabels.put("key2", "value2");
-  }
+  private static final Map<String, String> TEST_LABELS =
+      ImmutableMap.<String, String>of("key1", "value1", "key2", "value2");
+
   private MetricValue testValue;
   private MetricValue testValueWithMoney;
   private MetricValue otherValue;
@@ -67,13 +65,13 @@ public class MetricValuesTests {
   @Before
   public void setUpMetricValue() {
     testValue =
-        MetricValue.newBuilder().putAllLabels(testLabels).setDoubleValue(A_DOUBLE_VALUE).build();
+        MetricValue.newBuilder().putAllLabels(TEST_LABELS).setDoubleValue(A_DOUBLE_VALUE).build();
     Builder fromTestValue = testValue.toBuilder();
     earlyEndingTestValue = fromTestValue.setEndTime(EARLY).build();
     laterEndingTestValue = fromTestValue.setEndTime(LATER).build();
     testValueWithMoney = fromTestValue.setMoneyValue(testMoney).build();
     otherValue =
-        MetricValue.newBuilder().setDoubleValue(A_DOUBLE_VALUE).putAllLabels(testLabels).build();
+        MetricValue.newBuilder().setDoubleValue(A_DOUBLE_VALUE).putAllLabels(TEST_LABELS).build();
     otherValueWithMoney = otherValue.toBuilder().setMoneyValue(testMoney).build();
   }
 
