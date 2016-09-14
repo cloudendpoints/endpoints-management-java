@@ -17,11 +17,11 @@
 package com.google.api.control;
 
 import com.google.api.Service;
-import com.google.api.client.repackaged.com.google.common.base.Preconditions;
 import com.google.api.control.model.MethodRegistry;
 import com.google.api.control.model.MethodRegistry.Info;
 import com.google.api.control.model.ReportingRule;
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Preconditions;
 
 import java.io.IOException;
 import java.util.logging.Level;

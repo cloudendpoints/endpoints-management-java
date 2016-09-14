@@ -26,7 +26,6 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import autovalue.shaded.com.google.common.common.collect.Sets;
 import com.google.api.client.util.Clock;
 import com.google.api.control.ControlFilter.FilterServletOutputStream;
 import com.google.api.control.aggregator.FakeTicker;
@@ -49,6 +48,7 @@ import com.google.common.base.Ticker;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Sets;
 import com.google.protobuf.Timestamp;
 
 import org.junit.Before;
