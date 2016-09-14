@@ -55,83 +55,83 @@ public class KnownLabelsTest {
     }
   }
 
-  private static final StructuredTest[] ALL_TESTS =
-      {
-          // KnownLabels that do not yet do updates
-          new StructuredTest(KnownLabels.CREDENTIAL_ID),
-          new StructuredTest(KnownLabels.END_USER),
-          new StructuredTest(KnownLabels.END_USER_COUNTRY),
-          new StructuredTest(KnownLabels.GAE_CLONE_ID),
-          new StructuredTest(KnownLabels.GAE_MODULE_ID),
-          new StructuredTest(KnownLabels.GAE_REPLICA_INDEX),
-          new StructuredTest(KnownLabels.GAE_VERSION_ID),
-          new StructuredTest(KnownLabels.GCP_PROJECT),
-          new StructuredTest(KnownLabels.GCP_PROJECT),
-          new StructuredTest(KnownLabels.GCP_REGION),
-          new StructuredTest(KnownLabels.GCP_RESOURCE_ID),
-          new StructuredTest(KnownLabels.GCP_RESOURCE_TYPE),
-          new StructuredTest(KnownLabels.GCP_SERVICE),
-          new StructuredTest(KnownLabels.GCP_ZONE),
-          new StructuredTest(KnownLabels.GCP_UID),
-          new StructuredTest(KnownLabels.SCC_REFERER),
+  private static final StructuredTest[] ALL_TESTS = {
+      // KnownLabels that do not yet do updates
+      new StructuredTest(KnownLabels.CREDENTIAL_ID),
+      new StructuredTest(KnownLabels.END_USER),
+      new StructuredTest(KnownLabels.END_USER_COUNTRY),
+      new StructuredTest(KnownLabels.GAE_CLONE_ID),
+      new StructuredTest(KnownLabels.GAE_MODULE_ID),
+      new StructuredTest(KnownLabels.GAE_REPLICA_INDEX),
+      new StructuredTest(KnownLabels.GAE_VERSION_ID),
+      new StructuredTest(KnownLabels.GCP_PROJECT),
+      new StructuredTest(KnownLabels.GCP_PROJECT),
+      new StructuredTest(KnownLabels.GCP_REGION),
+      new StructuredTest(KnownLabels.GCP_RESOURCE_ID),
+      new StructuredTest(KnownLabels.GCP_RESOURCE_TYPE),
+      new StructuredTest(KnownLabels.GCP_SERVICE),
+      new StructuredTest(KnownLabels.GCP_ZONE),
+      new StructuredTest(KnownLabels.GCP_UID),
+      new StructuredTest(KnownLabels.SCC_REFERER),
 
-          // Credential label test
-          // TODO: add tests for when issuer and audience are present
-          new StructuredTest(KnownLabels.CREDENTIAL_ID,
-              ImmutableMap.<String, String>of(KnownLabels.CREDENTIAL_ID.getName(),
-                  "apiKey:testApiKey"),
-              new ReportRequestInfo(new OperationInfo().setApiKey("testApiKey"))),
+      // Credential label test
+      // TODO: add tests for when issuer and audience are present
+      new StructuredTest(KnownLabels.CREDENTIAL_ID,
+          ImmutableMap.<String, String>of(KnownLabels.CREDENTIAL_ID.getName(),
+              "apiKey:testApiKey"),
+          new ReportRequestInfo(new OperationInfo().setApiKey("testApiKey"))),
 
-          // Status Code
-          new StructuredTest(KnownLabels.STATUS_CODE,
-              ImmutableMap.<String, String>of(KnownLabels.STATUS_CODE.getName(), "0"),
-              new ReportRequestInfo().setResponseCode(200)),
-          new StructuredTest(KnownLabels.STATUS_CODE,
-              ImmutableMap.<String, String>of(KnownLabels.STATUS_CODE.getName(), "16"),
-              new ReportRequestInfo().setResponseCode(401)),
-          new StructuredTest(KnownLabels.STATUS_CODE,
-              ImmutableMap.<String, String>of(KnownLabels.STATUS_CODE.getName(), "9"),
-              new ReportRequestInfo().setResponseCode(477)), // unknown client failure
-          new StructuredTest(KnownLabels.STATUS_CODE,
-              ImmutableMap.<String, String>of(KnownLabels.STATUS_CODE.getName(), "13"),
-              new ReportRequestInfo().setResponseCode(577)), // unknown server failure
-          new StructuredTest(KnownLabels.STATUS_CODE,
-              ImmutableMap.<String, String>of(KnownLabels.STATUS_CODE.getName(), "2"),
-              new ReportRequestInfo().setResponseCode(777)), // complete unknown code
+      // Status Code
+      new StructuredTest(KnownLabels.STATUS_CODE,
+          ImmutableMap.<String, String>of(KnownLabels.STATUS_CODE.getName(), "0"),
+          new ReportRequestInfo().setResponseCode(200)),
+      new StructuredTest(KnownLabels.STATUS_CODE,
+          ImmutableMap.<String, String>of(KnownLabels.STATUS_CODE.getName(), "16"),
+          new ReportRequestInfo().setResponseCode(401)),
+      new StructuredTest(KnownLabels.STATUS_CODE,
+          ImmutableMap.<String, String>of(KnownLabels.STATUS_CODE.getName(), "9"),
+          new ReportRequestInfo().setResponseCode(477)), // unknown client failure
+      new StructuredTest(KnownLabels.STATUS_CODE,
+          ImmutableMap.<String, String>of(KnownLabels.STATUS_CODE.getName(), "13"),
+          new ReportRequestInfo().setResponseCode(577)), // unknown server failure
+      new StructuredTest(KnownLabels.STATUS_CODE,
+          ImmutableMap.<String, String>of(KnownLabels.STATUS_CODE.getName(), "2"),
+          new ReportRequestInfo().setResponseCode(777)), // complete unknown code
 
-          // Other labels
-          new StructuredTest(KnownLabels.ERROR_TYPE,
-              ImmutableMap.<String, String>of(KnownLabels.ERROR_TYPE.getName(), "2xx"),
-              new ReportRequestInfo().setResponseCode(200)),
-          new StructuredTest(KnownLabels.RESPONSE_CODE,
-              ImmutableMap.<String, String>of(KnownLabels.RESPONSE_CODE.getName(), "200"),
-              new ReportRequestInfo().setResponseCode(200)),
-          new StructuredTest(KnownLabels.RESPONSE_CODE_CLASS,
-              ImmutableMap.<String, String>of(KnownLabels.RESPONSE_CODE_CLASS.getName(), "2xx"),
-              new ReportRequestInfo().setResponseCode(200)),
-          new StructuredTest(KnownLabels.PROTOCOL,
-              ImmutableMap.<String, String>of(KnownLabels.PROTOCOL.getName(), "UNKNOWN")),
-          new StructuredTest(KnownLabels.REFERER,
-              ImmutableMap.<String, String>of(KnownLabels.REFERER.getName(),
-                  StructuredTest.TEST_REFERER)),
-          new StructuredTest(KnownLabels.SVC_API_VERSION, ImmutableMap.<String, String>of(
-              KnownLabels.SVC_API_VERSION.getName(), StructuredTest.TEST_VERSION)),
-          new StructuredTest(KnownLabels.SVC_API_METHOD,
-              ImmutableMap.<String, String>of(KnownLabels.SVC_API_METHOD.getName(),
-                  StructuredTest.TEST_METHOD)),
-          new StructuredTest(KnownLabels.GCP_LOCATION, ImmutableMap.<String, String>of(
-              KnownLabels.GCP_LOCATION.getName(), StructuredTest.TEST_LOCATION)),
-          new StructuredTest(
-              KnownLabels.GCP_LOCATION,
-              ImmutableMap.of(KnownLabels.GCP_LOCATION.getName(), "global"),
-              new ReportRequestInfo(new OperationInfo()))
-      };
+      // Other labels
+      new StructuredTest(KnownLabels.ERROR_TYPE,
+          ImmutableMap.<String, String>of(KnownLabels.ERROR_TYPE.getName(), "2xx"),
+          new ReportRequestInfo().setResponseCode(200)),
+      new StructuredTest(KnownLabels.RESPONSE_CODE,
+          ImmutableMap.<String, String>of(KnownLabels.RESPONSE_CODE.getName(), "200"),
+          new ReportRequestInfo().setResponseCode(200)),
+      new StructuredTest(KnownLabels.RESPONSE_CODE_CLASS,
+          ImmutableMap.<String, String>of(KnownLabels.RESPONSE_CODE_CLASS.getName(), "2xx"),
+          new ReportRequestInfo().setResponseCode(200)),
+      new StructuredTest(KnownLabels.PROTOCOL,
+          ImmutableMap.<String, String>of(KnownLabels.PROTOCOL.getName(), "UNKNOWN")),
+      new StructuredTest(KnownLabels.REFERER,
+          ImmutableMap.<String, String>of(KnownLabels.REFERER.getName(),
+              StructuredTest.TEST_REFERER)),
+      new StructuredTest(KnownLabels.SVC_API_VERSION, ImmutableMap.<String, String>of(
+          KnownLabels.SVC_API_VERSION.getName(), StructuredTest.TEST_VERSION)),
+      new StructuredTest(KnownLabels.SVC_API_METHOD,
+          ImmutableMap.<String, String>of(KnownLabels.SVC_API_METHOD.getName(),
+              StructuredTest.TEST_METHOD)),
+      new StructuredTest(KnownLabels.GCP_LOCATION, ImmutableMap.<String, String>of(
+          KnownLabels.GCP_LOCATION.getName(), StructuredTest.TEST_LOCATION)),
+      new StructuredTest(
+          KnownLabels.GCP_LOCATION,
+          ImmutableMap.of(KnownLabels.GCP_LOCATION.getName(), "global"),
+          new ReportRequestInfo(new OperationInfo()))
+  };
 
   static class StructuredTest {
     private static final String TEST_LOCATION = "location";
     private static final String TEST_METHOD = "aMethod";
     private static final String TEST_VERSION = "apiVersion";
     private static final String TEST_REFERER = "aReferer";
+
     StructuredTest() {
       given = new ReportRequestInfo(new OperationInfo().setReferer(TEST_REFERER))
           .setApiMethod(TEST_METHOD)

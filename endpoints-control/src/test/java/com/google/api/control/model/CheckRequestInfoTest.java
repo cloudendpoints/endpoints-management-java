@@ -43,10 +43,12 @@ public class CheckRequestInfoTest {
   private static final String TEST_OPERATION_ID = "anOperationId";
   private static final String TEST_SERVICE_NAME = "aServiceName";
   private static FakeClock TEST_CLOCK = new FakeClock();
+
   static {
     TEST_CLOCK.tick(2L, TimeUnit.SECONDS);
   }
-  private static Timestamp REALLY_EARLY = Timestamps.now(TEST_CLOCK);
+
+  private static final Timestamp REALLY_EARLY = Timestamps.now(TEST_CLOCK);
   private static final String TEST_CLIENT_IP = "127.0.0.1";
   private static final CheckRequestInfo[] INVALID_INFO = {
       new CheckRequestInfo(

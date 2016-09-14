@@ -93,7 +93,7 @@ public final class Moneys {
     int signOfB = signOf(b);
     if (signOfA > 0 && signOfB > 0 && unitSum < 0) {
       if (!allowOverflow) {
-       throw new ArithmeticException(MSG_POSITIVE_OVERFLOW);
+        throw new ArithmeticException(MSG_POSITIVE_OVERFLOW);
       } else {
         return Money.newBuilder()
             .setCurrencyCode(a.getCurrencyCode())
@@ -104,13 +104,13 @@ public final class Moneys {
     } else if (signOfA < 0 && signOfB < 0 && (unitSumNoCarry >= 0 || unitSum >= 0)) {
       if (!allowOverflow) {
         throw new ArithmeticException(MSG_NEGATIVE_OVERFLOW);
-       } else {
-         return Money.newBuilder()
-             .setCurrencyCode(a.getCurrencyCode())
-             .setNanos(-MAX_NANOS)
-             .setUnits(Long.MIN_VALUE)
-             .build();
-       }
+      } else {
+        return Money.newBuilder()
+            .setCurrencyCode(a.getCurrencyCode())
+            .setNanos(-MAX_NANOS)
+            .setUnits(Long.MIN_VALUE)
+            .build();
+      }
     } else {
       return Money.newBuilder()
           .setCurrencyCode(a.getCurrencyCode())

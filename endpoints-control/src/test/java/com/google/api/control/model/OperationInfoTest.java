@@ -39,11 +39,13 @@ public class OperationInfoTest {
   private static final String TEST_REFERER = "aReferer";
   private static final String TEST_OPERATION_NAME = "anOperationName";
   private static final String TEST_OPERATION_ID = "anOperationId";
-  private static FakeClock TEST_CLOCK = new FakeClock();
+  private static final FakeClock TEST_CLOCK = new FakeClock();
+
   static {
     TEST_CLOCK.tick(2L, TimeUnit.SECONDS);
   }
-  private static Timestamp REALLY_EARLY = Timestamps.now(TEST_CLOCK);
+
+  private static final Timestamp REALLY_EARLY = Timestamps.now(TEST_CLOCK);
   private static final InfoTest[] AS_OPERATION_TEST = {
       new InfoTest(
           new OperationInfo()

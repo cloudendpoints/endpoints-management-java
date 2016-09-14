@@ -133,29 +133,29 @@ public class MoneysTest {
 
   @Test
   public void addShouldAllowPositiveOverflows() {
-     Money sum = Moneys.add(SOME_YEN, LARGE_YEN, true);
-     assertEquals(sum.getNanos(), Moneys.MAX_NANOS);
-     assertEquals(sum.getUnits(), Long.MAX_VALUE);
+    Money sum = Moneys.add(SOME_YEN, LARGE_YEN, true);
+    assertEquals(sum.getNanos(), Moneys.MAX_NANOS);
+    assertEquals(sum.getUnits(), Long.MAX_VALUE);
   }
 
   @Test
   public void addShouldAllowNegativeOverflows() {
-     Money sum = Moneys.add(SOME_YEN_DEBT, LARGE_YEN_DEBT, true);
-     assertEquals(sum.getNanos(), -Moneys.MAX_NANOS);
-     assertEquals(sum.getUnits(), Long.MIN_VALUE);
+    Money sum = Moneys.add(SOME_YEN_DEBT, LARGE_YEN_DEBT, true);
+    assertEquals(sum.getNanos(), -Moneys.MAX_NANOS);
+    assertEquals(sum.getUnits(), Long.MIN_VALUE);
   }
 
   @Test
   public void addShouldBeOKWhenNanosHaveTheSameSign() {
-     Money sum = Moneys.add(SOME_YEN, SOME_YEN);
-     assertEquals(sum.getNanos(), 2 * SOME_YEN.getNanos());
-     assertEquals(sum.getUnits(), 2 * SOME_YEN.getUnits());
+    Money sum = Moneys.add(SOME_YEN, SOME_YEN);
+    assertEquals(sum.getNanos(), 2 * SOME_YEN.getNanos());
+    assertEquals(sum.getUnits(), 2 * SOME_YEN.getUnits());
   }
 
   @Test
   public void addShouldBeOKWhenNanosHaveDifferentSigns() {
-     Money sum = Moneys.add(SOME_YEN, SOME_YEN_DEBT);
-     assertEquals(sum.getNanos(), Moneys.MAX_NANOS);
-     assertEquals(sum.getUnits(), SOME_YEN_DEBT.getUnits() + SOME_YEN.getUnits() - 1);
+    Money sum = Moneys.add(SOME_YEN, SOME_YEN_DEBT);
+    assertEquals(sum.getNanos(), Moneys.MAX_NANOS);
+    assertEquals(sum.getUnits(), SOME_YEN_DEBT.getUnits() + SOME_YEN.getUnits() - 1);
   }
 }

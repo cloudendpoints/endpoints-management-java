@@ -61,7 +61,8 @@ public class Client {
     @Override
     public Scheduler create(Ticker ticker) {
       return new Scheduler(ticker);
-    }};
+    }
+  };
   private final CheckRequestAggregator checkAggregator;
   private final ReportRequestAggregator reportAggregator;
   private final Ticker ticker;
