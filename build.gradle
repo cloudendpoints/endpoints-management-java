@@ -23,7 +23,7 @@ allprojects {
   apply plugin: 'signing'
 
   group = 'com.google.endpoints'
-  version = "1.0.0-beta.7"
+  version = "1.0.0-beta.8"
 
   checkstyle {
     configFile = rootProject.file("config/checkstyle/checkstyle.xml")
