@@ -146,7 +146,9 @@ public class ReportRequestInfoTest {
         .setOperationId(TEST_OPERATION_ID)
         .setOperationName(TEST_OPERATION_NAME)
         .setEndTime(REALLY_EARLY)
-        .setStartTime(REALLY_EARLY);
+        .setStartTime(REALLY_EARLY)
+        .putLabels(OperationInfo.SCC_USER_AGENT, "ESP")
+        .putLabels(OperationInfo.SCC_SERVICE_AGENT, "EF_JAVA/UNKNOWN");
     if (!Strings.isNullOrEmpty(logName)) {
       res.addLogEntries(newTestLogEntry(logName, responseCode));
     }
