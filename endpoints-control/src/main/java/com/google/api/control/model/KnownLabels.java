@@ -227,7 +227,7 @@ public enum KnownLabels {
   /**
    * The service agent to record in report requests
    */
-  public static final String SERVICE_AGENT = USER_AGENT + "/0.1.0";
+  public static final String SERVICE_AGENT = "EF_JAVA/" + getAgentVersion();
 
   private String name;
   private LabelDescriptor.ValueType type;
@@ -348,5 +348,10 @@ public enum KnownLabels {
     } else {
       return Code.UNKNOWN_VALUE;
     }
+  }
+
+  private static String getAgentVersion() {
+    String implVersion = KnownLabels.class.getPackage().getImplementationVersion();
+    return implVersion != null ? implVersion : "UNKNOWN";
   }
 }
