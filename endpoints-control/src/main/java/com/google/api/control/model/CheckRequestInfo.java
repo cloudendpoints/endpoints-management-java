@@ -21,7 +21,6 @@ import com.google.api.servicecontrol.v1.CheckRequest;
 import com.google.api.servicecontrol.v1.Operation;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
-import com.google.common.collect.Maps;
 
 import java.util.Map;
 
@@ -30,9 +29,6 @@ import java.util.Map;
  */
 public class CheckRequestInfo extends OperationInfo {
   private String clientIp;
-  public static final String SCC_CALLER_IP = "servicecontrol.googleapis.com/caller_ip";
-  public static final String SCC_USER_AGENT = "servicecontrol.googleapis.com/user_agent";
-  public static final String SCC_REFERER = "servicecontrol.googleapis.com/referer";
 
   public CheckRequestInfo() {
     // default constructor
@@ -80,16 +76,20 @@ public class CheckRequestInfo extends OperationInfo {
     Preconditions.checkState(!Strings.isNullOrEmpty(getOperationName()),
         "an operation name must be set");
     Operation.Builder b = super.asOperation(clock).toBuilder();
-    Map<String, String> labels = Maps.newHashMap();
-    labels.put(SCC_USER_AGENT, KnownLabels.USER_AGENT);
-    if (!Strings.isNullOrEmpty(getReferer())) {
-      labels.put(SCC_REFERER, getReferer());
-    }
+    b.putAllLabels(getSystemLabels());
+
+    return CheckRequest.newBuilder().setServiceName(getServiceName()).setOperation(b).build();
+  }
+
+  @Override
+  protected Map<String, String> getSystemLabels() {
+    Map<String, String> labels = super.getSystemLabels();
     if (!Strings.isNullOrEmpty(getClientIp())) {
       labels.put(SCC_CALLER_IP, getClientIp());
     }
-    b.putAllLabels(labels);
-
-    return CheckRequest.newBuilder().setServiceName(getServiceName()).setOperation(b).build();
+    if (!Strings.isNullOrEmpty(getReferer())) {
+      labels.put(SCC_REFERER, getReferer());
+    }
+    return labels;
   }
 }

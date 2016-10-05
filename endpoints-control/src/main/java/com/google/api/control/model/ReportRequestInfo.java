@@ -124,6 +124,7 @@ public class ReportRequestInfo extends OperationInfo {
       for (KnownLabels l : rules.getLabels()) {
         l.performUpdate(this, addedLabels);
       }
+      o.putAllLabels(getSystemLabels());
       o.putAllLabels(addedLabels);
       KnownMetrics[] metrics = rules.getMetrics();
       for (KnownMetrics m : metrics) {

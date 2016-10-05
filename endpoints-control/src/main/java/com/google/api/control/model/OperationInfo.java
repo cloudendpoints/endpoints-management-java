@@ -20,12 +20,20 @@ import com.google.api.client.util.Clock;
 import com.google.api.servicecontrol.v1.Operation;
 import com.google.api.servicecontrol.v1.Operation.Importance;
 import com.google.common.base.Strings;
+import com.google.common.collect.Maps;
 import com.google.protobuf.Timestamp;
+
+import java.util.Map;
 
 /**
  * Holds basic information about an operation to be obtained from the HTTP layer.
  */
 public class OperationInfo {
+  public static final String SCC_CALLER_IP = "servicecontrol.googleapis.com/caller_ip";
+  public static final String SCC_USER_AGENT = "servicecontrol.googleapis.com/user_agent";
+  public static final String SCC_SERVICE_AGENT = "servicecontrol.googleapis.com/service_agent";
+  public static final String SCC_REFERER = "servicecontrol.googleapis.com/referer";
+
   private boolean apiKeyValid;
   private String apiKey;
   private String consumerProjectId;
@@ -142,5 +150,12 @@ public class OperationInfo {
   public OperationInfo setServiceName(String serviceName) {
     this.serviceName = serviceName;
     return this;
+  }
+
+  protected Map<String, String> getSystemLabels() {
+    Map<String, String> labels = Maps.newHashMap();
+    labels.put(SCC_USER_AGENT, KnownLabels.USER_AGENT);
+    labels.put(SCC_SERVICE_AGENT, KnownLabels.SERVICE_AGENT);
+    return labels;
   }
 }

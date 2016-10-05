@@ -35,6 +35,7 @@ import com.google.api.control.model.FakeClock;
 import com.google.api.control.model.KnownLabels;
 import com.google.api.control.model.KnownMetrics;
 import com.google.api.control.model.MethodRegistry;
+import com.google.api.control.model.OperationInfo;
 import com.google.api.control.model.ReportingRule;
 import com.google.api.control.model.Timestamps;
 import com.google.api.servicecontrol.v1.CheckError;
@@ -104,8 +105,9 @@ public class ControlFilterTest {
   private CheckResponse checkResponse;
   private static final Timestamp REALLY_EARLY = Timestamps.fromEpoch(0);
   private static final Map<String, String> OPERATION_LABELS =
-      ImmutableMap.of(CheckRequestInfo.SCC_CALLER_IP, TEST_CLIENT_IP, CheckRequestInfo.SCC_REFERER,
-          REFERER, CheckRequestInfo.SCC_USER_AGENT, "ESP");
+      ImmutableMap.of(CheckRequestInfo.SCC_CALLER_IP, TEST_CLIENT_IP, OperationInfo.SCC_REFERER,
+          REFERER, OperationInfo.SCC_USER_AGENT, "ESP", OperationInfo.SCC_SERVICE_AGENT,
+          "EF_JAVA/UNKNOWN");
 
   @Before
   public void setUp() {
@@ -168,7 +170,8 @@ public class ControlFilterTest {
     assertThat(aReport.getOperationsCount()).isEqualTo(1);
     Operation op = aReport.getOperations(0);
     Map<String, String> wantedLabels =
-        ImmutableMap.of(KnownLabels.GCP_LOCATION.getName(), "global");
+        ImmutableMap.of(KnownLabels.GCP_LOCATION.getName(), "global", OperationInfo.SCC_USER_AGENT,
+            "ESP", OperationInfo.SCC_SERVICE_AGENT, "EF_JAVA/UNKNOWN");
     assertThat(op.getLabelsMap()).isEqualTo(wantedLabels);
     // TODO: Add more assertions
   }
@@ -217,7 +220,9 @@ public class ControlFilterTest {
     Operation op = aReport.getOperations(0);
     Map<String, String> wantedLabels =
         ImmutableMap.of(KnownLabels.RESPONSE_CODE_CLASS.getName(), "2xx",
-            KnownLabels.PROTOCOL.getName(), "HTTP", KnownLabels.REFERER.getName(), "testReferer");
+            KnownLabels.PROTOCOL.getName(), "HTTP", KnownLabels.REFERER.getName(), "testReferer",
+            OperationInfo.SCC_USER_AGENT, "ESP", OperationInfo.SCC_SERVICE_AGENT,
+            "EF_JAVA/UNKNOWN");
     assertThat(op.getLabelsMap()).isEqualTo(wantedLabels);
     // TODO: Add more assertions
   }
@@ -251,7 +256,9 @@ public class ControlFilterTest {
       Operation op = aReport.getOperations(0);
       Map<String, String> wantedLabels =
           ImmutableMap.of(KnownLabels.RESPONSE_CODE_CLASS.getName(), "2xx",
-              KnownLabels.PROTOCOL.getName(), "HTTP", KnownLabels.REFERER.getName(), "testReferer");
+              KnownLabels.PROTOCOL.getName(), "HTTP", KnownLabels.REFERER.getName(), "testReferer",
+              OperationInfo.SCC_USER_AGENT, "ESP", OperationInfo.SCC_SERVICE_AGENT,
+              "EF_JAVA/UNKNOWN");
       assertThat(op.getLabelsMap()).isEqualTo(wantedLabels);
       assertThat(op.getConsumerId()).isEqualTo("api_key:" + testApiKey);
       reset(client);
@@ -291,7 +298,9 @@ public class ControlFilterTest {
     Operation op = aReport.getOperations(0);
     Map<String, String> wantedLabels =
         ImmutableMap.of(KnownLabels.RESPONSE_CODE_CLASS.getName(), "4xx",
-            KnownLabels.PROTOCOL.getName(), "HTTP", KnownLabels.REFERER.getName(), "testReferer");
+            KnownLabels.PROTOCOL.getName(), "HTTP", KnownLabels.REFERER.getName(), "testReferer",
+            OperationInfo.SCC_USER_AGENT, "ESP", OperationInfo.SCC_SERVICE_AGENT,
+            "EF_JAVA/UNKNOWN");
     assertThat(op.getLabelsMap()).isEqualTo(wantedLabels);
   }
 
@@ -333,7 +342,9 @@ public class ControlFilterTest {
     Operation op = aReport.getOperations(0);
     Map<String, String> wantedLabels =
         ImmutableMap.of(KnownLabels.RESPONSE_CODE_CLASS.getName(), "4xx",
-            KnownLabels.PROTOCOL.getName(), "HTTP", KnownLabels.REFERER.getName(), "testReferer");
+            KnownLabels.PROTOCOL.getName(), "HTTP", KnownLabels.REFERER.getName(), "testReferer",
+            OperationInfo.SCC_USER_AGENT, "ESP", OperationInfo.SCC_SERVICE_AGENT,
+            "EF_JAVA/UNKNOWN");
     assertThat(op.getLabelsMap()).isEqualTo(wantedLabels);
 
     // confirm that the report uses a consumer id derived from the project
@@ -365,7 +376,9 @@ public class ControlFilterTest {
     Operation op = aReport.getOperations(0);
     Map<String, String> wantedLabels =
         ImmutableMap.of(KnownLabels.RESPONSE_CODE_CLASS.getName(), "2xx",
-            KnownLabels.PROTOCOL.getName(), "HTTP", KnownLabels.REFERER.getName(), "testReferer");
+            KnownLabels.PROTOCOL.getName(), "HTTP", KnownLabels.REFERER.getName(), "testReferer",
+            OperationInfo.SCC_USER_AGENT, "ESP", OperationInfo.SCC_SERVICE_AGENT,
+            "EF_JAVA/UNKNOWN");
     assertThat(op.getLabelsMap()).isEqualTo(wantedLabels);
   }
 
@@ -400,7 +413,9 @@ public class ControlFilterTest {
     Operation op = aReport.getOperations(0);
     Map<String, String> wantedLabels =
         ImmutableMap.of(KnownLabels.RESPONSE_CODE_CLASS.getName(), "4xx",
-            KnownLabels.PROTOCOL.getName(), "HTTP", KnownLabels.REFERER.getName(), "testReferer");
+            KnownLabels.PROTOCOL.getName(), "HTTP", KnownLabels.REFERER.getName(), "testReferer",
+            OperationInfo.SCC_USER_AGENT, "ESP", OperationInfo.SCC_SERVICE_AGENT,
+            "EF_JAVA/UNKNOWN");
     assertThat(op.getLabelsMap()).isEqualTo(wantedLabels);
   }
 
@@ -435,7 +450,9 @@ public class ControlFilterTest {
       Operation op = aReport.getOperations(0);
       Map<String, String> wantedLabels =
           ImmutableMap.of(KnownLabels.RESPONSE_CODE_CLASS.getName(), "2xx",
-              KnownLabels.PROTOCOL.getName(), "HTTP", KnownLabels.REFERER.getName(), "testReferer");
+              KnownLabels.PROTOCOL.getName(), "HTTP", KnownLabels.REFERER.getName(), "testReferer",
+              OperationInfo.SCC_USER_AGENT, "ESP", OperationInfo.SCC_SERVICE_AGENT,
+              "EF_JAVA/UNKNOWN");
       assertThat(op.getLabelsMap()).isEqualTo(wantedLabels);
       assertThat(op.getConsumerId()).isEqualTo("api_key:" + testApiKey);
       reset(client);
