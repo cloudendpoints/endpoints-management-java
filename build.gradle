@@ -15,7 +15,6 @@
  */
 
 allprojects {
-  apply plugin: 'checkstyle'
   apply plugin: 'eclipse'
   apply plugin: 'jacoco'
   apply plugin: 'java'
@@ -25,25 +24,30 @@ allprojects {
   group = 'com.google.endpoints'
   version = "1.0.0-beta.8"
 
-  checkstyle {
-    configFile = rootProject.file("config/checkstyle/checkstyle.xml")
-    toolVersion = "6.19"
-  }
-
   jacocoTestReport {
     reports {
       xml.enabled true
     }
   }
 
-  // force checkstyle tasks to fail on warnings
-  tasks.withType(Checkstyle).each { checkstyleTask ->
-    checkstyleTask.doLast {
-      reports.all { report ->
-        def outputFile = report.destination
-        if (outputFile.exists() && outputFile.text.contains("<error ")) {
-          outputs.upToDateWhen { false }
-          throw new GradleException("There were checkstyle warnings! For more info check $outputFile")
+  // force checkstyle tasks to fail on warnings, but don't run checkstyle on
+  // code generated projects
+  if (name != 'endpoints-management-protos') {
+    apply plugin: 'checkstyle'
+
+    checkstyle {
+      configFile = rootProject.file("config/checkstyle/checkstyle.xml")
+      toolVersion = "6.19"
+    }
+
+    tasks.withType(Checkstyle).each { checkstyleTask ->
+      checkstyleTask.doLast {
+        reports.all { report ->
+          def outputFile = report.destination
+          if (outputFile.exists() && outputFile.text.contains("<error ")) {
+            outputs.upToDateWhen { false }
+            throw new GradleException("There were checkstyle warnings! For more info check $outputFile")
+          }
         }
       }
     }
@@ -51,14 +55,9 @@ allprojects {
 }
 
 subprojects {
-  def tmpSnapshotRepo = "http://104.197.230.53:8081/nexus/content/repositories/snapshots/"
   repositories {
     mavenLocal()
     mavenCentral()
-    maven {
-      // Private maven repo.  Temporary until launch
-      url tmpSnapshotRepo
-    }
   }
 
   compileJava {
