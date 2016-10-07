@@ -42,9 +42,6 @@ public enum CheckErrorInfo {
   BILLING_STATUS_UNAVAILABLE(CheckError.Code.BILLING_STATUS_UNAVAILABLE, HttpServletResponse.SC_OK,
       "", false),
 
-  QUOTA_CHECK_UNAVAILABLE(CheckError.Code.QUOTA_CHECK_UNAVAILABLE, HttpServletResponse.SC_OK, "",
-      false),
-
   NOT_FOUND(CheckError.Code.NOT_FOUND, HttpServletResponse.SC_BAD_REQUEST,
       "Client project not found. Please pass a valid project", false),
 
@@ -78,9 +75,6 @@ public enum CheckErrorInfo {
 
   PROJECT_INVALID(CheckError.Code.PROJECT_INVALID, HttpServletResponse.SC_BAD_REQUEST,
       "Client Project is not valid.  Please pass a valid project", false),
-
-  VISIBILITY_DENIED(CheckError.Code.VISIBILITY_DENIED, HttpServletResponse.SC_BAD_REQUEST,
-      "Project {project_id} has no visibility access to the service", false),
 
   BILLING_DISABLED(CheckError.Code.BILLING_DISABLED, HttpServletResponse.SC_BAD_REQUEST,
       "Project {project_id} has billing disabled. Please enable it", false),
