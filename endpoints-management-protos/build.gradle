@@ -1,0 +1,64 @@
+buildscript {
+  repositories {
+    mavenCentral()
+  }
+  dependencies { classpath 'com.google.protobuf:protobuf-gradle-plugin:0.7.7' }
+}
+
+apply plugin: 'java'
+apply plugin: 'maven'
+apply plugin: 'signing'
+apply plugin: 'com.google.protobuf'
+
+description = 'GRPC library for the servicecontrol-v1 service'
+// TODO: use a flag to determine whether to produce a release or a snapshot
+sourceCompatibility = 1.6
+targetCompatibility = 1.6
+
+repositories {
+  mavenCentral()
+  mavenLocal()
+}
+
+dependencies {
+  compile "com.google.protobuf:protobuf-java:3.0.0"
+  compile "com.google.api.grpc:googleapis-common-protos:0.0.2"
+  compile "io.grpc:grpc-all:0.15.0"
+}
+
+protobuf {
+  protoc {
+    // The version of protoc must match protobuf-java. If you don't depend on
+    // protobuf-java directly, you will be transitively depending on the
+    // protobuf-java version that grpc depends on.
+    artifact = "com.google.protobuf:protoc:3.0.0-beta-4"
+  }
+  plugins {
+    grpc {
+      artifact = 'io.grpc:protoc-gen-grpc-java:0.15.0'
+    }
+  }
+  generateProtoTasks {
+    all()*.plugins {
+      grpc {
+        outputSubDir = 'java'
+      }
+    }
+  }
+}
+
+sourceSets {
+  main {
+    java {
+      srcDir 'build/generated/source/proto/main/java'
+    }
+  }
+}
+sourceSets.main.proto.setIncludes(['google/api/servicecontrol/v1/*.proto'])
+
+configureMaven(
+  project,
+  'Endpoints Management - Generated Java Protobufs',
+  'Contains the generated protocol buffer surface used by Endpoints'
+)
+archivesBaseName = 'endpoints-management-protos'
