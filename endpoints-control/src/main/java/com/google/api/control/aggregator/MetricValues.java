@@ -18,7 +18,6 @@ package com.google.api.control.aggregator;
 
 import com.google.api.MetricDescriptor.MetricKind;
 import com.google.api.control.model.Distributions;
-import com.google.api.control.model.Moneys;
 import com.google.api.control.model.Timestamps;
 import com.google.api.servicecontrol.v1.MetricValue;
 import com.google.api.servicecontrol.v1.MetricValue.Builder;
@@ -26,7 +25,6 @@ import com.google.common.hash.HashCode;
 import com.google.common.hash.Hasher;
 import com.google.common.hash.Hashing;
 
-import java.nio.charset.StandardCharsets;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -50,10 +48,6 @@ public final class MetricValues {
    */
   public static Hasher putMetricValue(Hasher h, MetricValue value) {
     Signing.putLabels(h, value.getLabelsMap());
-    if (value.getValueCase() == MetricValue.ValueCase.MONEY_VALUE) {
-      h.putChar('\0');
-      h.putString(value.getMoneyValue().getCurrencyCode(), StandardCharsets.UTF_8);
-    }
     return h;
   }
 
@@ -109,9 +103,6 @@ public final class MetricValues {
       case DISTRIBUTION_VALUE:
         builder.setDistributionValue(
             Distributions.merge(prior.getDistributionValue(), latest.getDistributionValue()));
-        break;
-      case MONEY_VALUE:
-        builder.setMoneyValue(Moneys.add(prior.getMoneyValue(), latest.getMoneyValue()));
         break;
       case INT64_VALUE:
         builder.setInt64Value(prior.getInt64Value() + latest.getInt64Value());

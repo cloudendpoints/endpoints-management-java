@@ -17,7 +17,6 @@
 package com.google.api.control.aggregator;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.fail;
 
 import com.google.api.MetricDescriptor.MetricKind;
@@ -31,7 +30,6 @@ import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hasher;
 import com.google.common.hash.Hashing;
 import com.google.protobuf.Timestamp;
-import com.google.type.Money;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -48,17 +46,13 @@ import java.util.Map;
 public class MetricValuesTests {
   private static final double TOLERANCE = 1e-5;
   private static final double A_DOUBLE_VALUE = 0.1;
-  private static final Money testMoney =
-      Money.newBuilder().setCurrencyCode("JPY").setUnits(1).setNanos(1).build();
   private static final Timestamp EARLY = Timestamp.newBuilder().setNanos(1).setSeconds(100).build();
   private static final Timestamp LATER = Timestamp.newBuilder().setNanos(2).setSeconds(100).build();
   private static final Map<String, String> TEST_LABELS =
       ImmutableMap.<String, String>of("key1", "value1", "key2", "value2");
 
   private MetricValue testValue;
-  private MetricValue testValueWithMoney;
   private MetricValue otherValue;
-  private MetricValue otherValueWithMoney;
   private MetricValue earlyEndingTestValue;
   private MetricValue laterEndingTestValue;
 
@@ -69,10 +63,8 @@ public class MetricValuesTests {
     Builder fromTestValue = testValue.toBuilder();
     earlyEndingTestValue = fromTestValue.setEndTime(EARLY).build();
     laterEndingTestValue = fromTestValue.setEndTime(LATER).build();
-    testValueWithMoney = fromTestValue.setMoneyValue(testMoney).build();
     otherValue =
         MetricValue.newBuilder().setDoubleValue(A_DOUBLE_VALUE).putAllLabels(TEST_LABELS).build();
-    otherValueWithMoney = otherValue.toBuilder().setMoneyValue(testMoney).build();
   }
 
   @Test
@@ -86,38 +78,8 @@ public class MetricValuesTests {
   }
 
   @Test
-  public void putMetricValueShouldChangeTheHashWhenMoneyIsInvolved() {
-    HashFunction hf = Hashing.md5();
-    Hasher hasher1 = hf.newHasher();
-    Hasher hasher2 = hf.newHasher();
-    HashCode hash1 = MetricValues.putMetricValue(hasher1, testValue).hash();
-    HashCode hash2 = MetricValues.putMetricValue(hasher2, testValueWithMoney).hash();
-    assertNotEquals(hash1, hash2);
-  }
-
-  @Test
-  public void putMetricValueShouldUpdateHashesConsistentlyWhenMoneyIsInvolved() {
-    HashFunction hf = Hashing.md5();
-    Hasher hasher1 = hf.newHasher();
-    Hasher hasher2 = hf.newHasher();
-    HashCode hash1 = MetricValues.putMetricValue(hasher1, testValueWithMoney).hash();
-    HashCode hash2 = MetricValues.putMetricValue(hasher2, otherValueWithMoney).hash();
-    assertEquals(hash1, hash2);
-  }
-
-  @Test
   public void signShouldProduceConsistentHashCodes() {
     assertEquals(MetricValues.sign(testValue), MetricValues.sign(otherValue));
-  }
-
-  @Test
-  public void signShouldProduceHaveDifferentHashCodeWhenMoneyIsAdded() {
-    assertNotEquals(MetricValues.sign(testValue), MetricValues.sign(testValueWithMoney));
-  }
-
-  @Test
-  public void signShouldProduceConsistentHashCodesWhenMoneyIsInvolved() {
-    assertEquals(MetricValues.sign(testValueWithMoney), MetricValues.sign(otherValueWithMoney));
   }
 
   @Test
@@ -165,13 +127,6 @@ public class MetricValuesTests {
         // expected
       }
     }
-  }
-
-  @Test
-  public void mergeShouldSucceedForDeltaMetricsOfTheMoneyType() {
-    MetricValue merged = MetricValues.merge(MetricKind.DELTA, testValueWithMoney, testValueWithMoney);
-    assertEquals(merged.getMoneyValue().getUnits(), 2 * testValueWithMoney.getMoneyValue().getUnits());
-    assertEquals(merged.getMoneyValue().getNanos(), 2 * testValueWithMoney.getMoneyValue().getNanos());
   }
 
   @Test
