@@ -16,6 +16,12 @@
 
 package com.google.api.control;
 
+import com.google.api.client.http.GenericUrl;
+import com.google.api.client.http.HttpHeaders;
+import com.google.api.client.http.HttpRequest;
+import com.google.api.client.http.HttpResponse;
+import com.google.api.client.http.HttpTransport;
+import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.util.Clock;
 import com.google.api.control.model.CheckErrorInfo;
 import com.google.api.control.model.CheckRequestInfo;
@@ -41,6 +47,7 @@ import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.security.GeneralSecurityException;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
@@ -74,8 +81,10 @@ public class ControlFilter implements Filter {
   private static final String STATS_LOG_FREQUENCY_PARAM = "endpoints.statsLogFrequency";
   private static final String DEFAULT_LOCATION = "global";
   private static final List<String> DEFAULT_API_KEYS = ImmutableList.of("key", "api_key");
+  private static final String METADATA_SERVER_URL = "http://metadata.google.internal";
   private final Ticker ticker;
   private final Clock clock;
+  private final ReportedPlatforms platform;
   private String projectId;
   private Client client;
   private int statsLogFrequency = Client.DO_NOT_LOG_STATS;
@@ -83,16 +92,18 @@ public class ControlFilter implements Filter {
 
   @VisibleForTesting
   public ControlFilter(@Nullable Client client, @Nullable String projectId, @Nullable Ticker ticker,
-      @Nullable Clock clock) {
+      @Nullable Clock clock, @Nullable HttpTransport transport) {
     this.client = client;
     setProjectId(projectId);
     this.ticker = ticker == null ? Ticker.systemTicker() : ticker;
     this.clock = clock == null ? Clock.SYSTEM : clock;
+    transport = transport == null ? new NetHttpTransport() : transport;
+    platform = getPlatformFromEnvironment(System.getenv(), transport);
     this.statistics = new Statistics();
   }
 
   public ControlFilter() {
-    this(null, null, null, null);
+    this(null, null, null, null, null);
   }
 
   @Override
@@ -305,7 +316,7 @@ public class ControlFilter implements Filter {
         .setLocation(DEFAULT_LOCATION)
         .setMethod(appInfo.httpMethod)
         .setOverheadTimeMillis(timer.getOverheadTimeMillis())
-        .setPlatform(ReportedPlatforms.GAE)
+        .setPlatform(platform)
         .setProducerProjectId(projectId)
         .setProtocol(ReportedProtocols.HTTP)
         .setRequestSize(appInfo.requestSize)
@@ -388,6 +399,41 @@ public class ControlFilter implements Filter {
     if (statistics.totalFiltered.get() % statsLogFrequency == 0) {
       log.info(statistics.toString());
     }
+  }
+
+  @VisibleForTesting
+  static ReportedPlatforms getPlatformFromEnvironment(Map<String, String> env, HttpTransport transport) {
+    if (env.containsKey("KUBERNETES_SERVICE_HOST")) {
+      return ReportedPlatforms.GKE;
+    }
+    boolean hasMetadataServer = hasMetadataServer(transport);
+    boolean onGae = env.containsKey("GAE_MODULE_NAME");
+    if (hasMetadataServer && onGae) {
+      return ReportedPlatforms.GAE_FLEX;
+    } else if (hasMetadataServer) {
+      return ReportedPlatforms.GCE;
+    } else if (onGae) {
+      return ReportedPlatforms.GAE_STANDARD;
+    }
+    String software = env.get("SERVER_SOFTWARE");
+    if (software != null && software.startsWith("Development")) {
+      return ReportedPlatforms.DEVELOPMENT;
+    }
+    return ReportedPlatforms.UNKNOWN;
+  }
+
+  private static boolean hasMetadataServer(HttpTransport transport) {
+    try {
+      HttpRequest request = transport.createRequestFactory()
+          .buildGetRequest(new GenericUrl(METADATA_SERVER_URL));
+      HttpResponse response = request.execute();
+      HttpHeaders headers = response.getHeaders();
+      return "Google".equals(headers.getFirstHeaderStringValue("Metadata-Flavor"));
+    } catch (IOException expected) {
+      // If an error happens, it's probably safe to say the metadata service isn't available where
+      // the code is running.
+    }
+    return false;
   }
 
   private static class AppStruct {

@@ -17,6 +17,7 @@
 package com.google.api.control.extensions.appengine;
 
 import com.google.api.client.extensions.appengine.http.UrlFetchTransport;
+import com.google.api.client.http.HttpTransport;
 import com.google.api.client.util.Clock;
 import com.google.api.control.Client;
 import com.google.api.control.ControlFilter;
@@ -36,8 +37,9 @@ import java.security.GeneralSecurityException;
  */
 public class GoogleAppEngineControlFilter extends ControlFilter {
   @VisibleForTesting
-  GoogleAppEngineControlFilter(Client client, String projectId, Ticker ticker, Clock clock) {
-    super(client, projectId, ticker, clock);
+  GoogleAppEngineControlFilter(Client client, String projectId, Ticker ticker, Clock clock,
+      HttpTransport transport) {
+    super(client, projectId, ticker, clock, UrlFetchTransport.getDefaultInstance());
   }
 
   /**

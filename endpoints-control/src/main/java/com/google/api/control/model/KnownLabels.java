@@ -182,9 +182,9 @@ public enum KnownLabels {
         @Override
         public void update(String name, ReportRequestInfo info, Map<String, String> labels) {
           if (info.getPlatform() != null) {
-            labels.put(name, info.getPlatform().name());
+            labels.put(name, info.getPlatform().getName());
           } else {
-            labels.put(name, ReportRequestInfo.ReportedPlatforms.UNKNOWN.name());
+            labels.put(name, ReportRequestInfo.ReportedPlatforms.UNKNOWN.getName());
           }
         }
       }),
