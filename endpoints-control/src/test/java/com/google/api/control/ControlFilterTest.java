@@ -26,6 +26,10 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.google.api.client.http.HttpTransport;
+import com.google.api.client.http.LowLevelHttpRequest;
+import com.google.api.client.http.LowLevelHttpResponse;
+import com.google.api.client.testing.http.MockLowLevelHttpResponse;
 import com.google.api.client.util.Clock;
 import com.google.api.control.ControlFilter.FilterServletOutputStream;
 import com.google.api.control.aggregator.FakeTicker;
@@ -36,6 +40,7 @@ import com.google.api.control.model.KnownLabels;
 import com.google.api.control.model.KnownMetrics;
 import com.google.api.control.model.MethodRegistry;
 import com.google.api.control.model.OperationInfo;
+import com.google.api.control.model.ReportRequestInfo.ReportedPlatforms;
 import com.google.api.control.model.ReportingRule;
 import com.google.api.control.model.Timestamps;
 import com.google.api.servicecontrol.v1.CheckError;
@@ -134,14 +139,14 @@ public class ControlFilterTest {
 
   @Test
   public void shouldCallTheChainIfThereIsNoClient() throws IOException, ServletException {
-    ControlFilter f = new ControlFilter(null, "aProjectId", testTicker, testClock);
+    ControlFilter f = new ControlFilter(null, "aProjectId", testTicker, testClock, null);
     f.doFilter(request, response, chain);
     verify(chain).doFilter(request, response);
   }
 
   @Test
   public void shouldNotUseTheClientWithoutAProjectId() throws IOException, ServletException {
-    ControlFilter f = new ControlFilter(client, null, testTicker, testClock);
+    ControlFilter f = new ControlFilter(client, null, testTicker, testClock, null);
     f.doFilter(request, response, chain);
     verify(chain).doFilter(request, response);
     verify(client, never()).check(capturedCheck.capture());
@@ -149,7 +154,7 @@ public class ControlFilterTest {
 
   @Test
   public void shouldNotUseTheClientIfThereIsNoMethodInfo() throws IOException, ServletException {
-    ControlFilter f = new ControlFilter(client, TEST_PROJECT_ID, testTicker, testClock);
+    ControlFilter f = new ControlFilter(client, TEST_PROJECT_ID, testTicker, testClock, null);
     when(request.getAttribute(ConfigFilter.METHOD_INFO_ATTRIBUTE)).thenReturn(null);
     f.doFilter(request, response, chain);
     verify(chain).doFilter(request, response);
@@ -163,7 +168,7 @@ public class ControlFilterTest {
     mockRequestAndResponse();
     when(client.check(any(CheckRequest.class))).thenReturn(checkResponse);
 
-    ControlFilter f = new ControlFilter(client, TEST_PROJECT_ID, testTicker, testClock);
+    ControlFilter f = new ControlFilter(client, TEST_PROJECT_ID, testTicker, testClock, null);
     f.doFilter(request, response, chain);
     verify(client, times(1)).report(capturedReport.capture());
     ReportRequest aReport = capturedReport.getValue();
@@ -184,7 +189,7 @@ public class ControlFilterTest {
     mockRequestAndResponse();
     when(client.check(any(CheckRequest.class))).thenReturn(checkResponse);
 
-    ControlFilter f = new ControlFilter(client, TEST_PROJECT_ID, testTicker, testClock);
+    ControlFilter f = new ControlFilter(client, TEST_PROJECT_ID, testTicker, testClock, null);
     f.doFilter(request, response, chain);
     verify(client, times(1)).report(capturedReport.capture());
     ReportRequest aReport = capturedReport.getValue();
@@ -203,7 +208,7 @@ public class ControlFilterTest {
 
   @Test
   public void shouldUseTheClientIfConfiguredOk() throws IOException, ServletException {
-    ControlFilter f = new ControlFilter(client, TEST_PROJECT_ID, testTicker, testClock);
+    ControlFilter f = new ControlFilter(client, TEST_PROJECT_ID, testTicker, testClock, null);
     mockRequestAndResponse();
     when(client.check(any(CheckRequest.class))).thenReturn(checkResponse);
 
@@ -231,7 +236,7 @@ public class ControlFilterTest {
   public void shouldSendTheDefaultApiKeyIfPresent() throws IOException, ServletException {
     String[] defaultKeyNames = {"key", "api_key"};
     String testApiKey = "defaultApiKey";
-    ControlFilter f = new ControlFilter(client, TEST_PROJECT_ID, testTicker, testClock);
+    ControlFilter f = new ControlFilter(client, TEST_PROJECT_ID, testTicker, testClock, null);
     for (String defaultKeyName : defaultKeyNames) {
       mockRequestAndResponse();
       when(request.getParameter(defaultKeyName)).thenReturn(testApiKey);
@@ -269,7 +274,7 @@ public class ControlFilterTest {
   @Test
   public void shouldSendAReportButNotInvokeTheChainIfTheCheckFails()
       throws IOException, ServletException {
-    ControlFilter f = new ControlFilter(client, TEST_PROJECT_ID, testTicker, testClock);
+    ControlFilter f = new ControlFilter(client, TEST_PROJECT_ID, testTicker, testClock, null);
 
     // Fail because the project got deleted
     CheckResponse deleted = CheckResponse
@@ -308,7 +313,7 @@ public class ControlFilterTest {
   public void shouldSendAReportButNotInvokeTheChainIfTheCheckFailsOnBadApiKey()
       throws IOException, ServletException {
     String testApiKey = "defaultApiKey";
-    ControlFilter f = new ControlFilter(client, TEST_PROJECT_ID, testTicker, testClock);
+    ControlFilter f = new ControlFilter(client, TEST_PROJECT_ID, testTicker, testClock, null);
 
     // Fail because the project got deleted
     CheckResponse deleted = CheckResponse
@@ -355,7 +360,7 @@ public class ControlFilterTest {
   @Test
   public void shouldSendAReportAndInvokeTheChainIfTheCheckErrors()
       throws IOException, ServletException {
-    ControlFilter f = new ControlFilter(client, TEST_PROJECT_ID, testTicker, testClock);
+    ControlFilter f = new ControlFilter(client, TEST_PROJECT_ID, testTicker, testClock, null);
 
     // Return null from check to indicate that transport fail occurred
     mockRequestAndResponse();
@@ -384,7 +389,7 @@ public class ControlFilterTest {
 
   @Test
   public void shouldStopTheClientWhenDestroyed() throws IOException, ServletException {
-    ControlFilter f = new ControlFilter(client, TEST_PROJECT_ID, testTicker, testClock);
+    ControlFilter f = new ControlFilter(client, TEST_PROJECT_ID, testTicker, testClock, null);
     f.destroy();
     verify(client, times(1)).stop();
   }
@@ -392,7 +397,7 @@ public class ControlFilterTest {
   @Test
   public void shouldSendAReportButNotInvokeTheChainWhenNeededApiKeyIsNotProvided()
       throws IOException, ServletException {
-    ControlFilter f = new ControlFilter(client, TEST_PROJECT_ID, testTicker, testClock);
+    ControlFilter f = new ControlFilter(client, TEST_PROJECT_ID, testTicker, testClock, null);
 
     // Fail because the api key is needed but no provided
     mockRequestAndResponse();
@@ -423,7 +428,7 @@ public class ControlFilterTest {
   public void shouldSucceedWhenANeededApiKeyIsPresent() throws IOException, ServletException {
     String[] defaultKeyNames = {"key", "api_key"};
     String testApiKey = "defaultApiKey";
-    ControlFilter f = new ControlFilter(client, TEST_PROJECT_ID, testTicker, testClock);
+    ControlFilter f = new ControlFilter(client, TEST_PROJECT_ID, testTicker, testClock, null);
     info.setAllowUnregisteredCalls(false); // the means that the API key is necessary
 
     for (String defaultKeyName : defaultKeyNames) {
@@ -457,6 +462,90 @@ public class ControlFilterTest {
       assertThat(op.getConsumerId()).isEqualTo("api_key:" + testApiKey);
       reset(client);
       reset(request);
+    }
+  }
+
+  @Test
+  public void getPlatformFromEnvironment_Gke() {
+    assertThat(
+        ControlFilter.getPlatformFromEnvironment(
+            ImmutableMap.of("KUBERNETES_SERVICE_HOST", "test"), new MetadataTransport(true)))
+        .isEqualTo(ReportedPlatforms.GKE);
+  }
+
+  @Test
+  public void getPlatformFromEnvironment_Gce() {
+    assertThat(
+        ControlFilter.getPlatformFromEnvironment(
+            ImmutableMap.<String, String>of(), new MetadataTransport(true)))
+        .isEqualTo(ReportedPlatforms.GCE);
+  }
+
+  @Test
+  public void getPlatformFromEnvironment_GaeStandard() {
+    assertThat(
+        ControlFilter.getPlatformFromEnvironment(
+            ImmutableMap.of("GAE_MODULE_NAME", "test"), new MetadataTransport(false)))
+        .isEqualTo(ReportedPlatforms.GAE_STANDARD);
+  }
+
+  @Test
+  public void getPlatformFromEnvironment_GaeFlex() {
+    assertThat(
+        ControlFilter.getPlatformFromEnvironment(
+            ImmutableMap.of("GAE_MODULE_NAME", "test"), new MetadataTransport(true)))
+        .isEqualTo(ReportedPlatforms.GAE_FLEX);
+  }
+
+  @Test
+  public void getPlatformFromEnvironment_Development() {
+    assertThat(
+        ControlFilter.getPlatformFromEnvironment(
+            ImmutableMap.of("SERVER_SOFTWARE", "Development"), new MetadataTransport(false)))
+        .isEqualTo(ReportedPlatforms.DEVELOPMENT);
+  }
+
+  @Test
+  public void getPlatformFromEnvironment_Unknown() {
+    assertThat(
+        ControlFilter.getPlatformFromEnvironment(
+            ImmutableMap.<String, String>of(), new MetadataTransport(false)))
+        .isEqualTo(ReportedPlatforms.UNKNOWN);
+  }
+
+  private static class MetadataTransport extends HttpTransport {
+    private final boolean hasMetadata;
+
+    MetadataTransport(boolean hasMetadata) {
+      this.hasMetadata = hasMetadata;
+    }
+
+    @Override
+    protected LowLevelHttpRequest buildRequest(String s, String s1) throws IOException {
+      return new MetadataRequest(hasMetadata);
+    }
+  }
+
+  private static class MetadataRequest extends LowLevelHttpRequest {
+    private final boolean hasMetadata;
+
+    MetadataRequest(boolean hasMetadata) {
+      this.hasMetadata = hasMetadata;
+    }
+
+    @Override
+    public void addHeader(String s, String s1) throws IOException {
+
+    }
+
+    @Override
+    public LowLevelHttpResponse execute() throws IOException {
+      MockLowLevelHttpResponse response = new MockLowLevelHttpResponse();
+      if (hasMetadata) {
+        response.addHeader("Metadata-Flavor", "Google");
+        return response;
+      }
+      throw new IOException("emulated server exception");
     }
   }
 

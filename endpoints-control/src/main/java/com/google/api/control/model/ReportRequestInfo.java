@@ -36,11 +36,27 @@ import java.util.Map;
  * and transport layers.
  */
 public class ReportRequestInfo extends OperationInfo {
+
   /**
    * ReportedPlatform enumerates the platforms that may be reported.
    */
   public enum ReportedPlatforms {
-    UNKNOWN, GAE, GCE, GKE
+    UNKNOWN("Unknown"),
+    GAE_STANDARD("GAE Standard"),
+    GAE_FLEX("GAE"),
+    GCE("GCE"),
+    GKE("GKE"),
+    DEVELOPMENT("Development");
+
+    private final String name;
+
+    ReportedPlatforms(String name) {
+      this.name = name;
+    }
+
+    public String getName() {
+      return name;
+    }
   }
 
   /**
