@@ -67,8 +67,8 @@ public final class ServiceConfigSupplier implements Supplier<Service> {
       "usage");
 
   private static final String SERVICE_MGMT_URL_TEMPLATE =
-      "https://servicemanagement.googleapis.com/v1/services/{0}/config?configId={1}"
-      + "&$fields=" + FIELD_MASKS;
+      "https://servicemanagement.googleapis.com/v1/services/{0}/configs/{1}"
+      + "?$fields=" + FIELD_MASKS;
 
   private final AppIdentityService appIdentityService;
   private final Environment environment;
