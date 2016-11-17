@@ -36,8 +36,11 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.io.BaseEncoding;
 import com.google.rpc.Code;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
+import java.util.Properties;
 
 /**
  * KnownLabels enumerates the well-known labels and allows them to be added to the ReportRequest's
@@ -227,7 +230,7 @@ public enum KnownLabels {
   /**
    * The service agent to record in report requests
    */
-  public static final String SERVICE_AGENT = "EF_JAVA/" + getAgentVersion();
+  public static final String SERVICE_AGENT = getServiceAgent();
 
   private String name;
   private LabelDescriptor.ValueType type;
@@ -350,8 +353,14 @@ public enum KnownLabels {
     }
   }
 
-  private static String getAgentVersion() {
-    String implVersion = KnownLabels.class.getPackage().getImplementationVersion();
-    return implVersion != null ? implVersion : "UNKNOWN";
+  private static String getServiceAgent() {
+    InputStream in = KnownLabels.class.getResourceAsStream("version.properties");
+    Properties properties = new Properties();
+    try {
+      properties.load(in);
+      return "EF_JAVA/" + properties.getProperty("version");
+    } catch (IOException e) {
+      return "EF_JAVA/UNKNOWN";
+    }
   }
 }

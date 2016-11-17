@@ -140,6 +140,11 @@ public class ReportRequestInfo extends OperationInfo {
       for (KnownLabels l : rules.getLabels()) {
         l.performUpdate(this, addedLabels);
       }
+      // Forcibly add platform reporting here, as the base service config does not specify it as a
+      // label.
+      if (!o.getLabelsMap().containsKey(KnownLabels.SCC_PLATFORM.getName())) {
+        KnownLabels.SCC_PLATFORM.performUpdate(this, addedLabels);
+      }
       o.putAllLabels(getSystemLabels());
       o.putAllLabels(addedLabels);
       KnownMetrics[] metrics = rules.getMetrics();

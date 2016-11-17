@@ -41,6 +41,12 @@ sourceSets {
   }
 }
 
+processResources {
+  filesMatching('**/version.properties') {
+    expand 'serviceControlVersion': project.findProperty("version") ?: "UNKNOWN"
+  }
+}
+
 dependencies {
   compile "com.google.api.grpc:googleapis-common-protos:$googleapisCommonProtosVersion"
   compile "com.google.appengine:appengine-api-1.0-sdk:$appengineSdkVersion"
