@@ -148,7 +148,8 @@ public class ReportRequestInfoTest {
         .setEndTime(REALLY_EARLY)
         .setStartTime(REALLY_EARLY)
         .putLabels(OperationInfo.SCC_USER_AGENT, "ESP")
-        .putLabels(OperationInfo.SCC_SERVICE_AGENT, "EF_JAVA/UNKNOWN");
+        .putLabels(OperationInfo.SCC_SERVICE_AGENT, KnownLabels.SERVICE_AGENT)
+        .putLabels(KnownLabels.SCC_PLATFORM.getName(), "Unknown");
     if (!Strings.isNullOrEmpty(logName)) {
       res.addLogEntries(newTestLogEntry(logName, responseCode));
     }

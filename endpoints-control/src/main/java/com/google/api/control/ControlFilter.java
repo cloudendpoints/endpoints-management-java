@@ -48,6 +48,7 @@ import java.io.PrintWriter;
 import java.security.GeneralSecurityException;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
@@ -98,7 +99,7 @@ public class ControlFilter implements Filter {
     this.ticker = ticker == null ? Ticker.systemTicker() : ticker;
     this.clock = clock == null ? Clock.SYSTEM : clock;
     transport = transport == null ? new NetHttpTransport() : transport;
-    platform = getPlatformFromEnvironment(System.getenv(), transport);
+    platform = getPlatformFromEnvironment(System.getenv(), System.getProperties(), transport);
     this.statistics = new Statistics();
   }
 
@@ -402,12 +403,14 @@ public class ControlFilter implements Filter {
   }
 
   @VisibleForTesting
-  static ReportedPlatforms getPlatformFromEnvironment(Map<String, String> env, HttpTransport transport) {
+  static ReportedPlatforms getPlatformFromEnvironment(
+      Map<String, String> env, Properties properties, HttpTransport transport) {
     if (env.containsKey("KUBERNETES_SERVICE_HOST")) {
       return ReportedPlatforms.GKE;
     }
     boolean hasMetadataServer = hasMetadataServer(transport);
-    boolean onGae = env.containsKey("GAE_MODULE_NAME");
+    String gaeEnvironment = properties.getProperty("com.google.appengine.runtime.environment");
+    boolean onGae = gaeEnvironment != null && gaeEnvironment.startsWith("Production");
     if (hasMetadataServer && onGae) {
       return ReportedPlatforms.GAE_FLEX;
     } else if (hasMetadataServer) {
@@ -415,8 +418,7 @@ public class ControlFilter implements Filter {
     } else if (onGae) {
       return ReportedPlatforms.GAE_STANDARD;
     }
-    String software = env.get("SERVER_SOFTWARE");
-    if (software != null && software.startsWith("Development")) {
+    if (gaeEnvironment != null && gaeEnvironment.startsWith("Development")) {
       return ReportedPlatforms.DEVELOPMENT;
     }
     return ReportedPlatforms.UNKNOWN;

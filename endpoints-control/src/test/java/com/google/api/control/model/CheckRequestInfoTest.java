@@ -117,7 +117,7 @@ public class CheckRequestInfoTest {
         .setEndTime(REALLY_EARLY)
         .setStartTime(REALLY_EARLY)
         .putLabels(OperationInfo.SCC_USER_AGENT, "ESP")
-        .putLabels(OperationInfo.SCC_SERVICE_AGENT, "EF_JAVA/UNKNOWN");
+        .putLabels(OperationInfo.SCC_SERVICE_AGENT, KnownLabels.SERVICE_AGENT);
   }
 
   private static OperationInfo newTestOperationInfo() {
