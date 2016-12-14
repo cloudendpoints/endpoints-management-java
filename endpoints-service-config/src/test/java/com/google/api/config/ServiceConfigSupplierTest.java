@@ -34,11 +34,11 @@ import com.google.appengine.api.appidentity.AppIdentityService;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.util.JsonFormat;
 
-import org.apache.http.HttpStatus;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.util.LinkedList;
 
 /**
  * Tests for {@link ServiceConfigSupplier}.
@@ -88,9 +88,10 @@ public final class ServiceConfigSupplierTest {
     when(mockEnvironment.getVariable("ENDPOINTS_SERVICE_NAME")).thenReturn(SERVICE_NAME);
     when(mockEnvironment.getVariable("ENDPOINTS_SERVICE_VERSION")).thenReturn(null);
 
+    testHttpTransport.addResponse(
+        200, "{\"serviceConfigs\": [{\"id\": \"" + SERVICE_VERSION + "\"}]}");
     String content = JsonFormat.printer().print(SERVICE);
-    testHttpTransport.setStatusCode(200);
-    testHttpTransport.setContent(content);
+    testHttpTransport.addResponse(200, content);
 
     assertEquals(SERVICE, fetcher.get());
   }
@@ -101,8 +102,7 @@ public final class ServiceConfigSupplierTest {
     when(mockEnvironment.getVariable("ENDPOINTS_SERVICE_VERSION")).thenReturn(SERVICE_VERSION);
 
     String content = JsonFormat.printer().print(SERVICE);
-    testHttpTransport.setStatusCode(200);
-    testHttpTransport.setContent(content);
+    testHttpTransport.addResponse(200, content);
 
     assertEquals(SERVICE, fetcher.get());
   }
@@ -114,14 +114,14 @@ public final class ServiceConfigSupplierTest {
 
     Service service = Service.newBuilder().setName("random-name").build();
     String content = JsonFormat.printer().print(service);
-    testHttpTransport.setStatusCode(200);
-    testHttpTransport.setContent(content);
+    testHttpTransport.addResponse(200, content);
 
     try {
       fetcher.get();
       fail();
     } catch (ServiceConfigException exception) {
-      assertEquals("Unexpected service name in service config: random-name", exception.getMessage());
+      assertEquals(
+          "Unexpected service name in service config: random-name", exception.getMessage());
     }
   }
 
@@ -135,14 +135,14 @@ public final class ServiceConfigSupplierTest {
         .setId("random-version")
         .build();
     String content = JsonFormat.printer().print(service);
-    testHttpTransport.setStatusCode(200);
-    testHttpTransport.setContent(content);
+    testHttpTransport.addResponse(200, content);
 
     try {
       fetcher.get();
       fail();
     } catch (ServiceConfigException exception) {
-      assertEquals("Unexpected service version in service config: random-version", exception.getMessage());
+      assertEquals(
+          "Unexpected service version in service config: random-version", exception.getMessage());
     }
   }
 
@@ -150,7 +150,7 @@ public final class ServiceConfigSupplierTest {
   public void testFetchFailed() throws IOException {
     when(mockEnvironment.getVariable("ENDPOINTS_SERVICE_NAME")).thenReturn(SERVICE_NAME);
     when(mockEnvironment.getVariable("ENDPOINTS_SERVICE_VERSION")).thenReturn(SERVICE_VERSION);
-    testHttpTransport.setStatusCode(404);
+    testHttpTransport.addResponse(404, "");
 
     try {
       fetcher.get();
@@ -161,20 +161,24 @@ public final class ServiceConfigSupplierTest {
   }
 
   private static final class TestingHttpTransport extends MockHttpTransport {
-    private String content;
-    private int statusCode;
+    private static final class Response {
+      private int statusCode;
+      private String content;
 
-    public void setContent(String content) {
-      this.content = content;
+      Response(int statusCode, String content) {
+        this.content = content;
+        this.statusCode = statusCode;
+      }
     }
 
-    public void setStatusCode(int statusCode) {
-      this.statusCode = statusCode;
+    private final LinkedList<Response> responses = new LinkedList<>();
+
+    void reset() {
+      responses.clear();
     }
 
-    public void reset() {
-      this.content = null;
-      this.statusCode = HttpStatus.SC_OK;
+    void addResponse(int statusCode, String content) {
+      responses.add(new Response(statusCode, content));
     }
 
     @Override
@@ -182,10 +186,11 @@ public final class ServiceConfigSupplierTest {
       return new MockLowLevelHttpRequest() {
         @Override
         public LowLevelHttpResponse execute() throws IOException {
+          Response storedResponse = responses.removeFirst();
           MockLowLevelHttpResponse response = new MockLowLevelHttpResponse();
-          response.setStatusCode(statusCode);
+          response.setStatusCode(storedResponse.statusCode);
           response.setContentType(Json.MEDIA_TYPE);
-          response.setContent(content);
+          response.setContent(storedResponse.content);
           return response;
         }
       };
