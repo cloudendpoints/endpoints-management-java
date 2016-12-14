@@ -23,6 +23,7 @@ archivesBaseName = 'endpoints-management-config'
 
 dependencies {
   compile "com.google.api.grpc:googleapis-common-protos:$googleapisCommonProtosVersion"
+  compile "com.google.apis:google-api-services-servicemanagement:$servicemanagementVersion"
   compile "com.google.appengine:appengine-api-1.0-sdk:$appengineSdkVersion"
   compile "com.google.guava:guava:$guavaVersion"
   compile "com.google.http-client:google-http-client:$httpClientVersion"
