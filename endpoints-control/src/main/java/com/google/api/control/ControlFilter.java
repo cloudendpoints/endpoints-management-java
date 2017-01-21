@@ -40,11 +40,14 @@ import com.google.common.base.Strings;
 import com.google.common.base.Ticker;
 import com.google.common.collect.ImmutableList;
 
+import java.io.BufferedWriter;
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
+import java.io.UnsupportedEncodingException;
 import java.security.GeneralSecurityException;
 import java.util.List;
 import java.util.Map;
@@ -596,7 +599,15 @@ public class ControlFilter implements Filter {
     @Override
     public PrintWriter getWriter() {
       if (newWriter == null) {
-        newWriter = new PrintWriter(getOutputStream(), true);
+        OutputStreamWriter writer;
+        try {
+          writer = new OutputStreamWriter(getOutputStream(), getCharacterEncoding());
+        } catch (UnsupportedEncodingException e) {
+          log.warning(String.format("Could not write using charset %s, using default instead",
+              getCharacterEncoding()));
+          writer = new OutputStreamWriter(getOutputStream());
+        }
+        newWriter = new PrintWriter(new BufferedWriter(writer), true);
       }
       return newWriter;
     }
