@@ -83,6 +83,8 @@ public class ControlFilter implements Filter {
   private static final String DEFAULT_LOCATION = "global";
   private static final List<String> DEFAULT_API_KEYS = ImmutableList.of("key", "api_key");
   private static final String METADATA_SERVER_URL = "http://metadata.google.internal";
+  private static final String API_PROXY_EXCEPTION_CLASS_NAME =
+      "com.google.apphosting.api.ApiProxy.ApiProxyException";
   private final Ticker ticker;
   private final Clock clock;
   private final ReportedPlatforms platform;
@@ -431,9 +433,16 @@ public class ControlFilter implements Filter {
       HttpResponse response = request.execute();
       HttpHeaders headers = response.getHeaders();
       return "Google".equals(headers.getFirstHeaderStringValue("Metadata-Flavor"));
-    } catch (IOException expected) {
+    } catch (IOException | RuntimeException expected) {
       // If an error happens, it's probably safe to say the metadata service isn't available where
-      // the code is running.
+      // the code is running. We have to catch ApiProxyException due to the new dev server returning
+      // a different error for unresolvable hostnames. Due to not wanting to put a required
+      // dependency on the App Engine SDK here, we catch the generic RuntimeException and do a
+      // class name check.
+      if (expected instanceof RuntimeException
+          && !API_PROXY_EXCEPTION_CLASS_NAME.equals(expected.getClass().getName())) {
+        throw (RuntimeException) expected;
+      }
     }
     return false;
   }
