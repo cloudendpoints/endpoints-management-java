@@ -22,7 +22,6 @@ allprojects {
   apply plugin: 'signing'
 
   group = 'com.google.endpoints'
-  version = "1.0.0"
 
   jacocoTestReport {
     reports {
