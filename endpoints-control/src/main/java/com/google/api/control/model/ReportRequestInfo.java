@@ -43,7 +43,7 @@ public class ReportRequestInfo extends OperationInfo {
   public enum ReportedPlatforms {
     UNKNOWN("Unknown"),
     GAE_STANDARD("GAE Standard"),
-    GAE_FLEX("GAE"),
+    GAE_FLEX("GAE Flex"),
     GCE("GCE"),
     GKE("GKE"),
     DEVELOPMENT("Development");
