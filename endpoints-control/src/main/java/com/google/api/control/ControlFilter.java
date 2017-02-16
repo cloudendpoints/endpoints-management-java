@@ -88,6 +88,8 @@ public class ControlFilter implements Filter {
   private static final String METADATA_SERVER_URL = "http://metadata.google.internal";
   private static final String API_PROXY_EXCEPTION_CLASS_NAME =
       "com.google.apphosting.api.ApiProxy.ApiProxyException";
+  private static final String REMOTE_API_EXCEPTION_CLASS_NAME =
+      "com.google.appengine.tools.remoteapi.RemoteApiException";
   private final Ticker ticker;
   private final Clock clock;
   private final ReportedPlatforms platform;
@@ -443,7 +445,8 @@ public class ControlFilter implements Filter {
       // dependency on the App Engine SDK here, we catch the generic RuntimeException and do a
       // class name check.
       if (expected instanceof RuntimeException
-          && !API_PROXY_EXCEPTION_CLASS_NAME.equals(expected.getClass().getName())) {
+          && !API_PROXY_EXCEPTION_CLASS_NAME.equals(expected.getClass().getName())
+          && !REMOTE_API_EXCEPTION_CLASS_NAME.equals(expected.getClass().getName())) {
         throw (RuntimeException) expected;
       }
     }
