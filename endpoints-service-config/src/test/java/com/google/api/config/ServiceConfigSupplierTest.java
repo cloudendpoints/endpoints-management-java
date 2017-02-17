@@ -18,8 +18,6 @@ package com.google.api.config;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
-import static org.mockito.ArgumentMatchers.anyListOf;
-import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -32,7 +30,6 @@ import com.google.api.client.json.jackson2.JacksonFactory;
 import com.google.api.client.testing.http.MockHttpTransport;
 import com.google.api.client.testing.http.MockLowLevelHttpRequest;
 import com.google.api.client.testing.http.MockLowLevelHttpResponse;
-import com.google.appengine.api.appidentity.AppIdentityService;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.util.JsonFormat;
 
@@ -47,7 +44,6 @@ import java.util.LinkedList;
  */
 public final class ServiceConfigSupplierTest {
 
-  private static final String ACCESS_TOKEN = "test-access-token";
   private static final String SERVICE_NAME = "test-service-name";
   private static final String SERVICE_VERSION = "test-service-version";
 
@@ -56,8 +52,6 @@ public final class ServiceConfigSupplierTest {
       .setId(SERVICE_VERSION)
       .build();
 
-  private final AppIdentityService mockAppIdentityService =
-      mock(AppIdentityService.class, RETURNS_DEEP_STUBS);
   private final Environment mockEnvironment = mock(Environment.class);
   private final GoogleCredential mockCredential = mock(GoogleCredential.class);
   private final TestingHttpTransport testHttpTransport = new TestingHttpTransport();
@@ -66,8 +60,6 @@ public final class ServiceConfigSupplierTest {
 
   @Before
   public void setUp() {
-    when(mockAppIdentityService.getAccessToken(anyListOf(String.class)).getAccessToken())
-        .thenReturn(ACCESS_TOKEN);
     testHttpTransport.reset();
   }
 
