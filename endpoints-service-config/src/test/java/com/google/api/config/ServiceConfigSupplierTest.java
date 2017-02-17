@@ -24,9 +24,11 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.google.api.Service;
+import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
 import com.google.api.client.http.LowLevelHttpRequest;
 import com.google.api.client.http.LowLevelHttpResponse;
 import com.google.api.client.json.Json;
+import com.google.api.client.json.jackson2.JacksonFactory;
 import com.google.api.client.testing.http.MockHttpTransport;
 import com.google.api.client.testing.http.MockLowLevelHttpRequest;
 import com.google.api.client.testing.http.MockLowLevelHttpResponse;
@@ -57,11 +59,10 @@ public final class ServiceConfigSupplierTest {
   private final AppIdentityService mockAppIdentityService =
       mock(AppIdentityService.class, RETURNS_DEEP_STUBS);
   private final Environment mockEnvironment = mock(Environment.class);
+  private final GoogleCredential mockCredential = mock(GoogleCredential.class);
   private final TestingHttpTransport testHttpTransport = new TestingHttpTransport();
   private final ServiceConfigSupplier fetcher = new ServiceConfigSupplier(
-      mockAppIdentityService,
-      mockEnvironment,
-      testHttpTransport);
+      mockEnvironment, testHttpTransport, new JacksonFactory(), mockCredential);
 
   @Before
   public void setUp() {

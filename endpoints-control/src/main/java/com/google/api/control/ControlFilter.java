@@ -184,7 +184,10 @@ public class ControlFilter implements Filter {
    */
   protected Client createClient(String configServiceName)
       throws GeneralSecurityException, IOException {
-    return new Client.Builder(configServiceName).setStatsLogFrequency(statsLogFrequency()).build();
+    return new Client.Builder(configServiceName)
+        .setStatsLogFrequency(statsLogFrequency())
+        .setHttpTransport(new NetHttpTransport())
+        .build();
   }
 
   @Override
