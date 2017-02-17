@@ -421,7 +421,7 @@ public class ControlFilter implements Filter {
     boolean hasMetadataServer = hasMetadataServer(transport);
     String gaeEnvironment = properties.getProperty("com.google.appengine.runtime.environment");
     boolean onGae = gaeEnvironment != null && gaeEnvironment.startsWith("Production");
-    if (hasMetadataServer && onGae) {
+    if (hasMetadataServer && env.containsKey("GAE_SERVICE")) {
       return ReportedPlatforms.GAE_FLEX;
     } else if (hasMetadataServer) {
       return ReportedPlatforms.GCE;
