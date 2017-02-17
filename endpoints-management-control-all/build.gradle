@@ -1,0 +1,67 @@
+/*
+ * Copyright 2017 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+plugins {
+  id 'com.github.johnrengelman.shadow' version '1.2.3'
+}
+
+configurations {
+  include
+  compile.extendsFrom include
+}
+
+jar {
+  from {
+    configurations.include.collect { it.isDirectory() ? it : zipTree(it) }
+  }
+}
+
+def repackagedDir = 'endpoints.repackaged'
+
+shadowJar {
+  classifier = null
+  relocate 'com.fasterxml', "${repackagedDir}.com.fasterxml"
+  relocate('com.google.api', "${repackagedDir}.com.google.api") {
+    exclude 'com.google.api.auth.**'
+    exclude 'com.google.api.control.**'
+  }
+  relocate 'com.google.code.gson', "${repackagedDir}.com.google.code.gson"
+  relocate 'com.google.common', "${repackagedDir}.com.google.common"
+  relocate 'com.google.gson', "${repackagedDir}.com.google.gson"
+  relocate 'com.google.logging', "${repackagedDir}.google.logging"
+  relocate 'com.google.longrunning', "${repackagedDir}.google.longrunning"
+  relocate 'com.google.protobuf', "${repackagedDir}.google.protobuf"
+  relocate 'com.google.rpc', "${repackagedDir}.google.rpc"
+  relocate 'com.google.thirdparty', "${repackagedDir}.com.google.thirdparty"
+  relocate 'io.grpc', "${repackagedDir}.io.grpc"
+  relocate 'org.apache', "${repackagedDir}.org.apache"
+  relocate 'org.jose4j', "${repackagedDir}.org.jose4j"
+  relocate 'org.slf4j', "${repackagedDir}.org.slf4j"
+}
+
+artifacts {
+  archives shadowJar
+}
+
+dependencies {
+  include project(':endpoints-auth')
+  include project(':endpoints-control')
+}
+
+configureMaven(
+  project,
+  'Endpoints API Management',
+  'Provide access control for managed services')

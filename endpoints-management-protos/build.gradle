@@ -22,7 +22,7 @@ repositories {
 
 dependencies {
   compile "com.google.protobuf:protobuf-java:3.0.0"
-  compile "com.google.api.grpc:googleapis-common-protos:0.0.2"
+  compile "com.google.api.grpc:googleapis-common-protos:${googleapisCommonProtosVersion}"
 }
 
 protobuf {
