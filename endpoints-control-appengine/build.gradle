@@ -24,11 +24,14 @@ archivesBaseName = 'endpoints-management-control-appengine'
 dependencies {
   compile "com.google.appengine:appengine-api-1.0-sdk:$appengineSdkVersion"
   compile "com.google.code.findbugs:jsr305:${jsr305Version}"
+  compile "com.fasterxml.jackson.core:jackson-core:${jacksonVersion}"
   compile "com.google.guava:guava:${guavaVersion}"
   compile("com.google.http-client:google-http-client-jackson2:${httpClientVersion}") {
+    exclude group: 'com.fasterxml.jackson.core', module: 'jackson-core'
     exclude group: 'com.google.guava', module: 'guava-jdk5'
   }
   compile(group: 'com.google.api-client', name: 'google-api-client-appengine', version: "${googleApiClientAppEngineVersion}") {
+    exclude group: 'com.fasterxml.jackson.core', module: 'jackson-core'
     exclude group: 'com.google.guava', module: 'guava-jdk5'
   }
   compile project(":endpoints-control")
