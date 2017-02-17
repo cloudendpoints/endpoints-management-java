@@ -525,10 +525,9 @@ public class ControlFilterTest {
   @Test
   public void getPlatformFromEnvironment_GaeFlex() {
     Properties properties = new Properties();
-    properties.setProperty("com.google.appengine.runtime.environment", "Production");
     assertThat(
         ControlFilter.getPlatformFromEnvironment(
-            ImmutableMap.of("GAE_MODULE_NAME", "test"), properties, new MetadataTransport(true)))
+            ImmutableMap.of("GAE_SERVICE", "test"), properties, new MetadataTransport(true)))
         .isEqualTo(ReportedPlatforms.GAE_FLEX);
   }
 
