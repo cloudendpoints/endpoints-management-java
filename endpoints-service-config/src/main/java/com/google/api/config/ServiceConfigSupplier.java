@@ -18,19 +18,17 @@ package com.google.api.config;
 
 import com.google.api.Service;
 import com.google.api.Service.Builder;
-import com.google.api.client.http.HttpHeaders;
+import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
 import com.google.api.client.http.HttpRequest;
 import com.google.api.client.http.HttpRequestInitializer;
 import com.google.api.client.http.HttpResponse;
 import com.google.api.client.http.HttpStatusCodes;
 import com.google.api.client.http.HttpTransport;
 import com.google.api.client.http.javanet.NetHttpTransport;
+import com.google.api.client.json.JsonFactory;
 import com.google.api.client.json.jackson2.JacksonFactory;
 import com.google.api.services.servicemanagement.ServiceManagement;
 import com.google.api.services.servicemanagement.model.ListServiceConfigsResponse;
-import com.google.appengine.api.appidentity.AppIdentityService;
-import com.google.appengine.api.appidentity.AppIdentityService.GetAccessTokenResult;
-import com.google.appengine.api.appidentity.AppIdentityServiceFactory;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
@@ -69,35 +67,25 @@ public final class ServiceConfigSupplier implements Supplier<Service> {
       "system_parameters",
       "usage");
 
-  private static final String SERVICE_MGMT_URL_TEMPLATE =
-      "https://servicemanagement.googleapis.com/v1/services/{0}/configs/{1}"
-      + "?$fields=" + FIELD_MASKS;
-
-  private final AppIdentityService appIdentityService;
   private final Environment environment;
-  private final HttpTransport httpTransport;
   private final ServiceManagement serviceManagement;
 
   @VisibleForTesting
   ServiceConfigSupplier(
-      AppIdentityService appIdentityService,
       Environment environment,
-      HttpTransport httpTransport) {
-    this.appIdentityService = appIdentityService;
+      HttpTransport httpTransport,
+      JsonFactory jsonFactory,
+      final GoogleCredential credential) {
     this.environment = environment;
-    this.httpTransport = httpTransport;
     HttpRequestInitializer requestInitializer = new HttpRequestInitializer() {
       @Override
       public void initialize(HttpRequest request) throws IOException {
-        HttpHeaders httpHeaders = new HttpHeaders();
-        httpHeaders.setAuthorization("Bearer " + getAccessToken());
-        request
-            .setThrowExceptionOnExecuteError(false)
-            .setHeaders(httpHeaders);
+        request.setThrowExceptionOnExecuteError(false);
+        credential.initialize(request);
       }
     };
     this.serviceManagement =
-        new ServiceManagement.Builder(httpTransport, new JacksonFactory(), requestInitializer)
+        new ServiceManagement.Builder(httpTransport, jsonFactory, requestInitializer)
             .build();
   }
 
@@ -131,9 +119,6 @@ public final class ServiceConfigSupplier implements Supplier<Service> {
   private Service fetch(String serviceName, @Nullable String serviceVersion) {
     Preconditions.checkArgument(
         !Strings.isNullOrEmpty(serviceName), "service name must be specified");
-
-    HttpHeaders httpHeaders = new HttpHeaders();
-    httpHeaders.setAuthorization("Bearer " + getAccessToken());
 
     if (serviceVersion == null) {
       serviceVersion = fetchLatestServiceVersion(serviceName);
@@ -177,14 +162,6 @@ public final class ServiceConfigSupplier implements Supplier<Service> {
     }
   }
 
-  private String getAccessToken() {
-    // TODO (yangguan): use Application Default Credentials to retrieve access
-    // token instead of App Identity APIs.
-    GetAccessTokenResult accessTokenResult =
-        this.appIdentityService.getAccessToken(SCOPES);
-    return accessTokenResult.getAccessToken();
-  }
-
   private static Service parseHttpResponse(HttpResponse httpResponse) {
     try {
       Builder builder = Service.newBuilder();
@@ -218,10 +195,17 @@ public final class ServiceConfigSupplier implements Supplier<Service> {
    * @return a {@code ServiceConfigSuppler}
    */
   public static ServiceConfigSupplier create() {
+    NetHttpTransport httpTransport = new NetHttpTransport();
+    JacksonFactory jsonFactory = new JacksonFactory();
+    GoogleCredential credential;
+    try {
+      credential = GoogleCredential.getApplicationDefault(httpTransport, jsonFactory)
+          .createScoped(SCOPES);
+    } catch (IOException e) {
+      throw new IllegalStateException("could not get credentials for fetching service config!");
+    }
     return new ServiceConfigSupplier(
-        AppIdentityServiceFactory.getAppIdentityService(),
-        new SystemEnvironment(),
-        new NetHttpTransport());
+        new SystemEnvironment(), httpTransport, jsonFactory, credential);
   }
 
   private static final class SystemEnvironment implements Environment {
