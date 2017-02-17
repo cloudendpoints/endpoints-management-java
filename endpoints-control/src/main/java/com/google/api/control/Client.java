@@ -444,7 +444,7 @@ public class Client {
       return new Client(serviceName, o, r,
           new Servicecontrol.Builder(h, c)
               .setHttpRequestInitializer(addUserAgent)
-          .setApplicationName(CLIENT_APPLICATION_NAME)
+              .setApplicationName(CLIENT_APPLICATION_NAME)
               .build(),
           f, schedulerFactory, statsLogFrequency, ticker);
     }
