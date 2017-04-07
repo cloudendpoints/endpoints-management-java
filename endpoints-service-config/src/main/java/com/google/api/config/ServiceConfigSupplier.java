@@ -86,6 +86,7 @@ public final class ServiceConfigSupplier implements Supplier<Service> {
     };
     this.serviceManagement =
         new ServiceManagement.Builder(httpTransport, jsonFactory, requestInitializer)
+            .setApplicationName("Endpoints Frameworks Java")
             .build();
   }
 
