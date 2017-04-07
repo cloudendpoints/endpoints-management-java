@@ -56,6 +56,10 @@ import javax.annotation.Nullable;
 public class Client {
   private static final Logger log = Logger.getLogger(Client.class.getName());
   private static final String CLIENT_APPLICATION_NAME = "Service Control Client";
+  private static final String BACKGROUND_THREAD_ERROR =
+      "The scheduler thread was unable to start. This means that metric reporting will only be "
+      + "done periodically after requests are served. If your API is low-traffic (below 1 query "
+      + "per second), this may result in delays in reporting.";
   public static final int DO_NOT_LOG_STATS = -1;
   public static final SchedulerFactory DEFAULT_SCHEDULER_FACTORY = new SchedulerFactory() {
     @Override
@@ -123,7 +127,7 @@ public class Client {
       });
       schedulerThread.start();
     } catch (RuntimeException e) {
-      log.log(Level.WARNING, "no scheduler thread, schedule.run will be invoked by report(...)", e);
+      log.log(Level.INFO, BACKGROUND_THREAD_ERROR);
       schedulerThread = null;
       initializeFlushing();
     }
