@@ -46,7 +46,7 @@ public class ReportRequestInfo extends OperationInfo {
     GAE_FLEX("GAE Flex"),
     GCE("GCE"),
     GKE("GKE"),
-    DEVELOPMENT("Development");
+    DEVELOPMENT("GAE Dev Server");
 
     private final String name;
 
