@@ -34,12 +34,20 @@ public enum KnownMetrics {
   PRODUCER_REQUEST_COUNT("serviceruntime.googleapis.com/api/producer/request_count",
       MetricKind.DELTA, ValueType.INT64, add1ToInt64Metric()),
 
+  PRODUCER_BY_CONSUMER_REQUEST_COUNT(
+      "serviceruntime.googleapis.com/api/producer/by_consumer/request_count", MetricKind.DELTA,
+      ValueType.INT64, add1ToInt64Metric(), Mark.CONSUMER),
+
   CONSUMER_REQUEST_SIZES("serviceruntime.googleapis.com/api/consumer/request_sizes",
       MetricKind.DELTA, ValueType.DISTRIBUTION, addDistributionMetricForRequestSize(),
       Mark.CONSUMER),
 
   PRODUCER_REQUEST_SIZES("serviceruntime.googleapis.com/api/producer/request_sizes",
       MetricKind.DELTA, ValueType.DISTRIBUTION, addDistributionMetricForRequestSize()),
+
+  PRODUCER_BY_CONSUMER_REQUEST_SIZES(
+      "serviceruntime.googleapis.com/api/producer/by_consumer/request_sizes", MetricKind.DELTA,
+      ValueType.DISTRIBUTION, addDistributionMetricForRequestSize(), Mark.CONSUMER),
 
   CONSUMER_RESPONSE_SIZES("serviceruntime.googleapis.com/api/consumer/response_sizes",
       MetricKind.DELTA, ValueType.DISTRIBUTION, addDistributionMetricForResponseSize(),
@@ -48,11 +56,19 @@ public enum KnownMetrics {
   PRODUCER_RESPONSE_SIZES("serviceruntime.googleapis.com/api/producer/response_sizes",
       MetricKind.DELTA, ValueType.DISTRIBUTION, addDistributionMetricForResponseSize()),
 
+  PRODUCER_BY_CONSUMER_RESPONSE_SIZES(
+      "serviceruntime.googleapis.com/api/producer/by_consumer/response_sizes", MetricKind.DELTA,
+      ValueType.DISTRIBUTION, addDistributionMetricForResponseSize(), Mark.CONSUMER),
+
   CONSUMER_REQUEST_ERROR_COUNT("serviceruntime.googleapis.com/api/consumer/error_count",
       MetricKind.DELTA, ValueType.INT64, add1ToInt64MetricIfError(), Mark.CONSUMER),
 
   PRODUCER_REQUEST_ERROR_COUNT("serviceruntime.googleapis.com/api/producer/error_count",
       MetricKind.DELTA, ValueType.INT64, add1ToInt64MetricIfError()),
+
+  PRODUCER_BY_CONSUMER_ERROR_COUNT(
+      "serviceruntime.googleapis.com/api/producer/by_consumer/error_count", MetricKind.DELTA,
+      ValueType.INT64, add1ToInt64MetricIfError(), Mark.CONSUMER),
 
   CONSUMER_TOTAL_LATENCIES("serviceruntime.googleapis.com/api/consumer/total_latencies",
       MetricKind.DELTA, ValueType.DISTRIBUTION, addDistributionMetricForRequestTimeMillis(),
@@ -61,6 +77,10 @@ public enum KnownMetrics {
   PRODUCER_TOTAL_LATENCIES("serviceruntime.googleapis.com/api/producer/total_latencies",
       MetricKind.DELTA, ValueType.DISTRIBUTION, addDistributionMetricForRequestTimeMillis()),
 
+  PRODUCER_BY_CONSUMER_TOTAL_LATENCIES(
+      "serviceruntime.googleapis.com/api/producer/by_consumer/total_latencies", MetricKind.DELTA,
+      ValueType.DISTRIBUTION, addDistributionMetricForRequestTimeMillis(), Mark.CONSUMER),
+
   CONSUMER_BACKEND_LATENCIES("serviceruntime.googleapis.com/api/consumer/backend_latencies",
       MetricKind.DELTA, ValueType.DISTRIBUTION, addDistributionMetricForBackendTimeMillis(),
       Mark.CONSUMER),
@@ -68,13 +88,22 @@ public enum KnownMetrics {
   PRODUCER_BACKEND_LATENCIES("serviceruntime.googleapis.com/api/producer/backend_latencies",
       MetricKind.DELTA, ValueType.DISTRIBUTION, addDistributionMetricForBackendTimeMillis()),
 
+  PRODUCER_BY_CONSUMER_BACKEND_LATENCIES(
+      "serviceruntime.googleapis.com/api/producer/by_consumer/backend_latencies", MetricKind.DELTA,
+      ValueType.DISTRIBUTION, addDistributionMetricForBackendTimeMillis(), Mark.CONSUMER),
+
   CONSUMER_REQUEST_OVERHEAD_LATENCIES(
       "serviceruntime.googleapis.com/api/consumer/request_overhead_latencies", MetricKind.DELTA,
       ValueType.DISTRIBUTION, addDistributionMetricForOverheadTimeMillis(), Mark.CONSUMER),
 
   PRODUCER_REQUEST_OVERHEAD_LATENCIES(
       "serviceruntime.googleapis.com/api/producer/request_overhead_latencies", MetricKind.DELTA,
-      ValueType.DISTRIBUTION, addDistributionMetricForOverheadTimeMillis());
+      ValueType.DISTRIBUTION, addDistributionMetricForOverheadTimeMillis()),
+
+  PRODUCER_BY_CONSUMER_REQUEST_OVERHEAD_LATENCIES(
+      "serviceruntime.googleapis.com/api/producer/by_consumer/request_overhead_latencies",
+      MetricKind.DELTA, ValueType.DISTRIBUTION, addDistributionMetricForOverheadTimeMillis(),
+      Mark.CONSUMER);
 
   private static final double TIME_SCALE = 1e-6;
   private static final double SIZE_SCALE = 1;
