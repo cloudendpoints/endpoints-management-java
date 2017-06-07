@@ -16,14 +16,8 @@
 
 package com.google.api.services.servicecontrol.v1;
 
-import com.google.api.client.googleapis.services.AbstractGoogleClientRequest;
-import com.google.api.client.googleapis.services.CommonGoogleClientRequestInitializer;
-
-import java.io.IOException;
-
-
 /**
- * Servicecontrol request initializer for setting properties like key and userIp.
+ * ServiceControl request initializer for setting properties like key and userIp.
  *
  * <p>
  * The simplest usage is to use it to set the key parameter:
@@ -31,7 +25,7 @@ import java.io.IOException;
  *
  * <pre>
   public static final GoogleClientRequestInitializer KEY_INITIALIZER =
-      new ServicecontrolRequestInitializer(KEY);
+      new ServiceControlRequestInitializer(KEY);
  * </pre>
  *
  * <p>
@@ -40,7 +34,7 @@ import java.io.IOException;
  *
  * <pre>
   public static final GoogleClientRequestInitializer INITIALIZER =
-      new ServicecontrolRequestInitializer(KEY, USER_IP);
+      new ServiceControlRequestInitializer(KEY, USER_IP);
  * </pre>
  *
  * <p>
@@ -48,10 +42,10 @@ import java.io.IOException;
  * </p>
  *
  * <pre>
-  public static class MyRequestInitializer extends ServicecontrolRequestInitializer {
+  public static class MyRequestInitializer extends ServiceControlRequestInitializer {
 
     {@literal @}Override
-    public void initializeServicecontrolRequest(ServicecontrolRequest{@literal <}?{@literal >} request)
+    public void initializeServiceControlRequest(ServiceControlRequest{@literal <}?{@literal >} request)
         throws IOException {
       // custom logic
     }
@@ -63,14 +57,14 @@ import java.io.IOException;
  * </p>
  *
  * <pre>
-  public static class MyRequestInitializer2 extends ServicecontrolRequestInitializer {
+  public static class MyRequestInitializer2 extends ServiceControlRequestInitializer {
 
     public MyKeyRequestInitializer() {
       super(KEY, USER_IP);
     }
 
     {@literal @}Override
-    public void initializeServicecontrolRequest(ServicecontrolRequest{@literal <}?{@literal >} request)
+    public void initializeServiceControlRequest(ServiceControlRequest{@literal <}?{@literal >} request)
         throws IOException {
       // custom logic
     }
@@ -83,17 +77,16 @@ import java.io.IOException;
  *
  * @since 1.12
  */
-@SuppressWarnings("unused")
-public class ServicecontrolRequestInitializer extends CommonGoogleClientRequestInitializer {
+public class ServiceControlRequestInitializer extends com.google.api.client.googleapis.services.CommonGoogleClientRequestInitializer {
 
-  public ServicecontrolRequestInitializer() {
+  public ServiceControlRequestInitializer() {
     super();
   }
 
   /**
    * @param key API key or {@code null} to leave it unchanged
    */
-  public ServicecontrolRequestInitializer(String key) {
+  public ServiceControlRequestInitializer(String key) {
     super(key);
   }
 
@@ -101,18 +94,18 @@ public class ServicecontrolRequestInitializer extends CommonGoogleClientRequestI
    * @param key API key or {@code null} to leave it unchanged
    * @param userIp user IP or {@code null} to leave it unchanged
    */
-  public ServicecontrolRequestInitializer(String key, String userIp) {
+  public ServiceControlRequestInitializer(String key, String userIp) {
     super(key, userIp);
   }
 
   @Override
-  public final void initialize(AbstractGoogleClientRequest<?> request) throws IOException {
+  public final void initialize(com.google.api.client.googleapis.services.AbstractGoogleClientRequest<?> request) throws java.io.IOException {
     super.initialize(request);
-    initializeServicecontrolRequest((ServicecontrolRequest<?>) request);
+    initializeServiceControlRequest((ServiceControlRequest<?>) request);
   }
 
   /**
-   * Initializes Servicecontrol request.
+   * Initializes ServiceControl request.
    *
    * <p>
    * Default implementation does nothing. Called from
@@ -121,6 +114,6 @@ public class ServicecontrolRequestInitializer extends CommonGoogleClientRequestI
    *
    * @throws java.io.IOException I/O exception
    */
-  protected void initializeServicecontrolRequest(ServicecontrolRequest<?> request) throws java.io.IOException {
+  protected void initializeServiceControlRequest(ServiceControlRequest<?> request) throws java.io.IOException {
   }
 }

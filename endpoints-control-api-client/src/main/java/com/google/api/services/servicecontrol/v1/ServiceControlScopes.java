@@ -21,7 +21,7 @@ package com.google.api.services.servicecontrol.v1;
  *
  * @since 1.4
  */
-public class ServicecontrolScopes {
+public class ServiceControlScopes {
 
   /** View and manage your data across Google Cloud Platform services. */
   public static final String CLOUD_PLATFORM = "https://www.googleapis.com/auth/cloud-platform";
@@ -41,6 +41,6 @@ public class ServicecontrolScopes {
     return java.util.Collections.unmodifiableSet(set);
   }
 
-  private ServicecontrolScopes() {
+  private ServiceControlScopes() {
   }
 }
