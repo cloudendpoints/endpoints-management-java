@@ -41,6 +41,7 @@ public class OperationInfo {
   private String operationName;
   private String referer;
   private String serviceName;
+  private String serviceConfigId;
 
   /**
    * Returns the {@link Operation} instance corresponding to this instance.
@@ -60,10 +61,9 @@ public class OperationInfo {
     if (!Strings.isNullOrEmpty(operationName)) {
       b.setOperationName(operationName);
     }
-    if (!Strings.isNullOrEmpty(apiKey) && apiKeyValid) {
-      b.setConsumerId("api_key:" + apiKey);
-    } else if (!Strings.isNullOrEmpty(consumerProjectId)) {
-      b.setConsumerId("project:" + consumerProjectId);
+    String consumerId = getOperationConsumerId();
+    if (!Strings.isNullOrEmpty(consumerId)) {
+      b.setConsumerId(consumerId);
     }
     return b.build();
   }
@@ -150,6 +150,18 @@ public class OperationInfo {
   public OperationInfo setServiceName(String serviceName) {
     this.serviceName = serviceName;
     return this;
+  }
+
+  /**
+   * @return a consumer id suitable for insertion into an operation
+   */
+  public String getOperationConsumerId() {
+    if (!Strings.isNullOrEmpty(apiKey) && apiKeyValid) {
+      return "api_key:" + apiKey;
+    } else if (!Strings.isNullOrEmpty(consumerProjectId)) {
+      return "project:" + consumerProjectId;
+    }
+    return null;
   }
 
   protected Map<String, String> getSystemLabels() {

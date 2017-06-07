@@ -19,10 +19,12 @@ package com.google.api.control.model;
 import com.google.api.AuthRequirement;
 import com.google.api.AuthenticationRule;
 import com.google.api.HttpRule;
+import com.google.api.MetricRule;
 import com.google.api.Service;
 import com.google.api.SystemParameter;
 import com.google.api.SystemParameterRule;
 import com.google.api.UsageRule;
+import com.google.auto.value.AutoValue;
 import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
@@ -51,6 +53,7 @@ public class MethodRegistry {
   private static final String OPTIONS_VERB = "OPTIONS";
   private final Service theService;
   private final Map<String, AuthInfo> authInfos;
+  private final Map<String, QuotaInfo> quotaInfos;
   private final Map<String, List<Info>> infosByHttpMethod;
   private final Map<String, Info> extractedMethods;
 
@@ -65,6 +68,7 @@ public class MethodRegistry {
     infosByHttpMethod = Maps.newHashMap();
     extractedMethods = Maps.newHashMap();
     authInfos = extractAuth(s);
+    quotaInfos = extractQuota(s);
 
     extractMethods();
   }
@@ -223,9 +227,7 @@ public class MethodRegistry {
       return i;
     }
 
-    AuthInfo authInfo = this.authInfos.containsKey(selector)
-        ? this.authInfos.get(selector) : null;
-    i = new Info(selector, authInfo);
+    i = new Info(selector, this.authInfos.get(selector), this.quotaInfos.get(selector));
     extractedMethods.put(selector, i);
     return i;
   }
@@ -282,6 +284,18 @@ public class MethodRegistry {
     return authInfoBuilder.build();
   }
 
+  private static Map<String, QuotaInfo> extractQuota(Service service) {
+    if (!service.hasQuota()) {
+      return ImmutableMap.<String, QuotaInfo>of();
+    }
+    ImmutableMap.Builder<String, QuotaInfo> quotaInfoBuilder = ImmutableMap.builder();
+    for (MetricRule metricRule : service.getQuota().getMetricRulesList()) {
+      quotaInfoBuilder.put(
+          metricRule.getSelector(), QuotaInfo.create(metricRule.getMetricCostsMap()));
+    }
+    return quotaInfoBuilder.build();
+  }
+
   /**
    * Consolidates information about methods defined in a Service
    */
@@ -289,6 +303,7 @@ public class MethodRegistry {
     private static final String API_KEY_NAME = "api_key";
 
     private final Optional<AuthInfo> authInfo;
+    private final QuotaInfo quotaInfo;
 
     private boolean allowUnregisteredCalls;
     private String selector;
@@ -298,9 +313,11 @@ public class MethodRegistry {
     private Map<String, List<String>> headerParams;
     private PathTemplate template;
 
-    public Info(String selector, @CheckForNull AuthInfo authInfo) {
+    public Info(String selector, @CheckForNull AuthInfo authInfo,
+        @CheckForNull QuotaInfo quotaInfo) {
       this.selector = selector;
       this.authInfo = Optional.<AuthInfo>fromNullable(authInfo);
+      this.quotaInfo = quotaInfo != null ? quotaInfo : QuotaInfo.DEFAULT;
 
       this.urlQueryParams = Maps.newHashMap();
       this.headerParams = Maps.newHashMap();
@@ -360,6 +377,10 @@ public class MethodRegistry {
       return this.authInfo;
     }
 
+    public QuotaInfo getQuotaInfo() {
+      return quotaInfo;
+    }
+
     public boolean shouldAllowUnregisteredCalls() {
       return allowUnregisteredCalls;
     }
@@ -416,6 +437,17 @@ public class MethodRegistry {
         return this.providerIdsToAudiences.get(providerId);
       }
       return ImmutableSet.<String>of();
+    }
+  }
+
+  @AutoValue
+  public abstract static class QuotaInfo {
+    public static final QuotaInfo DEFAULT = QuotaInfo.create(ImmutableMap.<String, Long>of());
+
+    public abstract Map<String, Long> getMetricCosts();
+
+    public static QuotaInfo create(Map<String, Long> metricCosts) {
+      return new AutoValue_MethodRegistry_QuotaInfo(metricCosts);
     }
   }
 }

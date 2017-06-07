@@ -28,6 +28,7 @@ import static org.mockito.Mockito.when;
 
 import com.google.api.control.aggregator.CheckAggregationOptions;
 import com.google.api.control.aggregator.FakeTicker;
+import com.google.api.control.aggregator.QuotaAggregationOptions;
 import com.google.api.control.aggregator.ReportAggregationOptions;
 import com.google.api.servicecontrol.v1.CheckRequest;
 import com.google.api.servicecontrol.v1.CheckResponse;
@@ -61,6 +62,7 @@ public class ClientTest {
   private static final String TEST_SERVICE_NAME = "testServiceName";
   private CheckAggregationOptions checkOptions;
   private ReportAggregationOptions reportOptions;
+  private QuotaAggregationOptions quotaOptions;
   private FakeTicker testTicker;
   private ServiceControl transport;
   private ThreadFactory threads;
@@ -83,10 +85,11 @@ public class ClientTest {
     schedulers = mock(Client.SchedulerFactory.class);
     checkOptions = new CheckAggregationOptions();
     reportOptions = new ReportAggregationOptions();
+    quotaOptions = new QuotaAggregationOptions();
 
     client =
-        new Client(TEST_SERVICE_NAME, checkOptions, reportOptions, transport, threads, schedulers,
-            1 /* ensure stats dumping code is touched */, testTicker);
+        new Client(TEST_SERVICE_NAME, checkOptions, reportOptions, quotaOptions, transport, threads,
+            schedulers, 1 /* ensure stats dumping code is touched */, testTicker);
     when(threads.newThread(any(Runnable.class))).thenReturn(aThread);
     when(schedulers.create(any(Ticker.class))).thenReturn(new Client.Scheduler(testTicker));
     when(transport.services()).thenReturn(services);

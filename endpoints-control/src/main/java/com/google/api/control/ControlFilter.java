@@ -16,6 +16,7 @@
 
 package com.google.api.control;
 
+import com.google.api.Service;
 import com.google.api.client.http.GenericUrl;
 import com.google.api.client.http.HttpHeaders;
 import com.google.api.client.http.HttpRequest;
@@ -27,10 +28,14 @@ import com.google.api.control.model.CheckErrorInfo;
 import com.google.api.control.model.CheckRequestInfo;
 import com.google.api.control.model.MethodRegistry;
 import com.google.api.control.model.OperationInfo;
+import com.google.api.control.model.QuotaErrorInfo;
+import com.google.api.control.model.QuotaRequestInfo;
 import com.google.api.control.model.ReportRequestInfo;
 import com.google.api.control.model.ReportRequestInfo.ReportedPlatforms;
 import com.google.api.control.model.ReportRequestInfo.ReportedProtocols;
 import com.google.api.control.model.ReportingRule;
+import com.google.api.servicecontrol.v1.AllocateQuotaRequest;
+import com.google.api.servicecontrol.v1.AllocateQuotaResponse;
 import com.google.api.servicecontrol.v1.CheckRequest;
 import com.google.api.servicecontrol.v1.CheckResponse;
 import com.google.api.servicecontrol.v1.ReportRequest;
@@ -263,30 +268,48 @@ public class ControlFilter implements Filter {
 
       // 'Send' a report, end the latency timer to collect correct overhead and backend latencies
       timer.end();
-      ReportRequest reportRequest =
-          createReportRequest(info, checkInfo, appInfo, ConfigFilter.getReportRule(request), timer);
-      if (log.isLoggable(Level.FINEST)) {
-        log.log(Level.FINEST, String.format("sending an error report request %s", reportRequest));
-      }
-      client.report(reportRequest);
-
+      boolean trickle = false;
       if (errorInfo == CheckErrorInfo.API_KEY_NOT_PROVIDED) {
         // a needed API key was not provided
         HttpServletResponse httpResponse = (HttpServletResponse) response;
         httpResponse.sendError(errorInfo.getHttpCode(), errorInfo.getMessage());
       } else if (checkResponse == null) {
         // the check did not complete: 'fail open'
-        chain.doFilter(request, response);
+        trickle = true;
       } else {
         // the checked failed: assume that any error information will be in the first check error
         HttpServletResponse httpResponse = (HttpServletResponse) response;
         httpResponse.sendError(errorInfo.getHttpCode(),
             errorInfo.fullMessage(projectId, checkResponse.getCheckErrors(0).getDetail()));
       }
-      statistics.totalFiltered.incrementAndGet();
-      statistics.totalFilteredTime.addAndGet(overallTimer.elapsed(TimeUnit.MILLISECONDS));
-      logStatistics();
-      return;
+      if (!trickle) {
+        ReportRequest reportRequest =
+            createReportRequest(info, checkInfo, appInfo, ConfigFilter.getReportRule(request), timer);
+        if (log.isLoggable(Level.FINEST)) {
+          log.log(Level.FINEST, String.format("sending an error report request %s", reportRequest));
+        }
+        client.report(reportRequest);
+        statistics.totalFiltered.incrementAndGet();
+        statistics.totalFilteredTime.addAndGet(overallTimer.elapsed(TimeUnit.MILLISECONDS));
+        logStatistics();
+        return;
+      }
+    }
+
+    QuotaRequestInfo quotaInfo = createQuotaInfo(httpRequest, info);
+    if (quotaInfo.getMetricCosts().isEmpty()) {
+      if (log.isLoggable(Level.FINE)) {
+        log.log(Level.FINE, "no metric costs for this method");
+      }
+    } else {
+      AllocateQuotaRequest quotaRequest = quotaInfo.asQuotaRequest(clock);
+      AllocateQuotaResponse quotaResponse = client.allocateQuota(quotaRequest);
+      QuotaErrorInfo quotaErrorInfo = QuotaErrorInfo.convert(quotaResponse);
+      if (quotaErrorInfo.isReallyError()) {
+        HttpServletResponse httpResponse = (HttpServletResponse) response;
+        httpResponse.sendError(quotaErrorInfo.getHttpCode(), quotaErrorInfo.getMessage());
+        return;
+      }
     }
 
     // Execute the request in wrapper, capture the response, then write it to the output
@@ -358,6 +381,29 @@ public class ControlFilter implements Filter {
         .setOperationId(nextOperationId())
         .setOperationName(info.getSelector())
         .setServiceName(serviceName)).setClientIp(request.getRemoteAddr());
+  }
+
+  private QuotaRequestInfo createQuotaInfo(HttpServletRequest request, MethodRegistry.Info info) {
+    String serviceName = ConfigFilter.getServiceName(request);
+    String apiKey = findApiKeyParam(request, info);
+    if (Strings.isNullOrEmpty(apiKey)) {
+      apiKey = findApiKeyHeader(request, info);
+    }
+    if (Strings.isNullOrEmpty(apiKey)) {
+      apiKey = findDefaultApiKeyParam(request);
+    }
+    Service service = ConfigFilter.getService(request);
+
+    return new QuotaRequestInfo(new OperationInfo()
+        .setApiKey(apiKey)
+        .setApiKeyValid(!Strings.isNullOrEmpty(apiKey))
+        .setReferer(request.getHeader(REFERER))
+        .setConsumerProjectId(this.projectId)
+        .setOperationId(nextOperationId())
+        .setOperationName(info.getSelector())
+        .setServiceName(serviceName))
+        .setMetricCosts(info.getQuotaInfo().getMetricCosts())
+        .setConfigId(service.getId());
   }
 
   private static String nextOperationId() {

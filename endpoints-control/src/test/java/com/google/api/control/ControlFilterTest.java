@@ -19,6 +19,7 @@ package com.google.api.control;
 import static com.google.common.truth.Truth.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.reset;
@@ -26,6 +27,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.google.api.Service;
 import com.google.api.client.http.HttpTransport;
 import com.google.api.client.http.LowLevelHttpRequest;
 import com.google.api.client.http.LowLevelHttpResponse;
@@ -39,6 +41,7 @@ import com.google.api.control.model.FakeClock;
 import com.google.api.control.model.KnownLabels;
 import com.google.api.control.model.KnownMetrics;
 import com.google.api.control.model.MethodRegistry;
+import com.google.api.control.model.MethodRegistry.QuotaInfo;
 import com.google.api.control.model.OperationInfo;
 import com.google.api.control.model.ReportRequestInfo.ReportedPlatforms;
 import com.google.api.control.model.ReportingRule;
@@ -95,8 +98,13 @@ public class ControlFilterTest {
   private static final String TEST_URI = "my/test/uri";
   private static final Integer TEST_REQUEST_SIZE = 5;
   private static final String TEST_SERVICE_NAME = "testService";
+  private static final String TEST_CONFIG_ID = "testConfigId";
   private static final String REFERER = "testReferer";
   private static final String TEST_CLIENT_IP = "196.168.0.3";
+  private static final Service TEST_SERVICE = Service.newBuilder()
+      .setId(TEST_CONFIG_ID)
+      .setName(TEST_SERVICE_NAME)
+      .build();
   private HttpServletRequest request;
   private HttpServletResponse response;
   private FilterChain chain;
@@ -124,7 +132,7 @@ public class ControlFilterTest {
     client = mock(Client.class);
     testClock = new FakeClock();
     testTicker = new FakeTicker(true);
-    info = new MethodRegistry.Info(TEST_SELECTOR, null);
+    info = new MethodRegistry.Info(TEST_SELECTOR, null, QuotaInfo.DEFAULT);
     info.setAllowUnregisteredCalls(true);
     capturedCheck = ArgumentCaptor.forClass(CheckRequest.class);
     capturedReport = ArgumentCaptor.forClass(ReportRequest.class);
@@ -388,7 +396,7 @@ public class ControlFilterTest {
     verify(request, times(1)).getAttribute(ConfigFilter.METHOD_INFO_ATTRIBUTE);
     verify(client, times(1)).check(capturedCheck.capture());
     verify(client, times(1)).report(capturedReport.capture());
-    verify(chain, times(1)).doFilter(request, response);
+    verify(chain, times(1)).doFilter(eq(request), any(HttpServletResponse.class));
 
     CheckRequest aCheck = capturedCheck.getValue();
     assertThatCheckHasExpectedValues(aCheck);
@@ -608,6 +616,7 @@ public class ControlFilterTest {
     when(response.getOutputStream()).thenReturn(new FilterServletOutputStream(responseContent));
     when(request.getAttribute(ConfigFilter.METHOD_INFO_ATTRIBUTE)).thenReturn(info);
     when(request.getAttribute(ConfigFilter.REPORTING_ATTRIBUTE)).thenReturn(rule);
+    when(request.getAttribute(ConfigFilter.SERVICE_ATTRIBUTE)).thenReturn(TEST_SERVICE);
     when(request.getParameter(anyString())).thenReturn(null);
     when(request.getHeaders(anyString())).thenReturn(null);
     when(request.getRemoteAddr()).thenReturn(TEST_CLIENT_IP);
