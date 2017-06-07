@@ -246,7 +246,7 @@ message QuotaError {
     NO_LOAS_PROJECT = 119;
 
     // The backend server for looking up project id/number is unavailable.
-    PROJECT_STATUS_UNVAILABLE = 300;
+    PROJECT_STATUS_UNAVAILABLE = 300;
 
     // The backend server for checking service status is unavailable.
     SERVICE_STATUS_UNAVAILABLE = 301;

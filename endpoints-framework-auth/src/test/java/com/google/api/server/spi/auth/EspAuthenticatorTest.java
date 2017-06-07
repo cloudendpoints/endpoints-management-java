@@ -34,6 +34,7 @@ import com.google.api.auth.UserInfo;
 import com.google.api.control.ConfigFilter;
 import com.google.api.control.model.MethodRegistry.AuthInfo;
 import com.google.api.control.model.MethodRegistry.Info;
+import com.google.api.control.model.MethodRegistry.QuotaInfo;
 import com.google.api.server.spi.auth.common.User;
 import com.google.api.server.spi.request.Attribute;
 import com.google.common.collect.ImmutableList;
@@ -61,7 +62,7 @@ public class EspAuthenticatorTest {
   private static final Service SERVICE = Service.newBuilder().setName(SERVICE_NAME).build();
 
   private static final AuthInfo AUTH_INFO = new AuthInfo(ImmutableMap.<String, Set<String>>of());
-  private static final Info INFO = new Info("selector", AUTH_INFO);
+  private static final Info INFO = new Info("selector", AUTH_INFO, QuotaInfo.DEFAULT);
 
   @Mock private Authenticator authenticator;
 
@@ -116,7 +117,7 @@ public class EspAuthenticatorTest {
 
   @Test
   public void testNoAuthInfo() {
-    Info info = new Info("selector", null);
+    Info info = new Info("selector", null, QuotaInfo.DEFAULT);
     this.attribute.set(ATTRIBUTE_PREFIX + ".method_info", info);
     assertNull(this.espAuthenticator.authenticate(request));
     verify(this.authenticator, never())

@@ -25,9 +25,13 @@ import com.google.api.client.http.HttpTransport;
 import com.google.api.client.json.jackson2.JacksonFactory;
 import com.google.api.control.aggregator.CheckAggregationOptions;
 import com.google.api.control.aggregator.CheckRequestAggregator;
+import com.google.api.control.aggregator.QuotaAggregationOptions;
+import com.google.api.control.aggregator.QuotaRequestAggregator;
 import com.google.api.control.aggregator.ReportAggregationOptions;
 import com.google.api.control.aggregator.ReportRequestAggregator;
 import com.google.api.control.model.KnownLabels;
+import com.google.api.servicecontrol.v1.AllocateQuotaRequest;
+import com.google.api.servicecontrol.v1.AllocateQuotaResponse;
 import com.google.api.servicecontrol.v1.CheckRequest;
 import com.google.api.servicecontrol.v1.CheckResponse;
 import com.google.api.servicecontrol.v1.ReportRequest;
@@ -41,6 +45,7 @@ import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
+import java.util.List;
 import java.util.PriorityQueue;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
@@ -69,6 +74,7 @@ public class Client {
   };
   private final CheckRequestAggregator checkAggregator;
   private final ReportRequestAggregator reportAggregator;
+  private final QuotaRequestAggregator quotaAggregator;
   private final Ticker ticker;
   private final ThreadFactory threads;
   private final SchedulerFactory schedulers;
@@ -82,11 +88,13 @@ public class Client {
   private int statsLogFrequency;
 
   public Client(String serviceName, CheckAggregationOptions checkOptions,
-      ReportAggregationOptions reportOptions, ServiceControl transport, ThreadFactory threads,
+      ReportAggregationOptions reportOptions, QuotaAggregationOptions quotaOptions,
+      ServiceControl transport, ThreadFactory threads,
       SchedulerFactory schedulers, int statsLogFrequency, @Nullable Ticker ticker) {
     ticker = ticker == null ? Ticker.systemTicker() : ticker;
     this.checkAggregator = new CheckRequestAggregator(serviceName, checkOptions, null, ticker);
     this.reportAggregator = new ReportRequestAggregator(serviceName, reportOptions, null, ticker);
+    this.quotaAggregator = new QuotaRequestAggregator(serviceName, quotaOptions, ticker);
     this.serviceName = serviceName;
     this.ticker = ticker;
     this.transport = transport;
@@ -200,6 +208,31 @@ public class Client {
     }
   }
 
+  public AllocateQuotaResponse allocateQuota(AllocateQuotaRequest req) {
+    Preconditions.checkState(running, "Cannot check if it's not running");
+    statistics.totalQuotas.incrementAndGet();
+    Stopwatch w = Stopwatch.createStarted(ticker);
+    AllocateQuotaResponse resp = quotaAggregator.allocateQuota(req);
+    statistics.totalQuotaCacheLookupTimeMillis.addAndGet(w.elapsed(TimeUnit.MILLISECONDS));
+    if (resp != null) {
+      statistics.quotaHits.incrementAndGet();
+      return resp;
+    }
+    try {
+      w.reset().start();
+      resp = transport.services().allocateQuota(serviceName, req).execute();
+      statistics.totalQuotaTransportTimeMillis.addAndGet(w.elapsed(TimeUnit.MILLISECONDS));
+      quotaAggregator.cacheResponse(req, resp);
+      return resp;
+    } catch (IOException e) {
+      log.log(Level.SEVERE,
+          String.format("direct send of a quota request %s failed because of %s", req, e));
+      AllocateQuotaResponse dummyResponse = AllocateQuotaResponse.getDefaultInstance();
+      quotaAggregator.cacheResponse(req, dummyResponse);
+      return dummyResponse;
+    }
+  }
+
   /**
    * Process a report request.
    *
@@ -270,9 +303,10 @@ public class Client {
     log.info("creating a scheduler to control flushing");
     this.scheduler = schedulers.create(ticker);
     this.scheduler.setStatistics(statistics);
-    log.info("scheduling the initial check and report");
+    log.info("scheduling the initial check, report, and quota");
     flushAndScheduleChecks();
     flushAndScheduleReports();
+    flushAndScheduleQuota();
   }
 
   private synchronized boolean resetIfStopped() {
@@ -283,6 +317,7 @@ public class Client {
     // It's stopped to let's cleanup
     checkAggregator.clear();
     reportAggregator.clear();
+    quotaAggregator.clear();
     running = false;
     return true;
   }
@@ -363,6 +398,51 @@ public class Client {
     }, interval, 1 /* not so high priority */);
   }
 
+  private void flushAndScheduleQuota() {
+    if (resetIfStopped()) {
+      log.log(Level.FINE, "did not schedule quota flush: client is stopped");
+      return;
+    }
+    int interval = quotaAggregator.getFlushIntervalMillis();
+    if (interval < 0) {
+      log.log(Level.FINE, "did not schedule quota flush: caching is disabled");
+      return; // cache is disabled, so no flushing it
+    }
+
+    if (isRunningSchedulerDirectly()) {
+      log.log(Level.FINE, "did not schedule check flush: no scheduler thread is running");
+      return;
+    }
+
+    log.log(Level.FINE, "flushing the quota aggregator");
+    Stopwatch w = Stopwatch.createUnstarted(ticker);
+    List<AllocateQuotaRequest> reqs = quotaAggregator.flush();
+    if (log.isLoggable(Level.FINE)) {
+      log.log(Level.FINE,
+          String.format("flushing %d quota from the quota aggregator", reqs.size()));
+    }
+    for (AllocateQuotaRequest req : reqs) {
+      try {
+        statistics.recachedQuotas.incrementAndGet();
+        w.reset().start();
+        AllocateQuotaResponse resp = transport.services().allocateQuota(serviceName, req).execute();
+        statistics.totalQuotaTransportTimeMillis.addAndGet(w.elapsed(TimeUnit.MILLISECONDS));
+        w.reset().start();
+        quotaAggregator.cacheResponse(req, resp);
+        statistics.totalQuotaCacheUpdateTimeMillis.addAndGet(w.elapsed(TimeUnit.MILLISECONDS));
+      } catch (IOException e) {
+        log.log(Level.SEVERE,
+            String.format("direct send of a quota request %s failed because of %s", req, e));
+      }
+    }
+    scheduler.enter(new Runnable() {
+      @Override
+      public void run() {
+        flushAndScheduleQuota(); // Do this again after the interval
+      }
+    }, interval, 0 /* high priority */);
+  }
+
   /**
    * Builder provide structure to the construction of a {@link Client}
    */
@@ -374,6 +454,7 @@ public class Client {
     private String serviceName;
     private CheckAggregationOptions checkOptions;
     private ReportAggregationOptions reportOptions;
+    private QuotaAggregationOptions quotaOptions;
     private SchedulerFactory schedulerFactory = DEFAULT_SCHEDULER_FACTORY;
 
     public Builder(String name) {
@@ -397,6 +478,11 @@ public class Client {
 
     public Builder setReportOptions(ReportAggregationOptions options) {
       this.reportOptions = options;
+      return this;
+    }
+
+    public Builder setQuotaOptions(QuotaAggregationOptions options) {
+      this.quotaOptions = options;
       return this;
     }
 
@@ -436,6 +522,10 @@ public class Client {
       if (r == null) {
         r = new ReportAggregationOptions();
       }
+      QuotaAggregationOptions q = this.quotaOptions;
+      if (q == null) {
+        q = new QuotaAggregationOptions();
+      }
       final GoogleCredential nestedInitializer = c;
       HttpRequestInitializer addUserAgent = new HttpRequestInitializer() {
         @Override
@@ -445,7 +535,7 @@ public class Client {
           nestedInitializer.initialize(request);
         }
       };
-      return new Client(serviceName, o, r,
+      return new Client(serviceName, o, r, q,
           new ServiceControl.Builder(h, c)
               .setHttpRequestInitializer(addUserAgent)
               .setApplicationName(CLIENT_APPLICATION_NAME)
@@ -460,14 +550,17 @@ public class Client {
   static class Statistics {
     // counts
     AtomicLong checkHits = new AtomicLong();
+    AtomicLong quotaHits = new AtomicLong();
 
     AtomicLong directReports = new AtomicLong();
     AtomicLong flushedOperations = new AtomicLong();
     AtomicLong flushedReports = new AtomicLong();
     AtomicLong recachedChecks = new AtomicLong();
+    AtomicLong recachedQuotas = new AtomicLong();
     AtomicLong reportedOperations = new AtomicLong();
     AtomicLong totalChecks = new AtomicLong();
     AtomicLong totalReports = new AtomicLong();
+    AtomicLong totalQuotas = new AtomicLong();
     AtomicLong totalSchedulerRuns = new AtomicLong();
     AtomicLong totalSchedulerSkips = new AtomicLong();
 
@@ -477,6 +570,9 @@ public class Client {
     AtomicLong totalCheckTransportTimeMillis = new AtomicLong();
     AtomicLong totalTransportedReportTimeMillis = new AtomicLong();
     AtomicLong totalReportCacheUpdateTimeMillis = new AtomicLong();
+    AtomicLong totalQuotaCacheLookupTimeMillis = new AtomicLong();
+    AtomicLong totalQuotaCacheUpdateTimeMillis = new AtomicLong();
+    AtomicLong totalQuotaTransportTimeMillis = new AtomicLong();
     AtomicLong totalSchedulerSkiptimeMillis = new AtomicLong();
     AtomicLong totalSchedulerRuntimeMillis = new AtomicLong();
 

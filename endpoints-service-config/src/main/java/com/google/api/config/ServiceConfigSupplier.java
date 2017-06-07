@@ -64,6 +64,7 @@ public final class ServiceConfigSupplier implements Supplier<Service> {
       "monitoring",
       "name",
       "producer_project_id",
+      "quota",
       "system_parameters",
       "usage");
 

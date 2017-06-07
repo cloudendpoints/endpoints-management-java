@@ -95,7 +95,7 @@ public final class MetricValues {
     }
   }
 
-  private static void mergeValues(Builder builder, MetricValue prior, MetricValue latest) {
+  static void mergeValues(Builder builder, MetricValue prior, MetricValue latest) {
     switch (latest.getValueCase()) {
       case DOUBLE_VALUE:
         builder.setDoubleValue(prior.getDoubleValue() + latest.getDoubleValue());

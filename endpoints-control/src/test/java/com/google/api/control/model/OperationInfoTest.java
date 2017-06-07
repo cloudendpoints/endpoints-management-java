@@ -16,7 +16,7 @@
 
 package com.google.api.control.model;
 
-import static org.junit.Assert.assertEquals;
+import static com.google.common.truth.Truth.assertThat;
 
 import com.google.api.servicecontrol.v1.Operation;
 import com.google.api.servicecontrol.v1.Operation.Importance;
@@ -46,97 +46,111 @@ public class OperationInfoTest {
   }
 
   private static final Timestamp REALLY_EARLY = Timestamps.now(TEST_CLOCK);
-  private static final InfoTest[] AS_OPERATION_TEST = {
-      new InfoTest(
-          new OperationInfo()
-              .setReferer(TEST_REFERER)
-              .setOperationId(TEST_OPERATION_ID)
-              .setServiceName(TEST_SERVICE_NAME)
-              .setApiKey(TEST_API_KEY)
-              .setApiKeyValid(false)
-              .setConsumerProjectId(TEST_PROJECT_ID),
-          Operation
-              .newBuilder()
-              .setImportance(Importance.LOW)
-              .setEndTime(REALLY_EARLY)
-              .setOperationId(TEST_OPERATION_ID)
-              .setStartTime(REALLY_EARLY)
-              .setConsumerId("project:" + TEST_PROJECT_ID)
-              .build()),
-      new InfoTest(
-          new OperationInfo()
-              .setReferer(TEST_REFERER)
-              .setOperationId(TEST_OPERATION_ID)
-              .setServiceName(TEST_SERVICE_NAME)
-              .setApiKey(TEST_API_KEY)
-              .setApiKeyValid(false),
-          Operation
-              .newBuilder()
-              .setImportance(Importance.LOW)
-              .setEndTime(REALLY_EARLY)
-              .setOperationId(TEST_OPERATION_ID)
-              .setStartTime(REALLY_EARLY)
-              .build()),
-      new InfoTest(
-          new OperationInfo()
-              .setReferer(TEST_REFERER)
-              .setOperationId(TEST_OPERATION_ID)
-              .setServiceName(TEST_SERVICE_NAME)
-              .setApiKey(TEST_API_KEY)
-              .setApiKeyValid(true),
-          Operation
-              .newBuilder()
-              .setImportance(Importance.LOW)
-              .setEndTime(REALLY_EARLY)
-              .setOperationId(TEST_OPERATION_ID)
-              .setStartTime(REALLY_EARLY)
-              .setConsumerId("api_key:" + TEST_API_KEY)
-              .build()),
-      new InfoTest(
-          new OperationInfo()
-              .setReferer(TEST_REFERER)
-              .setOperationId(TEST_OPERATION_ID)
-              .setServiceName(TEST_SERVICE_NAME),
-          Operation
-              .newBuilder()
-              .setImportance(Importance.LOW)
-              .setEndTime(REALLY_EARLY)
-              .setOperationId(TEST_OPERATION_ID)
-              .setStartTime(REALLY_EARLY)
-              .build()),
-      new InfoTest(
-          new OperationInfo()
-              .setReferer(TEST_REFERER)
-              .setOperationName(TEST_OPERATION_NAME)
-              .setOperationId(TEST_OPERATION_ID)
-              .setServiceName(TEST_SERVICE_NAME),
-          Operation
-              .newBuilder()
-              .setImportance(Importance.LOW)
-              .setEndTime(REALLY_EARLY)
-              .setOperationName(TEST_OPERATION_NAME)
-              .setOperationId(TEST_OPERATION_ID)
-              .setStartTime(REALLY_EARLY)
-              .build()),
-      new InfoTest(new OperationInfo().setReferer(TEST_REFERER).setServiceName(TEST_SERVICE_NAME),
-          Operation.newBuilder().setEndTime(REALLY_EARLY).setStartTime(REALLY_EARLY).build()
-      ),
-  };
 
   @Test
-  public void test() {
-    for (InfoTest t : AS_OPERATION_TEST) {
-      assertEquals(t.want, t.given.asOperation(TEST_CLOCK));
-    }
+  public void test_consumerProjectId() {
+    doTest(
+        new OperationInfo()
+            .setReferer(TEST_REFERER)
+            .setOperationId(TEST_OPERATION_ID)
+            .setServiceName(TEST_SERVICE_NAME)
+            .setApiKey(TEST_API_KEY)
+            .setApiKeyValid(false)
+            .setConsumerProjectId(TEST_PROJECT_ID),
+        Operation
+            .newBuilder()
+            .setImportance(Importance.LOW)
+            .setEndTime(REALLY_EARLY)
+            .setOperationId(TEST_OPERATION_ID)
+            .setStartTime(REALLY_EARLY)
+            .setConsumerId("project:" + TEST_PROJECT_ID)
+            .build());
   }
 
-  private static class InfoTest {
-    OperationInfo given;
-    Operation want;
+  @Test
+  public void test_invalidApiKey() {
+    doTest(
+        new OperationInfo()
+            .setReferer(TEST_REFERER)
+            .setOperationId(TEST_OPERATION_ID)
+            .setServiceName(TEST_SERVICE_NAME)
+            .setApiKey(TEST_API_KEY)
+            .setApiKeyValid(false),
+        Operation
+            .newBuilder()
+            .setImportance(Importance.LOW)
+            .setEndTime(REALLY_EARLY)
+            .setOperationId(TEST_OPERATION_ID)
+            .setStartTime(REALLY_EARLY)
+            .build());
+  }
 
-    InfoTest(OperationInfo given, Operation want) {
-      this.given = given;
-      this.want = want;
-    }
+  @Test
+  public void test_noConsumerInfo() {
+    doTest(
+        new OperationInfo()
+            .setReferer(TEST_REFERER)
+            .setOperationName(TEST_OPERATION_NAME)
+            .setOperationId(TEST_OPERATION_ID)
+            .setServiceName(TEST_SERVICE_NAME),
+        Operation
+            .newBuilder()
+            .setImportance(Importance.LOW)
+            .setEndTime(REALLY_EARLY)
+            .setOperationName(TEST_OPERATION_NAME)
+            .setOperationId(TEST_OPERATION_ID)
+            .setStartTime(REALLY_EARLY)
+            .build());
+  }
+
+  @Test
+  public void test_apiKey() {
+    doTest(
+        new OperationInfo()
+            .setReferer(TEST_REFERER)
+            .setOperationId(TEST_OPERATION_ID)
+            .setServiceName(TEST_SERVICE_NAME)
+            .setApiKey(TEST_API_KEY)
+            .setApiKeyValid(true),
+        Operation
+            .newBuilder()
+            .setImportance(Importance.LOW)
+            .setEndTime(REALLY_EARLY)
+            .setOperationId(TEST_OPERATION_ID)
+            .setStartTime(REALLY_EARLY)
+            .setConsumerId("api_key:" + TEST_API_KEY)
+            .build());
+  }
+
+  @Test
+  public void test_noInfo() {
+    doTest(
+        new OperationInfo()
+            .setReferer(TEST_REFERER)
+            .setServiceName(TEST_SERVICE_NAME),
+        Operation.newBuilder()
+            .setEndTime(REALLY_EARLY)
+            .setStartTime(REALLY_EARLY)
+            .build());
+  }
+
+  @Test
+  public void test_noOperationName() {
+    doTest(
+        new OperationInfo()
+            .setReferer(TEST_REFERER)
+            .setOperationId(TEST_OPERATION_ID)
+            .setServiceName(TEST_SERVICE_NAME),
+        Operation
+            .newBuilder()
+            .setImportance(Importance.LOW)
+            .setEndTime(REALLY_EARLY)
+            .setOperationId(TEST_OPERATION_ID)
+            .setStartTime(REALLY_EARLY)
+            .build());
+  }
+
+  private void doTest(OperationInfo info, Operation expected) {
+    assertThat(info.asOperation(TEST_CLOCK)).isEqualTo(expected);
   }
 }
