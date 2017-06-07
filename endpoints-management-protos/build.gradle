@@ -22,7 +22,8 @@ repositories {
 
 dependencies {
   compile "com.google.protobuf:protobuf-java:3.0.0"
-  compile "com.google.api.grpc:googleapis-common-protos:${googleapisCommonProtosVersion}"
+  compile "io.grpc:grpc-protobuf:1.3.0"
+  compile "io.grpc:grpc-stub:1.3.0"
 }
 
 protobuf {
@@ -51,9 +52,15 @@ sourceSets {
     java {
       srcDir 'build/generated/source/proto/main/java'
     }
+    proto {
+      srcDir 'src/aux/proto'
+    }
   }
 }
-sourceSets.main.proto.setIncludes(['google/api/servicecontrol/v1/*.proto'])
+sourceSets.main.proto.setIncludes([
+  'google/api/servicecontrol/v1/*.proto',
+  'google/api/*.proto',
+  'google/api/experimental/*.proto'])
 
 configureMaven(
   project,
