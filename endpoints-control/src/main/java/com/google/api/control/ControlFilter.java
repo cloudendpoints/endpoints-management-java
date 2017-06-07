@@ -236,7 +236,7 @@ public class ControlFilter implements Filter {
     if (Strings.isNullOrEmpty(checkInfo.getApiKey()) && !info.shouldAllowUnregisteredCalls()) {
       errorInfo = CheckErrorInfo.API_KEY_NOT_PROVIDED;
       if (log.isLoggable(Level.FINE)) {
-        log.log(Level.FINE, String.format("no api key was provided"));
+        log.log(Level.FINE, "no api key was provided");
       }
     } else {
       creationTimer.reset().start();

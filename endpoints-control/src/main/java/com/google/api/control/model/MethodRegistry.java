@@ -230,7 +230,7 @@ public class MethodRegistry {
     return i;
   }
 
-  private static final String httpMethodFrom(HttpRule r) {
+  private static String httpMethodFrom(HttpRule r) {
     switch (r.getPatternCase()) {
       case CUSTOM:
         return r.getCustom().getKind().toLowerCase();
@@ -245,7 +245,7 @@ public class MethodRegistry {
     }
   }
 
-  private static final String urlFrom(HttpRule r) {
+  private static String urlFrom(HttpRule r) {
     switch (r.getPatternCase()) {
       case CUSTOM:
         return r.getCustom().getKind();
@@ -264,7 +264,7 @@ public class MethodRegistry {
     }
   }
 
-  private static final Map<String, AuthInfo> extractAuth(Service service) {
+  private static Map<String, AuthInfo> extractAuth(Service service) {
     if (!service.hasAuthentication()) {
       return ImmutableMap.<String, AuthInfo>of();
     }
