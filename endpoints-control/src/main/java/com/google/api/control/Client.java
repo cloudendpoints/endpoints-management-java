@@ -31,8 +31,8 @@ import com.google.api.control.model.KnownLabels;
 import com.google.api.servicecontrol.v1.CheckRequest;
 import com.google.api.servicecontrol.v1.CheckResponse;
 import com.google.api.servicecontrol.v1.ReportRequest;
-import com.google.api.services.servicecontrol.v1.Servicecontrol;
-import com.google.api.services.servicecontrol.v1.ServicecontrolScopes;
+import com.google.api.services.servicecontrol.v1.ServiceControl;
+import com.google.api.services.servicecontrol.v1.ServiceControlScopes;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Stopwatch;
 import com.google.common.base.Ticker;
@@ -72,7 +72,7 @@ public class Client {
   private final Ticker ticker;
   private final ThreadFactory threads;
   private final SchedulerFactory schedulers;
-  private final Servicecontrol transport;
+  private final ServiceControl transport;
   private boolean running;
   private boolean stopped;
   private Scheduler scheduler;
@@ -82,7 +82,7 @@ public class Client {
   private int statsLogFrequency;
 
   public Client(String serviceName, CheckAggregationOptions checkOptions,
-      ReportAggregationOptions reportOptions, Servicecontrol transport, ThreadFactory threads,
+      ReportAggregationOptions reportOptions, ServiceControl transport, ThreadFactory threads,
       SchedulerFactory schedulers, int statsLogFrequency, @Nullable Ticker ticker) {
     ticker = ticker == null ? Ticker.systemTicker() : ticker;
     this.checkAggregator = new CheckRequestAggregator(serviceName, checkOptions, null, ticker);
@@ -422,7 +422,7 @@ public class Client {
       }
       GoogleCredential c = GoogleCredential.getApplicationDefault(transport, new JacksonFactory());
       if (c.createScopedRequired()) {
-        c = c.createScoped(ServicecontrolScopes.all());
+        c = c.createScoped(ServiceControlScopes.all());
       }
       ThreadFactory f = this.factory;
       if (f == null) {
@@ -446,7 +446,7 @@ public class Client {
         }
       };
       return new Client(serviceName, o, r,
-          new Servicecontrol.Builder(h, c)
+          new ServiceControl.Builder(h, c)
               .setHttpRequestInitializer(addUserAgent)
               .setApplicationName(CLIENT_APPLICATION_NAME)
               .build(),

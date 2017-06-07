@@ -36,10 +36,10 @@ import com.google.api.servicecontrol.v1.Operation.Importance;
 import com.google.api.servicecontrol.v1.ReportRequest;
 import com.google.api.servicecontrol.v1.ReportRequest.Builder;
 import com.google.api.servicecontrol.v1.ReportResponse;
-import com.google.api.services.servicecontrol.v1.Servicecontrol;
-import com.google.api.services.servicecontrol.v1.Servicecontrol.Services;
-import com.google.api.services.servicecontrol.v1.Servicecontrol.Services.Check;
-import com.google.api.services.servicecontrol.v1.Servicecontrol.Services.Report;
+import com.google.api.services.servicecontrol.v1.ServiceControl;
+import com.google.api.services.servicecontrol.v1.ServiceControl.Services;
+import com.google.api.services.servicecontrol.v1.ServiceControl.Services.Check;
+import com.google.api.services.servicecontrol.v1.ServiceControl.Services.Report;
 import com.google.common.base.Ticker;
 
 import org.junit.Before;
@@ -62,7 +62,7 @@ public class ClientTest {
   private CheckAggregationOptions checkOptions;
   private ReportAggregationOptions reportOptions;
   private FakeTicker testTicker;
-  private Servicecontrol transport;
+  private ServiceControl transport;
   private ThreadFactory threads;
   private Client client;
   private Thread aThread;
@@ -77,7 +77,7 @@ public class ClientTest {
     checkStub = mock(Check.class);
     reportStub = mock(Report.class);
     services = mock(Services.class);
-    transport = mock(Servicecontrol.class);
+    transport = mock(ServiceControl.class);
     threads = mock(ThreadFactory.class);
     aThread = mock(Thread.class);
     schedulers = mock(Client.SchedulerFactory.class);

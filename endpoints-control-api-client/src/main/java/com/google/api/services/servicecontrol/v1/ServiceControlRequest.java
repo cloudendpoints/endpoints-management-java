@@ -16,17 +16,15 @@
 
 package com.google.api.services.servicecontrol.v1;
 
-import com.google.api.client.googleapis.services.AbstractGoogleClientRequest;
 import com.google.api.client.http.HttpContent;
 
-
 /**
- * Servicecontrol request.
+ * ServiceControl request.
  *
  * @since 1.3
  */
 @SuppressWarnings("javadoc")
-public abstract class ServicecontrolRequest<T> extends AbstractGoogleClientRequest<T> {
+public abstract class ServiceControlRequest<T> extends com.google.api.client.googleapis.services.AbstractGoogleClientRequest<T> {
 
   /**
    * @param client Google client
@@ -38,9 +36,8 @@ public abstract class ServicecontrolRequest<T> extends AbstractGoogleClientReque
    * @param content A POJO that can be serialized into JSON or {@code null} for none
    * @param responseClass response class to parse into
    */
-  public ServicecontrolRequest(
-      Servicecontrol client, String method, String uriTemplate, HttpContent content,
-      Class<T> responseClass) {
+  public ServiceControlRequest(
+      ServiceControl client, String method, String uriTemplate, HttpContent content, Class<T> responseClass) {
     super(
         client,
         method,
@@ -61,7 +58,7 @@ public abstract class ServicecontrolRequest<T> extends AbstractGoogleClientReque
   }
 
   /** OAuth access token. */
-  public ServicecontrolRequest<T> setAccessToken(java.lang.String accessToken) {
+  public ServiceControlRequest<T> setAccessToken(java.lang.String accessToken) {
     this.accessToken = accessToken;
     return this;
   }
@@ -78,7 +75,7 @@ public abstract class ServicecontrolRequest<T> extends AbstractGoogleClientReque
   }
 
   /** Data format for response. */
-  public ServicecontrolRequest<T> setAlt(java.lang.String alt) {
+  public ServiceControlRequest<T> setAlt(java.lang.String alt) {
     this.alt = alt;
     return this;
   }
@@ -95,7 +92,7 @@ public abstract class ServicecontrolRequest<T> extends AbstractGoogleClientReque
   }
 
   /** OAuth bearer token. */
-  public ServicecontrolRequest<T> setBearerToken(java.lang.String bearerToken) {
+  public ServiceControlRequest<T> setBearerToken(java.lang.String bearerToken) {
     this.bearerToken = bearerToken;
     return this;
   }
@@ -112,7 +109,7 @@ public abstract class ServicecontrolRequest<T> extends AbstractGoogleClientReque
   }
 
   /** JSONP */
-  public ServicecontrolRequest<T> setCallback(java.lang.String callback) {
+  public ServiceControlRequest<T> setCallback(java.lang.String callback) {
     this.callback = callback;
     return this;
   }
@@ -129,7 +126,7 @@ public abstract class ServicecontrolRequest<T> extends AbstractGoogleClientReque
   }
 
   /** Selector specifying which fields to include in a partial response. */
-  public ServicecontrolRequest<T> setFields(java.lang.String fields) {
+  public ServiceControlRequest<T> setFields(java.lang.String fields) {
     this.fields = fields;
     return this;
   }
@@ -153,7 +150,7 @@ public abstract class ServicecontrolRequest<T> extends AbstractGoogleClientReque
    * API key. Your API key identifies your project and provides you with API access, quota, and
    * reports. Required unless you provide an OAuth 2.0 token.
    */
-  public ServicecontrolRequest<T> setKey(java.lang.String key) {
+  public ServiceControlRequest<T> setKey(java.lang.String key) {
     this.key = key;
     return this;
   }
@@ -170,7 +167,7 @@ public abstract class ServicecontrolRequest<T> extends AbstractGoogleClientReque
   }
 
   /** OAuth 2.0 token for the current user. */
-  public ServicecontrolRequest<T> setOauthToken(java.lang.String oauthToken) {
+  public ServiceControlRequest<T> setOauthToken(java.lang.String oauthToken) {
     this.oauthToken = oauthToken;
     return this;
   }
@@ -187,7 +184,7 @@ public abstract class ServicecontrolRequest<T> extends AbstractGoogleClientReque
   }
 
   /** Pretty-print response. */
-  public ServicecontrolRequest<T> setPp(java.lang.Boolean pp) {
+  public ServiceControlRequest<T> setPp(java.lang.Boolean pp) {
     this.pp = pp;
     return this;
   }
@@ -204,7 +201,7 @@ public abstract class ServicecontrolRequest<T> extends AbstractGoogleClientReque
   }
 
   /** Returns response with indentations and line breaks. */
-  public ServicecontrolRequest<T> setPrettyPrint(java.lang.Boolean prettyPrint) {
+  public ServiceControlRequest<T> setPrettyPrint(java.lang.Boolean prettyPrint) {
     this.prettyPrint = prettyPrint;
     return this;
   }
@@ -228,7 +225,7 @@ public abstract class ServicecontrolRequest<T> extends AbstractGoogleClientReque
    * Available to use for quota purposes for server-side applications. Can be any arbitrary string
    * assigned to a user, but should not exceed 40 characters.
    */
-  public ServicecontrolRequest<T> setQuotaUser(java.lang.String quotaUser) {
+  public ServiceControlRequest<T> setQuotaUser(java.lang.String quotaUser) {
     this.quotaUser = quotaUser;
     return this;
   }
@@ -245,7 +242,7 @@ public abstract class ServicecontrolRequest<T> extends AbstractGoogleClientReque
   }
 
   /** Legacy upload protocol for media (e.g. "media", "multipart"). */
-  public ServicecontrolRequest<T> setUploadType(java.lang.String uploadType) {
+  public ServiceControlRequest<T> setUploadType(java.lang.String uploadType) {
     this.uploadType = uploadType;
     return this;
   }
@@ -262,28 +259,28 @@ public abstract class ServicecontrolRequest<T> extends AbstractGoogleClientReque
   }
 
   /** Upload protocol for media (e.g. "raw", "multipart"). */
-  public ServicecontrolRequest<T> setUploadProtocol(java.lang.String uploadProtocol) {
+  public ServiceControlRequest<T> setUploadProtocol(java.lang.String uploadProtocol) {
     this.uploadProtocol = uploadProtocol;
     return this;
   }
 
   @Override
-  public final Servicecontrol getAbstractGoogleClient() {
-    return (Servicecontrol) super.getAbstractGoogleClient();
+  public final ServiceControl getAbstractGoogleClient() {
+    return (ServiceControl) super.getAbstractGoogleClient();
   }
 
   @Override
-  public ServicecontrolRequest<T> setDisableGZipContent(boolean disableGZipContent) {
-    return (ServicecontrolRequest<T>) super.setDisableGZipContent(disableGZipContent);
+  public ServiceControlRequest<T> setDisableGZipContent(boolean disableGZipContent) {
+    return (ServiceControlRequest<T>) super.setDisableGZipContent(disableGZipContent);
   }
 
   @Override
-  public ServicecontrolRequest<T> setRequestHeaders(com.google.api.client.http.HttpHeaders headers) {
-    return (ServicecontrolRequest<T>) super.setRequestHeaders(headers);
+  public ServiceControlRequest<T> setRequestHeaders(com.google.api.client.http.HttpHeaders headers) {
+    return (ServiceControlRequest<T>) super.setRequestHeaders(headers);
   }
 
   @Override
-  public ServicecontrolRequest<T> set(String parameterName, Object value) {
-    return (ServicecontrolRequest<T>) super.set(parameterName, value);
+  public ServiceControlRequest<T> set(String parameterName, Object value) {
+    return (ServiceControlRequest<T>) super.set(parameterName, value);
   }
 }
