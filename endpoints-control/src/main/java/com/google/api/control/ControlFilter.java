@@ -268,6 +268,11 @@ public class ControlFilter implements Filter {
 
       // 'Send' a report, end the latency timer to collect correct overhead and backend latencies
       timer.end();
+      // trickle refers to whether or not a request should continue down the processing pipeline.
+      // Previously, there was only check and report, so we could just call the filter chain if
+      // check failed. Now, we need to check for quota, even if the check request fails open. The
+      // more ideal solution would be to use an interceptor chain, but we'll leave it at this for
+      // now.
       boolean trickle = false;
       if (errorInfo == CheckErrorInfo.API_KEY_NOT_PROVIDED) {
         // a needed API key was not provided
@@ -298,9 +303,7 @@ public class ControlFilter implements Filter {
 
     QuotaRequestInfo quotaInfo = createQuotaInfo(httpRequest, info);
     if (quotaInfo.getMetricCosts().isEmpty()) {
-      if (log.isLoggable(Level.FINE)) {
-        log.log(Level.FINE, "no metric costs for this method");
-      }
+      log.log(Level.FINE, "no metric costs for this method");
     } else {
       AllocateQuotaRequest quotaRequest = quotaInfo.asQuotaRequest(clock);
       AllocateQuotaResponse quotaResponse = client.allocateQuota(quotaRequest);
