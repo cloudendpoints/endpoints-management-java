@@ -138,8 +138,8 @@ public class QuotaRequestAggregator {
     synchronized (cache) {
       CachedItem item = cache.getIfPresent(signature);
       if (item == null) {
-        // To avoid sending concurrent allocateQuota from concurrent requests.
-        // insert a temporary positive response to the cache. Requests from other
+        // To avoid sending concurrent allocateQuota from concurrent requests,
+        // insert a temporary positive response to the cache. Quota requests from other API
         // requests will be aggregated to this temporary element until the
         // response for the actual request arrives.
         AllocateQuotaResponse tempResponse = AllocateQuotaResponse.getDefaultInstance();

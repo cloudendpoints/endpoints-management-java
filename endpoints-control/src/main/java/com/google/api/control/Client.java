@@ -423,12 +423,12 @@ public class Client {
     }
     for (AllocateQuotaRequest req : reqs) {
       try {
-        statistics.recachedQuotas.incrementAndGet();
         w.reset().start();
         AllocateQuotaResponse resp = transport.services().allocateQuota(serviceName, req).execute();
         statistics.totalQuotaTransportTimeMillis.addAndGet(w.elapsed(TimeUnit.MILLISECONDS));
         w.reset().start();
         quotaAggregator.cacheResponse(req, resp);
+        statistics.recachedQuotas.incrementAndGet();
         statistics.totalQuotaCacheUpdateTimeMillis.addAndGet(w.elapsed(TimeUnit.MILLISECONDS));
       } catch (IOException e) {
         log.log(Level.SEVERE,
