@@ -24,6 +24,7 @@ import com.google.api.Service;
 import com.google.api.SystemParameter;
 import com.google.api.SystemParameterRule;
 import com.google.api.UsageRule;
+import com.google.api.control.util.StringUtils;
 import com.google.auto.value.AutoValue;
 import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
@@ -85,6 +86,7 @@ public class MethodRegistry {
     if (url.startsWith("/")) {
       url = url.substring(1);
     }
+    url = StringUtils.stripTrailingSlash(url);
     List<Info> infos = infosByHttpMethod.get(httpMethod);
     if (infos == null) {
       log.log(Level.FINE,
@@ -113,7 +115,7 @@ public class MethodRegistry {
     Set<String> allUrls = Sets.newHashSet();
     Set<String> urlsWithOptions = Sets.newHashSet();
     for (HttpRule r : rules) {
-      String url = urlFrom(r);
+      String url = StringUtils.stripTrailingSlash(urlFrom(r));
       String httpMethod = httpMethodFrom(r);
       if (Strings.isNullOrEmpty(url) || Strings.isNullOrEmpty(httpMethod)
           || Strings.isNullOrEmpty(r.getSelector())) {
