@@ -34,6 +34,7 @@ import org.junit.runners.JUnit4;
 @RunWith(JUnit4.class)
 public class KnownMetricsTest {
   private static final String TEST_API_KEY = "test_key";
+  private static final long TEST_CONSUMER_PROJECT_NUMBER = 1234;
 
   @Test
   public void shouldBeSupported() {
@@ -127,6 +128,7 @@ public class KnownMetricsTest {
       new StructuredTest(KnownMetrics.PRODUCER_BY_CONSUMER_ERROR_COUNT),
       new StructuredTest(
           (ReportRequestInfo) new ReportRequestInfo()
+              .setConsumerProjectNumber(TEST_CONSUMER_PROJECT_NUMBER)
               .setResponseCode(400)
               .setApiKey(TEST_API_KEY)
               .setApiKeyValid(true),
@@ -156,6 +158,7 @@ public class KnownMetricsTest {
           .setRequestTimeMillis(wantedSize)
           .setOverheadTimeMillis(wantedSize)
           .setResponseSize(wantedSize)
+          .setConsumerProjectNumber(TEST_CONSUMER_PROJECT_NUMBER)
           .setApiKey(TEST_API_KEY)
           .setApiKeyValid(true);
     }

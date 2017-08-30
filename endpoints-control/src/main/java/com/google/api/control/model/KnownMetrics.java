@@ -23,6 +23,8 @@ import com.google.api.servicecontrol.v1.Distribution;
 import com.google.api.servicecontrol.v1.MetricValue;
 import com.google.api.servicecontrol.v1.MetricValueSet;
 import com.google.api.servicecontrol.v1.Operation;
+import com.google.api.servicecontrol.v1.Operation.Builder;
+import com.google.common.base.Strings;
 
 /**
  * KnownMetric enumerates the well-known metrics and allows them to be added to the ReportRequest.
@@ -36,7 +38,7 @@ public enum KnownMetrics {
 
   PRODUCER_BY_CONSUMER_REQUEST_COUNT(
       "serviceruntime.googleapis.com/api/producer/by_consumer/request_count", MetricKind.DELTA,
-      ValueType.INT64, add1ToInt64Metric(), Mark.CONSUMER),
+      ValueType.INT64, add1ToInt64Metric(), Mark.PRODUCER_BY_CONSUMER),
 
   CONSUMER_REQUEST_SIZES("serviceruntime.googleapis.com/api/consumer/request_sizes",
       MetricKind.DELTA, ValueType.DISTRIBUTION, addDistributionMetricForRequestSize(),
@@ -47,7 +49,7 @@ public enum KnownMetrics {
 
   PRODUCER_BY_CONSUMER_REQUEST_SIZES(
       "serviceruntime.googleapis.com/api/producer/by_consumer/request_sizes", MetricKind.DELTA,
-      ValueType.DISTRIBUTION, addDistributionMetricForRequestSize(), Mark.CONSUMER),
+      ValueType.DISTRIBUTION, addDistributionMetricForRequestSize(), Mark.PRODUCER_BY_CONSUMER),
 
   CONSUMER_RESPONSE_SIZES("serviceruntime.googleapis.com/api/consumer/response_sizes",
       MetricKind.DELTA, ValueType.DISTRIBUTION, addDistributionMetricForResponseSize(),
@@ -58,7 +60,7 @@ public enum KnownMetrics {
 
   PRODUCER_BY_CONSUMER_RESPONSE_SIZES(
       "serviceruntime.googleapis.com/api/producer/by_consumer/response_sizes", MetricKind.DELTA,
-      ValueType.DISTRIBUTION, addDistributionMetricForResponseSize(), Mark.CONSUMER),
+      ValueType.DISTRIBUTION, addDistributionMetricForResponseSize(), Mark.PRODUCER_BY_CONSUMER),
 
   CONSUMER_REQUEST_ERROR_COUNT("serviceruntime.googleapis.com/api/consumer/error_count",
       MetricKind.DELTA, ValueType.INT64, add1ToInt64MetricIfError(), Mark.CONSUMER),
@@ -68,7 +70,7 @@ public enum KnownMetrics {
 
   PRODUCER_BY_CONSUMER_ERROR_COUNT(
       "serviceruntime.googleapis.com/api/producer/by_consumer/error_count", MetricKind.DELTA,
-      ValueType.INT64, add1ToInt64MetricIfError(), Mark.CONSUMER),
+      ValueType.INT64, add1ToInt64MetricIfError(), Mark.PRODUCER_BY_CONSUMER),
 
   CONSUMER_TOTAL_LATENCIES("serviceruntime.googleapis.com/api/consumer/total_latencies",
       MetricKind.DELTA, ValueType.DISTRIBUTION, addDistributionMetricForRequestTimeMillis(),
@@ -79,7 +81,8 @@ public enum KnownMetrics {
 
   PRODUCER_BY_CONSUMER_TOTAL_LATENCIES(
       "serviceruntime.googleapis.com/api/producer/by_consumer/total_latencies", MetricKind.DELTA,
-      ValueType.DISTRIBUTION, addDistributionMetricForRequestTimeMillis(), Mark.CONSUMER),
+      ValueType.DISTRIBUTION, addDistributionMetricForRequestTimeMillis(),
+      Mark.PRODUCER_BY_CONSUMER),
 
   CONSUMER_BACKEND_LATENCIES("serviceruntime.googleapis.com/api/consumer/backend_latencies",
       MetricKind.DELTA, ValueType.DISTRIBUTION, addDistributionMetricForBackendTimeMillis(),
@@ -90,7 +93,8 @@ public enum KnownMetrics {
 
   PRODUCER_BY_CONSUMER_BACKEND_LATENCIES(
       "serviceruntime.googleapis.com/api/producer/by_consumer/backend_latencies", MetricKind.DELTA,
-      ValueType.DISTRIBUTION, addDistributionMetricForBackendTimeMillis(), Mark.CONSUMER),
+      ValueType.DISTRIBUTION, addDistributionMetricForBackendTimeMillis(),
+      Mark.PRODUCER_BY_CONSUMER),
 
   CONSUMER_REQUEST_OVERHEAD_LATENCIES(
       "serviceruntime.googleapis.com/api/consumer/request_overhead_latencies", MetricKind.DELTA,
@@ -103,7 +107,7 @@ public enum KnownMetrics {
   PRODUCER_BY_CONSUMER_REQUEST_OVERHEAD_LATENCIES(
       "serviceruntime.googleapis.com/api/producer/by_consumer/request_overhead_latencies",
       MetricKind.DELTA, ValueType.DISTRIBUTION, addDistributionMetricForOverheadTimeMillis(),
-      Mark.CONSUMER);
+      Mark.PRODUCER_BY_CONSUMER);
 
   private static final double TIME_SCALE = 1e-6;
   private static final double SIZE_SCALE = 1;
@@ -125,7 +129,13 @@ public enum KnownMetrics {
     this.name = name;
     this.type = type;
     this.kind = kind;
-    this.updater = mark == Mark.CONSUMER ? consumerMetric(updater) : updater;
+    if (mark == Mark.CONSUMER) {
+      this.updater = consumerMetric(updater);
+    } else if (mark == Mark.PRODUCER_BY_CONSUMER) {
+      this.updater = producerByConsumerMetric(updater);
+    } else {
+      this.updater = updater;
+    }
     this.mark = mark;
   }
 
@@ -252,6 +262,20 @@ public enum KnownMetrics {
     };
   }
 
+  /**
+   * This wraps an existing {@link Update} to only write if a consumer project number exists.
+   */
+  private static Update producerByConsumerMetric(final Update delegate) {
+    return new Update() {
+      @Override
+      public void update(String name, ReportRequestInfo info, Builder op) {
+        if (info.getConsumerProjectNumber() > 0) {
+          delegate.update(name, info, op);
+        }
+      }
+    };
+  }
+
   private static void addInt64MetricValue(String name, long value, Operation.Builder op) {
     op.addMetricValueSets(MetricValueSet.newBuilder().setMetricName(name).addMetricValues(
         MetricValue.newBuilder().setInt64Value(value).build()));
@@ -331,6 +355,6 @@ public enum KnownMetrics {
   }
 
   private enum Mark {
-    PRODUCER, CONSUMER;
+    PRODUCER, CONSUMER, PRODUCER_BY_CONSUMER;
   }
 }

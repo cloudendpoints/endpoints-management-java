@@ -238,6 +238,7 @@ public class ControlFilter implements Filter {
     CheckRequestInfo checkInfo = createCheckInfo(httpRequest, appInfo.url, info);
     CheckErrorInfo errorInfo;
     CheckResponse checkResponse = null;
+    long consumerProjectNumber = 0;
     if (Strings.isNullOrEmpty(checkInfo.getApiKey()) && !info.shouldAllowUnregisteredCalls()) {
       errorInfo = CheckErrorInfo.API_KEY_NOT_PROVIDED;
       if (log.isLoggable(Level.FINE)) {
@@ -253,6 +254,9 @@ public class ControlFilter implements Filter {
       }
       checkResponse = client.check(checkRequest);
       errorInfo = CheckErrorInfo.convert(checkResponse);
+      if (checkResponse != null) {
+        consumerProjectNumber = checkResponse.getCheckInfo().getConsumerInfo().getProjectNumber();
+      }
     }
 
     // Handle check failures. This includes check transport failures, in
@@ -289,7 +293,8 @@ public class ControlFilter implements Filter {
       }
       if (!trickle) {
         ReportRequest reportRequest =
-            createReportRequest(info, checkInfo, appInfo, ConfigFilter.getReportRule(request), timer);
+            createReportRequest(info, checkInfo, appInfo, ConfigFilter.getReportRule(request),
+                timer, consumerProjectNumber);
         if (log.isLoggable(Level.FINEST)) {
           log.log(Level.FINEST, String.format("sending an error report request %s", reportRequest));
         }
@@ -333,7 +338,8 @@ public class ControlFilter implements Filter {
         wrapper.getContentLength() != 0 ? wrapper.getContentLength() : wrapper.getData().length;
     creationTimer.reset().start();
     ReportRequest reportRequest =
-        createReportRequest(info, checkInfo, appInfo, ConfigFilter.getReportRule(request), timer);
+        createReportRequest(info, checkInfo, appInfo, ConfigFilter.getReportRule(request), timer,
+            consumerProjectNumber);
     statistics.totalReports.incrementAndGet();
     statistics.totalReportCreationTime.addAndGet(creationTimer.elapsed(TimeUnit.MILLISECONDS));
     if (log.isLoggable(Level.FINEST)) {
@@ -346,7 +352,7 @@ public class ControlFilter implements Filter {
   }
 
   private ReportRequest createReportRequest(MethodRegistry.Info info, CheckRequestInfo checkInfo,
-      AppStruct appInfo, ReportingRule rules, LatencyTimer timer) {
+      AppStruct appInfo, ReportingRule rules, LatencyTimer timer, long consumerProjectNumber) {
     // TODO: confirm how to fill in platform and location
     return new ReportRequestInfo(checkInfo)
         .setApiMethod(info.getSelector())
@@ -362,6 +368,7 @@ public class ControlFilter implements Filter {
         .setResponseSize(appInfo.responseSize)
         .setUrl(appInfo.url)
         .setBackendTimeMillis(timer.getBackendTimeMillis())
+        .setConsumerProjectNumber(consumerProjectNumber)
         .asReportRequest(rules, clock);
   }
 

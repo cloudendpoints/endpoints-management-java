@@ -208,6 +208,17 @@ public enum KnownLabels {
         public void update(String name, ReportRequestInfo info, Map<String, String> labels) {
           labels.put(name, USER_AGENT);
         }
+      }),
+
+  SCC_CONSUMER_PROJECT(
+      "serviceruntime.googleapis.com/consumer_project", ValueType.STRING, Kind.SYSTEM,
+      new Update() {
+        @Override
+        public void update(String name, ReportRequestInfo info, Map<String, String> labels) {
+          if (info.getConsumerProjectNumber() > 0) {
+            labels.put(name, Long.toString(info.getConsumerProjectNumber()));
+          }
+        }
       });
 
   /**
