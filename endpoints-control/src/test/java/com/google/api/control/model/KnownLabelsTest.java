@@ -123,7 +123,16 @@ public class KnownLabelsTest {
       new StructuredTest(
           KnownLabels.GCP_LOCATION,
           ImmutableMap.of(KnownLabels.GCP_LOCATION.getName(), "global"),
-          new ReportRequestInfo(new OperationInfo()))
+          new ReportRequestInfo(new OperationInfo())),
+      new StructuredTest(KnownLabels.SCC_CONSUMER_PROJECT),
+      new StructuredTest(
+          KnownLabels.SCC_CONSUMER_PROJECT,
+          ImmutableMap.of(KnownLabels.SCC_CONSUMER_PROJECT.getName(), "1234"),
+          new ReportRequestInfo(new OperationInfo()).setConsumerProjectNumber(1234)),
+      new StructuredTest(
+          KnownLabels.SCC_CONSUMER_PROJECT,
+          ImmutableMap.<String, String>of(),
+          new ReportRequestInfo(new OperationInfo()).setConsumerProjectNumber(-1))
   };
 
   static class StructuredTest {

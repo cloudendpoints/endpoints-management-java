@@ -95,6 +95,11 @@ public class ReportRequestInfo extends OperationInfo {
   private int responseCode;
   private long responseSize;
   private String url;
+  // There is also a consumer project id, but it follows a different format from what we need, and
+  // is not a value returned from Chemist, but one we set manually. This field is purely set to
+  // enable per-consumer metrics. All per-consumer metrics and the consumer project label use this
+  // field, but consumer_id (which can also be API key, for example) uses consumerProjectId.
+  private long consumerProjectNumber;
 
   /**
    * Default constructor,
@@ -447,6 +452,18 @@ public class ReportRequestInfo extends OperationInfo {
 
   public ReportRequestInfo setUrl(String url) {
     this.url = url;
+    return this;
+  }
+
+  /**
+   * @return the consumer project number of the reported operation
+   */
+  public long getConsumerProjectNumber() {
+    return consumerProjectNumber;
+  }
+
+  public ReportRequestInfo setConsumerProjectNumber(long consumerProjectNumber) {
+    this.consumerProjectNumber = consumerProjectNumber;
     return this;
   }
 }
