@@ -43,7 +43,6 @@ public class UserInfo {
    */
   public UserInfo(Collection<String> audiences, String email, String id, String issuer) {
     Preconditions.checkNotNull(audiences);
-    Preconditions.checkNotNull(email);
     Preconditions.checkNotNull(id);
     Preconditions.checkNotNull(issuer);
 
