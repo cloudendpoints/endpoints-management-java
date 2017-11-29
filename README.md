@@ -21,7 +21,11 @@ https://cloud.google.com/endpoints/docs/frameworks/java
 To install test versions to Maven for easier dependency management, simply run:
 
     gradle install
+    
+## Build pacakage
 
+    git submodule init && git pull --recurse-submodules=yes
+    ./gradlew build
 
 Java Versions
 -------------
