@@ -19,6 +19,7 @@ package com.google.api.control.model;
 import com.google.api.client.util.Clock;
 import com.google.api.servicecontrol.v1.CheckRequest;
 import com.google.api.servicecontrol.v1.Operation;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 
@@ -28,7 +29,18 @@ import java.util.Map;
  * Holds information about a {@code CheckRequest} to be obtained from the HTTP layer.
  */
 public class CheckRequestInfo extends OperationInfo {
+  @VisibleForTesting
+  static final String ANDROID_PACKAGE_LABEL = "servicecontrol.googleapis.com/android_package_name";
+  @VisibleForTesting
+  static final String ANDROID_CERTIFICATE_FINGERPRINT_LABEL =
+      "servicecontrol.googleapis.com/android_cert_fingerprint";
+  @VisibleForTesting
+  static final String IOS_BUNDLE_ID = "servicecontrol.googleapis.com/ios_bundle_id";
+
   private String clientIp;
+  private String androidPackageName;
+  private String androidCertificateFingerprint;
+  private String iosBundleId;
 
   public CheckRequestInfo() {
     // default constructor
@@ -53,6 +65,33 @@ public class CheckRequestInfo extends OperationInfo {
 
   public CheckRequestInfo setClientIp(String clientIp) {
     this.clientIp = clientIp;
+    return this;
+  }
+
+  public String getAndroidPackageName() {
+    return androidPackageName;
+  }
+
+  public CheckRequestInfo setAndroidPackageName(String androidPackageName) {
+    this.androidPackageName = androidPackageName;
+    return this;
+  }
+
+  public String getAndroidCertificateFingerprint() {
+    return androidCertificateFingerprint;
+  }
+
+  public CheckRequestInfo setAndroidCertificateFingerprint(String androidCertificateFingerprint) {
+    this.androidCertificateFingerprint = androidCertificateFingerprint;
+    return this;
+  }
+
+  public String getIosBundleId() {
+    return iosBundleId;
+  }
+
+  public CheckRequestInfo setIosBundleId(String iosBundleId) {
+    this.iosBundleId = iosBundleId;
     return this;
   }
 
@@ -89,6 +128,15 @@ public class CheckRequestInfo extends OperationInfo {
     }
     if (!Strings.isNullOrEmpty(getReferer())) {
       labels.put(SCC_REFERER, getReferer());
+    }
+    if (!Strings.isNullOrEmpty(getAndroidPackageName())) {
+      labels.put(ANDROID_PACKAGE_LABEL, getAndroidPackageName());
+    }
+    if (!Strings.isNullOrEmpty(getAndroidCertificateFingerprint())) {
+      labels.put(ANDROID_CERTIFICATE_FINGERPRINT_LABEL, getAndroidCertificateFingerprint());
+    }
+    if (!Strings.isNullOrEmpty(getIosBundleId())) {
+      labels.put(IOS_BUNDLE_ID, getIosBundleId());
     }
     return labels;
   }

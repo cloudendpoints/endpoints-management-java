@@ -42,6 +42,9 @@ public class CheckRequestInfoTest {
   private static final String TEST_OPERATION_NAME = "anOperationName";
   private static final String TEST_OPERATION_ID = "anOperationId";
   private static final String TEST_SERVICE_NAME = "aServiceName";
+  private static final String TEST_ANDROID_PACKAGE = "anAndroidPkg";
+  private static final String TEST_ANDROID_FINGERPRINT = "anAndroidFingerprint";
+  private static final String TEST_IOS_BUNDLE = "anIosBundle";
   private static FakeClock TEST_CLOCK = new FakeClock();
 
   static {
@@ -75,6 +78,33 @@ public class CheckRequestInfoTest {
               .setOperation(newExpectedOperationBuilder()
                   .putAllLabels(ImmutableMap.of(CheckRequestInfo.SCC_USER_AGENT,
                       KnownLabels.USER_AGENT, CheckRequestInfo.SCC_CALLER_IP, TEST_CLIENT_IP)))
+              .build()),
+      new InfoTest(
+          new CheckRequestInfo(newTestOperationInfo())
+              .setAndroidPackageName(TEST_ANDROID_PACKAGE),
+          CheckRequest.newBuilder()
+              .setServiceName(TEST_SERVICE_NAME)
+              .setOperation(newExpectedOperationBuilder()
+                  .putAllLabels(ImmutableMap.of(
+                      CheckRequestInfo.ANDROID_PACKAGE_LABEL, TEST_ANDROID_PACKAGE)))
+              .build()),
+      new InfoTest(
+          new CheckRequestInfo(newTestOperationInfo())
+              .setAndroidCertificateFingerprint(TEST_ANDROID_FINGERPRINT),
+          CheckRequest.newBuilder()
+              .setServiceName(TEST_SERVICE_NAME)
+              .setOperation(newExpectedOperationBuilder()
+                  .putAllLabels(ImmutableMap.of(
+                      CheckRequestInfo.ANDROID_CERTIFICATE_FINGERPRINT_LABEL,
+                      TEST_ANDROID_FINGERPRINT)))
+              .build()),
+      new InfoTest(
+          new CheckRequestInfo(newTestOperationInfo()).setIosBundleId(TEST_IOS_BUNDLE),
+          CheckRequest.newBuilder()
+              .setServiceName(TEST_SERVICE_NAME)
+              .setOperation(newExpectedOperationBuilder()
+                  .putAllLabels(ImmutableMap.of(
+                      CheckRequestInfo.IOS_BUNDLE_ID, TEST_IOS_BUNDLE)))
               .build())
 
   };
