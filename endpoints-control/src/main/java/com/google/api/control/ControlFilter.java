@@ -95,6 +95,10 @@ public class ControlFilter implements Filter {
       "com.google.apphosting.api.ApiProxy.ApiProxyException";
   private static final String REMOTE_API_EXCEPTION_CLASS_NAME =
       "com.google.appengine.tools.remoteapi.RemoteApiException";
+  private static final String X_ANDROID_CERT = "x-android-cert";
+  private static final String X_ANDROID_PACKAGE = "x-android-package";
+  private static final String X_IOS_BUNDLE_ID = "x-ios-bundle-identifier";
+
   private final Ticker ticker;
   private final Clock clock;
   private final ReportedPlatforms platform;
@@ -390,7 +394,11 @@ public class ControlFilter implements Filter {
         .setConsumerProjectId(this.projectId)
         .setOperationId(nextOperationId())
         .setOperationName(info.getSelector())
-        .setServiceName(serviceName)).setClientIp(request.getRemoteAddr());
+        .setServiceName(serviceName))
+        .setClientIp(request.getRemoteAddr())
+        .setAndroidPackageName(request.getHeader(X_ANDROID_PACKAGE))
+        .setAndroidCertificateFingerprint(request.getHeader(X_ANDROID_CERT))
+        .setIosBundleId(request.getHeader(X_IOS_BUNDLE_ID));
   }
 
   private QuotaRequestInfo createQuotaInfo(HttpServletRequest request, MethodRegistry.Info info) {
