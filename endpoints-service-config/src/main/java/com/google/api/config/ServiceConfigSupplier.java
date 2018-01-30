@@ -35,6 +35,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 import com.google.common.base.Supplier;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.protobuf.util.JsonFormat;
 
 import java.io.IOException;
@@ -49,6 +50,25 @@ import javax.annotation.Nullable;
 public final class ServiceConfigSupplier implements Supplier<Service> {
   private static final String SERVICE_NAME_KEY = "ENDPOINTS_SERVICE_NAME";
   private static final String SERVICE_VERSION_KEY = "ENDPOINTS_SERVICE_VERSION";
+  private static final ImmutableMap<Integer, String> ERROR_CODE_DETAILS =
+      ImmutableMap.<Integer, String>builder()
+          .put(
+              403 /* forbidden */,
+              "This may occur if the App Engine service account has been deleted or does not " +
+              "have correct permissions. Visit https://goo.gl/UEKik4 and verify that the " +
+              "App Engine default service account has either the Editor or Service Controller " +
+              "role.")
+          .put(
+              404 /* not found */,
+              "The service config name and config id could not be found. Double check that " +
+              "filter initialization parameters endpoints.projectId and endpoints.serviceName " +
+              "are correctly set. See https://goo.gl/yp8QUN for details.")
+          .put(
+              429 /* too many requests */,
+              "Too many requests are being made to fetch the service config. Check to see if " +
+              "instances are crashing prematurely. If not, you may need to increase your " +
+              "Google Service Management API quota. See https://goo.gl/JjBQMu to manage quota.")
+          .build();
 
   private static final List<String> SCOPES =
       ImmutableList.of("https://www.googleapis.com/auth/cloud-platform");
@@ -137,9 +157,13 @@ public final class ServiceConfigSupplier implements Supplier<Service> {
 
     int statusCode = httpResponse.getStatusCode();
     if (statusCode != HttpStatusCodes.STATUS_CODE_OK) {
+      String extendedMessage = ERROR_CODE_DETAILS.get(statusCode);
       String message = MessageFormat.format(
           "Failed to fetch service config (status code {0})",
           statusCode);
+      if (extendedMessage != null) {
+        message = String.format("%s: %s", message, extendedMessage);
+      }
       throw new ServiceConfigException(message);
     }
 

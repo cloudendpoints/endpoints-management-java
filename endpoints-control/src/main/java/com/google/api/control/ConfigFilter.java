@@ -17,6 +17,7 @@
 package com.google.api.control;
 
 import com.google.api.Service;
+import com.google.api.config.ServiceConfigException;
 import com.google.api.control.model.MethodRegistry;
 import com.google.api.control.model.MethodRegistry.Info;
 import com.google.api.control.model.ReportingRule;
@@ -34,6 +35,7 @@ import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 /**
  * ConfigFilter used to load the {@code Service} and associated objects and make them available
@@ -65,7 +67,7 @@ public class ConfigFilter implements Filter {
   /**
    * {@code Loader} specifies a method for loading a {@code Service} instance.
    */
-  public static interface Loader {
+  public interface Loader {
     /**
      * @return the loaded {@link Service}
      * @throws IOException if on any errors that occur while loading the service.
@@ -77,7 +79,7 @@ public class ConfigFilter implements Filter {
    * @param loader the used to load the service instance
    */
   public ConfigFilter(Loader loader) {
-    Preconditions.checkNotNull(loader, "The laoder must be non-null");
+    Preconditions.checkNotNull(loader, "The loader must be non-null");
     this.loader = loader;
   }
 
@@ -87,8 +89,8 @@ public class ConfigFilter implements Filter {
       theService = this.loader.load();
       rule = ReportingRule.fromService(theService);
       registry = new MethodRegistry(theService);
-    } catch (IOException e) {
-      log.log(Level.SEVERE, "Failed to load service it will all dependent filters: %s", e);
+    } catch (IOException | ServiceConfigException e) {
+      log.log(Level.SEVERE, "Failed to load service: %s", e);
       theService = null;
     }
   }
@@ -98,7 +100,10 @@ public class ConfigFilter implements Filter {
       throws IOException, ServletException {
     if (theService == null) {
       log.log(Level.WARNING,
-          "The config filter did not initialize properly, no service is present");
+          "Rejecting this API request due to config loading error.");
+      HttpServletResponse httpResponse = (HttpServletResponse) response;
+      httpResponse.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+      return;
     } else {
       HttpServletRequest httpRequest = (HttpServletRequest) request;
       httpRequest.setAttribute(SERVICE_ATTRIBUTE, theService);

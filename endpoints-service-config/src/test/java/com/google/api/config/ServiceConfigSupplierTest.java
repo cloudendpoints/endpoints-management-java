@@ -16,6 +16,7 @@
 
 package com.google.api.config;
 
+import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
@@ -149,7 +150,8 @@ public final class ServiceConfigSupplierTest {
       fetcher.get();
       fail();
     } catch (ServiceConfigException exception) {
-      assertEquals("Failed to fetch service config (status code 404)", exception.getMessage());
+      assertThat(exception.getMessage())
+          .startsWith("Failed to fetch service config (status code 404):");
     }
   }
 
