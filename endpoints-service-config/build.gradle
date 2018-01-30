@@ -32,4 +32,5 @@ dependencies {
 
   testCompile "org.mockito:mockito-core:$mockitoVersion"
   testCompile "junit:junit:$junitVersion"
+  testCompile "com.google.truth:truth:$truthVersion"
 }
