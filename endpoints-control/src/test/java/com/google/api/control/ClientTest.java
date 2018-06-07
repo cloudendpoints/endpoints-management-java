@@ -115,16 +115,6 @@ public class ClientTest {
   }
 
   @Test
-  public void checkFailsIfNotStarted() {
-    try {
-      client.check(newTestCheck());
-      fail("Should have raised IllegalStateException");
-    } catch (IllegalStateException e) {
-      // expected
-    }
-  }
-
-  @Test
   public void checkInvokesTheTransportIfRequestIsNotCached() throws IOException {
     client.start();
     CheckRequest aCheck = newTestCheck();
@@ -143,16 +133,6 @@ public class ClientTest {
     client.check(aCheck); // now it's cached
     verify(services, never()).check(TEST_SERVICE_NAME, aCheck);
     verify(checkStub, never()).execute();
-  }
-
-  @Test
-  public void reportFailsIfNotStarted() {
-    try {
-      client.report(newTestReport());
-      fail("Should have raised IllegalStateException");
-    } catch (IllegalStateException e) {
-      // expected
-    }
   }
 
   @Test
