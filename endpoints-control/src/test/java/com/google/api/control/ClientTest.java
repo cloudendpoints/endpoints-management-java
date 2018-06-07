@@ -115,6 +115,12 @@ public class ClientTest {
   }
 
   @Test
+  public void checkStartsIfNotStarted() {
+    client.check(newTestCheck());
+    verify(aThread, times(1)).start();
+  }
+
+  @Test
   public void checkInvokesTheTransportIfRequestIsNotCached() throws IOException {
     client.start();
     CheckRequest aCheck = newTestCheck();
@@ -133,6 +139,12 @@ public class ClientTest {
     client.check(aCheck); // now it's cached
     verify(services, never()).check(TEST_SERVICE_NAME, aCheck);
     verify(checkStub, never()).execute();
+  }
+
+  @Test
+  public void reportStartsIfNotStarted() {
+    client.report(newTestReport());
+    verify(aThread, times(1)).start();
   }
 
   @Test
