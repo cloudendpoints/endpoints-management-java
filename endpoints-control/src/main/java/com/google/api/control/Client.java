@@ -65,6 +65,7 @@ public class Client {
       "The scheduler thread was unable to start. This means that metric reporting will only be "
       + "done periodically after requests are served. If your API is low-traffic (below 1 query "
       + "per second), this may result in delays in reporting.";
+  private static final int MAX_IDLE_TIME_SECONDS = 120;
   public static final int DO_NOT_LOG_STATS = -1;
   public static final SchedulerFactory DEFAULT_SCHEDULER_FACTORY = new SchedulerFactory() {
     @Override
@@ -86,6 +87,7 @@ public class Client {
   private Statistics statistics;
   private Thread schedulerThread;
   private int statsLogFrequency;
+  private final Stopwatch reportStopwatch;
 
   public Client(String serviceName, CheckAggregationOptions checkOptions,
       ReportAggregationOptions reportOptions, QuotaAggregationOptions quotaOptions,
@@ -104,6 +106,7 @@ public class Client {
     this.schedulerThread = null;
     this.statsLogFrequency = statsLogFrequency;
     this.statistics = new Statistics();
+    this.reportStopwatch = Stopwatch.createUnstarted(ticker);
   }
 
   /**
@@ -126,6 +129,7 @@ public class Client {
     log.log(Level.INFO, String.format("starting %s", this));
     this.stopped = false;
     this.running = true;
+    this.reportStopwatch.reset().start();
     try {
       schedulerThread = threads.newThread(new Runnable() {
         @Override
@@ -141,6 +145,13 @@ public class Client {
     }
   }
 
+  /** Starts processing if it hasn't already started. */
+  public synchronized void startIfStopped() {
+    if (!running) {
+      start();
+    }
+  }
+
   /**
    * Stops processing.
    *
@@ -151,7 +162,7 @@ public class Client {
     Preconditions.checkState(running, "Cannot stop if it's not running");
 
     synchronized (this) {
-      log.log(Level.FINE, "flushing the report aggregator");
+      log.log(Level.INFO, "stopping client background thread and flushing the report aggregator");
       for (ReportRequest req : reportAggregator.clear()) {
         try {
           transport.services().report(serviceName, req).execute();
@@ -179,7 +190,7 @@ public class Client {
    *         failure
    */
   public @Nullable CheckResponse check(CheckRequest req) {
-    Preconditions.checkState(running, "Cannot check if it's not running");
+    startIfStopped();
     statistics.totalChecks.incrementAndGet();
     Stopwatch w = Stopwatch.createStarted(ticker);
     CheckResponse resp = checkAggregator.check(req);
@@ -209,7 +220,7 @@ public class Client {
   }
 
   public AllocateQuotaResponse allocateQuota(AllocateQuotaRequest req) {
-    Preconditions.checkState(running, "Cannot check if it's not running");
+    startIfStopped();
     statistics.totalQuotas.incrementAndGet();
     Stopwatch w = Stopwatch.createStarted(ticker);
     AllocateQuotaResponse resp = quotaAggregator.allocateQuota(req);
@@ -242,7 +253,7 @@ public class Client {
    * @param req a {@link ReportRequest}
    */
   public void report(ReportRequest req) {
-    Preconditions.checkState(running, "Cannot report if it's not running");
+    startIfStopped();
     statistics.totalReports.incrementAndGet();
     statistics.reportedOperations.addAndGet(req.getOperationsCount());
     Stopwatch w = Stopwatch.createStarted(ticker);
@@ -389,6 +400,15 @@ public class Client {
         log.log(Level.SEVERE,
             String.format("direct send of a report request failed because of %s", e));
       }
+    }
+    if (flushed.length > 0) {
+      reportStopwatch.reset().start();
+    } else if (reportStopwatch.elapsed(TimeUnit.SECONDS) > MAX_IDLE_TIME_SECONDS) {
+      log.log(Level.INFO,
+          String.format(
+              "Shutting down after no reports in the last %d seconds.", MAX_IDLE_TIME_SECONDS));
+      stop();
+      return;
     }
     scheduler.enter(new Runnable() {
       @Override
