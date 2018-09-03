@@ -44,9 +44,9 @@ import com.google.common.base.Stopwatch;
 import com.google.common.base.Strings;
 import com.google.common.base.Ticker;
 import com.google.common.collect.ImmutableList;
+import com.google.common.io.CountingOutputStream;
 
 import java.io.BufferedWriter;
-import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -331,15 +331,13 @@ public class ControlFilter implements Filter {
       chain.doFilter(request, wrapper);
     } finally {
       timer.end();
-      ServletOutputStream out = response.getOutputStream();
-      out.write(wrapper.getData());
-      out.close();
+      response.getOutputStream().close();
     }
 
     // Send a report
     appInfo.responseCode = wrapper.getResponseCode();
     appInfo.responseSize =
-        wrapper.getContentLength() != 0 ? wrapper.getContentLength() : wrapper.getData().length;
+        wrapper.getContentLength() != 0 ? wrapper.getContentLength() : wrapper.getActualContentLength();
     creationTimer.reset().start();
     ReportRequest reportRequest =
         createReportRequest(info, checkInfo, appInfo, ConfigFilter.getReportRule(request), timer,
@@ -635,23 +633,23 @@ public class ControlFilter implements Filter {
    * response size.
    */
   private static class GenericResponseWrapper extends HttpServletResponseWrapper {
-    private ByteArrayOutputStream output;
+    private CountingOutputStream output;
     private int contentLength;
     private String contentType;
     private int responseCode;
     private FilterServletOutputStream filteredOut;
     private PrintWriter newWriter;
 
-    public GenericResponseWrapper(HttpServletResponse response) {
+    public GenericResponseWrapper(HttpServletResponse response) throws IOException {
       super(response);
-      output = new ByteArrayOutputStream();
+      output = new CountingOutputStream(response.getOutputStream());
     }
 
-    public byte[] getData() {
+    public long getActualContentLength() {
       if (newWriter != null) {
         newWriter.flush();
       }
-      return output.toByteArray();
+      return output.getCount();
     }
 
     public int getResponseCode() {
