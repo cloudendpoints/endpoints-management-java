@@ -3,13 +3,15 @@ package com.google.api.control;
 import static com.google.common.truth.Truth.assertThat;
 import static org.mockito.Mockito.when;
 
-import java.util.Vector;
-import javax.servlet.http.HttpServletRequest;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
+
+import java.util.Vector;
+import javax.servlet.http.HttpServletRequest;
+
 
 @RunWith(MockitoJUnitRunner.class)
 public class ConfigFilterTest {
