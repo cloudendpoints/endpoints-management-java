@@ -25,6 +25,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 
 import java.io.IOException;
+import java.util.Enumeration;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -58,6 +59,9 @@ public class ConfigFilter implements Filter {
 
   @VisibleForTesting
   static final String REPORTING_ATTRIBUTE = ATTRIBUTE_ROOT + ".reporting";
+
+  @VisibleForTesting
+  static final String HTTP_METHOD_ATTRIBUTE = ATTRIBUTE_ROOT + ".http_method";
 
   private Service theService;
   private Loader loader;
@@ -114,7 +118,8 @@ public class ConfigFilter implements Filter {
 
       // Determine if service control is required
       String uri = httpRequest.getRequestURI();
-      String method = httpRequest.getMethod();
+      String method = getRequestMethod(httpRequest);
+      httpRequest.setAttribute(HTTP_METHOD_ATTRIBUTE, method);
       Info info = registry.lookup(method, uri);
       if (info != null) {
         httpRequest.setAttribute(METHOD_INFO_ATTRIBUTE, info);
@@ -171,8 +176,37 @@ public class ConfigFilter implements Filter {
     return (MethodRegistry.Info) httpRequest.getAttribute(METHOD_INFO_ATTRIBUTE);
   }
 
+  /**
+   * Get the "real" HTTP method for the request, taking into account the X-HTTP-Method-Override
+   * header.
+   *
+   * @param req a {@code ServletRequest}
+   * @return the HTTP method for the request
+   */
+  public static String getRealHttpMethod(ServletRequest req) {
+    HttpServletRequest httpRequest = (HttpServletRequest) req;
+    String method = (String) httpRequest.getAttribute(HTTP_METHOD_ATTRIBUTE);
+    if (method != null) {
+      return method;
+    }
+    return httpRequest.getMethod();
+  }
+
   @Override
   public void destroy() {
     // unused
+  }
+
+  private static String getRequestMethod(HttpServletRequest request) {
+    Enumeration headerNames = request.getHeaderNames();
+    String methodOverride = null;
+    while (headerNames.hasMoreElements()) {
+      String headerName = (String) headerNames.nextElement();
+      if (headerName.toLowerCase().equals("x-http-method-override")) {
+        methodOverride = request.getHeader(headerName);
+        break;
+      }
+    }
+    return methodOverride != null ? methodOverride.toUpperCase() : request.getMethod();
   }
 }
