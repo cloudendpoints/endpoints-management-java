@@ -197,7 +197,8 @@ public class ConfigFilter implements Filter {
     // unused
   }
 
-  private static String getRequestMethodOverride(HttpServletRequest request) {
+  @VisibleForTesting
+  static String getRequestMethodOverride(HttpServletRequest request) {
     Enumeration headerNames = request.getHeaderNames();
     String methodOverride = null;
     while (headerNames.hasMoreElements()) {
