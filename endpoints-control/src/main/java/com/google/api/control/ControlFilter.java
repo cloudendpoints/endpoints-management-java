@@ -236,7 +236,7 @@ public class ControlFilter implements Filter {
 
     // Perform the check
     AppStruct appInfo = new AppStruct();
-    appInfo.httpMethod = httpRequest.getMethod();
+    appInfo.httpMethod = ConfigFilter.getRealHttpMethod(httpRequest);
     appInfo.requestSize = httpRequest.getContentLength();
     appInfo.url = httpRequest.getRequestURI();
     CheckRequestInfo checkInfo = createCheckInfo(httpRequest, appInfo.url, info);
