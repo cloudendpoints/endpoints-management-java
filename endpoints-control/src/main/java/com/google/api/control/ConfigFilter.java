@@ -61,7 +61,7 @@ public class ConfigFilter implements Filter {
   static final String REPORTING_ATTRIBUTE = ATTRIBUTE_ROOT + ".reporting";
 
   @VisibleForTesting
-  static final String HTTP_METHOD_ATTRIBUTE = ATTRIBUTE_ROOT + ".http_method";
+  static final String HTTP_METHOD_OVERRIDE_ATTRIBUTE = ATTRIBUTE_ROOT + ".http_method_override";
 
   private Service theService;
   private Loader loader;
@@ -118,8 +118,8 @@ public class ConfigFilter implements Filter {
 
       // Determine if service control is required
       String uri = httpRequest.getRequestURI();
-      String method = getRequestMethod(httpRequest);
-      httpRequest.setAttribute(HTTP_METHOD_ATTRIBUTE, method);
+      String method = getRequestMethodOverride(httpRequest);
+      httpRequest.setAttribute(HTTP_METHOD_OVERRIDE_ATTRIBUTE, method);
       Info info = registry.lookup(method, uri);
       if (info != null) {
         httpRequest.setAttribute(METHOD_INFO_ATTRIBUTE, info);
@@ -185,7 +185,7 @@ public class ConfigFilter implements Filter {
    */
   public static String getRealHttpMethod(ServletRequest req) {
     HttpServletRequest httpRequest = (HttpServletRequest) req;
-    String method = (String) httpRequest.getAttribute(HTTP_METHOD_ATTRIBUTE);
+    String method = (String) httpRequest.getAttribute(HTTP_METHOD_OVERRIDE_ATTRIBUTE);
     if (method != null) {
       return method;
     }
@@ -197,7 +197,7 @@ public class ConfigFilter implements Filter {
     // unused
   }
 
-  private static String getRequestMethod(HttpServletRequest request) {
+  private static String getRequestMethodOverride(HttpServletRequest request) {
     Enumeration headerNames = request.getHeaderNames();
     String methodOverride = null;
     while (headerNames.hasMoreElements()) {
@@ -207,6 +207,6 @@ public class ConfigFilter implements Filter {
         break;
       }
     }
-    return methodOverride != null ? methodOverride.toUpperCase() : request.getMethod();
+    return methodOverride != null ? methodOverride.toUpperCase() : null;
   }
 }
