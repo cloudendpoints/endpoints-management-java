@@ -32,19 +32,16 @@ import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
+import com.google.common.flogger.FluentLogger;
 import com.google.common.net.HttpHeaders;
-
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import javax.servlet.http.HttpServletRequest;
 import org.jose4j.jwt.JwtClaims;
 import org.jose4j.jwt.MalformedClaimException;
 import org.jose4j.jwt.NumericDate;
 import org.jose4j.jwt.ReservedClaimNames;
-
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.logging.Logger;
-
-import javax.servlet.http.HttpServletRequest;
 
 /**
  * An authenticator that extracts the auth token from the HTTP request and
@@ -56,7 +53,7 @@ import javax.servlet.http.HttpServletRequest;
  */
 public class Authenticator {
 
-  private static final Logger logger = Logger.getLogger(Authenticator.class.getName());
+  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   private static final String ACCESS_TOKEN_PARAM_NAME = "access_token";
   private static final String BEARER_TOKEN_PREFIX = "Bearer ";
@@ -207,8 +204,7 @@ public class Authenticator {
     for (AuthProvider authProvider : authProviders) {
       String issuer = authProvider.getIssuer();
       if (Strings.isNullOrEmpty(issuer)) {
-        logger.warning(
-            String.format("The 'issuer' field is not set in AuthProvider (%s)", authProvider));
+        logger.atWarning().log("The 'issuer' field is not set in AuthProvider (%s)", authProvider);
         continue;
       }
 
