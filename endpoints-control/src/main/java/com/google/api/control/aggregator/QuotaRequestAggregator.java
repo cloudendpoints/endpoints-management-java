@@ -33,15 +33,12 @@ import com.google.common.collect.Ordering;
 import com.google.common.hash.HashCode;
 import com.google.common.hash.Hasher;
 import com.google.common.hash.Hashing;
-
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Logger;
-
 import javax.annotation.Nullable;
 
 /**
@@ -49,7 +46,6 @@ import javax.annotation.Nullable;
  */
 
 public class QuotaRequestAggregator {
-  private static final Logger log = Logger.getLogger(QuotaRequestAggregator.class.getName());
   public static final int NON_CACHING = -1;
   private static final long NANOS_PER_MILLI = 1000000;
   private final ConcurrentLinkedDeque<AllocateQuotaRequest> out;

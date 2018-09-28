@@ -41,8 +41,8 @@ import com.google.common.base.Preconditions;
 import com.google.common.base.Stopwatch;
 import com.google.common.base.Ticker;
 import com.google.common.collect.Queues;
+import com.google.common.flogger.FluentLogger;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
-
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.util.List;
@@ -50,16 +50,13 @@ import java.util.PriorityQueue;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
 import javax.annotation.Nullable;
 
 /**
  * Client is a package-level facade that encapsulates all service control functionality.
  */
 public class Client {
-  private static final Logger log = Logger.getLogger(Client.class.getName());
+  private static final FluentLogger log = FluentLogger.forEnclosingClass();
   private static final String CLIENT_APPLICATION_NAME = "Service Control Client";
   private static final String BACKGROUND_THREAD_ERROR =
       "The scheduler thread was unable to start. This means that metric reporting will only be "
@@ -123,10 +120,10 @@ public class Client {
    */
   public synchronized void start() {
     if (running) {
-      log.log(Level.INFO, String.format("%s is already started", this));
+      log.atInfo().log("%s is already started", this);
       return;
     }
-    log.log(Level.INFO, String.format("starting %s", this));
+    log.atInfo().log("starting %s", this);
     this.stopped = false;
     this.running = true;
     this.reportStopwatch.reset().start();
@@ -139,7 +136,7 @@ public class Client {
       });
       schedulerThread.start();
     } catch (RuntimeException e) {
-      log.log(Level.INFO, BACKGROUND_THREAD_ERROR);
+      log.atInfo().log(BACKGROUND_THREAD_ERROR);
       schedulerThread = null;
       initializeFlushing();
     }
@@ -162,13 +159,13 @@ public class Client {
     Preconditions.checkState(running, "Cannot stop if it's not running");
 
     synchronized (this) {
-      log.log(Level.INFO, "stopping client background thread and flushing the report aggregator");
+      log.atInfo().log("stopping client background thread and flushing the report aggregator");
       for (ReportRequest req : reportAggregator.clear()) {
         try {
           transport.services().report(serviceName, req).execute();
         } catch (IOException e) {
-          log.log(Level.SEVERE,
-              String.format("direct send of a report request failed because of %s", e));
+          log.atSevere().withCause(e)
+              .log("direct send of a report request failed because of %s");
         }
       }
       this.stopped = true;  // the scheduler thread will set running to false
@@ -197,9 +194,7 @@ public class Client {
     statistics.totalCheckCacheLookupTimeMillis.addAndGet(w.elapsed(TimeUnit.MILLISECONDS));
     if (resp != null) {
       statistics.checkHits.incrementAndGet();
-      if (log.isLoggable(Level.FINER)) {
-        log.log(Level.FINER, String.format("using cached check response for %s: %s", req, resp));
-      }
+      log.atFiner().log("using cached check response for %s: %s", req, resp);
       return resp;
     }
 
@@ -213,8 +208,8 @@ public class Client {
       checkAggregator.addResponse(req, resp);
       return resp;
     } catch (IOException e) {
-      log.log(Level.SEVERE,
-          String.format("direct send of a check request %s failed because of %s", req, e));
+      log.atSevere().withCause(e)
+          .log("direct send of a check request %s failed because of %s", req);
       return null;
     }
   }
@@ -236,8 +231,8 @@ public class Client {
       quotaAggregator.cacheResponse(req, resp);
       return resp;
     } catch (IOException e) {
-      log.log(Level.SEVERE,
-          String.format("direct send of a quota request %s failed because of %s", req, e));
+      log.atSevere().withCause(e)
+          .log("direct send of a quota request %s failed because of %s", req);
       AllocateQuotaResponse dummyResponse = AllocateQuotaResponse.getDefaultInstance();
       quotaAggregator.cacheResponse(req, dummyResponse);
       return dummyResponse;
@@ -266,8 +261,8 @@ public class Client {
         transport.services().report(serviceName, req).execute();
         statistics.totalTransportedReportTimeMillis.addAndGet(w.elapsed(TimeUnit.MILLISECONDS));
       } catch (IOException e) {
-        log.log(Level.SEVERE,
-            String.format("direct send of a report request %s failed because of %s", req, e));
+        log.atSevere().withCause(e)
+            .log("direct send of a report request %s failed because of %s", req);
       }
     }
 
@@ -275,8 +270,7 @@ public class Client {
       try {
         scheduler.run(false /* don't block */);
       } catch (InterruptedException e) {
-        log.log(Level.SEVERE,
-            String.format("direct run of scheduler failed because of %s", e));
+        log.atSevere().withCause(e).log("direct run of scheduler failed because of %s");
       }
     }
     logStatistics();
@@ -287,7 +281,7 @@ public class Client {
       return;
     }
     if (statistics.totalReports.get() % statsLogFrequency == 0) {
-      log.info(statistics.toString());
+      log.atInfo().log(statistics.toString());
     }
   }
 
@@ -295,13 +289,13 @@ public class Client {
     try {
       initializeFlushing();
       this.scheduler.run(); // if caching is configured, this blocks until stop is called
-      log.log(Level.INFO, String.format("scheduler %s has no further tasks and will exit", this));
+      log.atInfo().log("scheduler %s has no further tasks and will exit", this);
       this.scheduler = null;
     } catch (InterruptedException e) {
-      log.log(Level.SEVERE, String.format("scheduler %s was interrupted and exited", this), e);
+      log.atSevere().withCause(e).log("scheduler %s was interrupted and exited", this);
       this.stopped = true;
     } catch (RuntimeException e) {
-      log.log(Level.SEVERE, String.format("scheduler %s failed and exited", this), e);
+      log.atSevere().withCause(e).log("scheduler %s failed and exited", this);
       this.stopped = true;
     }
   }
@@ -311,10 +305,10 @@ public class Client {
   }
 
   private synchronized void initializeFlushing() {
-    log.info("creating a scheduler to control flushing");
+    log.atInfo().log("creating a scheduler to control flushing");
     this.scheduler = schedulers.create(ticker);
     this.scheduler.setStatistics(statistics);
-    log.info("scheduling the initial check, report, and quota");
+    log.atInfo().log("scheduling the initial check, report, and quota");
     flushAndScheduleChecks();
     flushAndScheduleReports();
     flushAndScheduleQuota();
@@ -335,21 +329,21 @@ public class Client {
 
   private void flushAndScheduleChecks() {
     if (resetIfStopped()) {
-      log.log(Level.FINE, "did not schedule check flush: client is stopped");
+      log.atFine().log("did not schedule check flush: client is stopped");
       return;
     }
     int interval = checkAggregator.getFlushIntervalMillis();
     if (interval < 0) {
-      log.log(Level.FINE, "did not schedule check flush: caching is disabled");
+      log.atFine().log("did not schedule check flush: caching is disabled");
       return; // cache is disabled, so no flushing it
     }
 
     if (isRunningSchedulerDirectly()) {
-      log.log(Level.FINE, "did not schedule check flush: no scheduler thread is running");
+      log.atFine().log("did not schedule check flush: no scheduler thread is running");
       return;
     }
 
-    log.log(Level.FINE, "flushing the check aggregator");
+    log.atFine().log("flushing the check aggregator");
     Stopwatch w = Stopwatch.createUnstarted(ticker);
     for (CheckRequest req : checkAggregator.flush()) {
       try {
@@ -361,8 +355,8 @@ public class Client {
         checkAggregator.addResponse(req, resp);
         statistics.totalCheckCacheUpdateTimeMillis.addAndGet(w.elapsed(TimeUnit.MILLISECONDS));
       } catch (IOException e) {
-        log.log(Level.SEVERE,
-            String.format("direct send of a check request %s failed because of %s", req, e));
+        log.atSevere().withCause(e)
+            .log("direct send of a check request %s failed because of %s", req);
       }
     }
     scheduler.enter(new Runnable() {
@@ -375,19 +369,16 @@ public class Client {
 
   private void flushAndScheduleReports() {
     if (resetIfStopped()) {
-      log.log(Level.FINE, "did not schedule report flush: client is stopped");
+      log.atFine().log("did not schedule report flush: client is stopped");
       return;
     }
     int interval = reportAggregator.getFlushIntervalMillis();
     if (interval < 0) {
-      log.log(Level.FINE, "did not schedule report flush: cache is disabled");
+      log.atFine().log("did not schedule report flush: cache is disabled");
       return; // cache is disabled, so no flushing it
     }
     ReportRequest[] flushed = reportAggregator.flush();
-    if (log.isLoggable(Level.FINE)) {
-      log.log(Level.FINE,
-          String.format("flushing %d reports from the report aggregator", flushed.length));
-    }
+    log.atFine().log("flushing %d reports from the report aggregator", flushed.length);
     statistics.flushedReports.addAndGet(flushed.length);
     Stopwatch w = Stopwatch.createUnstarted(ticker);
     for (ReportRequest req : flushed) {
@@ -397,16 +388,14 @@ public class Client {
         transport.services().report(serviceName, req).execute();
         statistics.totalTransportedReportTimeMillis.addAndGet(w.elapsed(TimeUnit.MILLISECONDS));
       } catch (IOException e) {
-        log.log(Level.SEVERE,
-            String.format("direct send of a report request failed because of %s", e));
+        log.atSevere().withCause(e).log("direct send of a report request failed");
       }
     }
     if (flushed.length > 0) {
       reportStopwatch.reset().start();
     } else if (reportStopwatch.elapsed(TimeUnit.SECONDS) > MAX_IDLE_TIME_SECONDS) {
-      log.log(Level.INFO,
-          String.format(
-              "Shutting down after no reports in the last %d seconds.", MAX_IDLE_TIME_SECONDS));
+      log.atInfo().log(
+          "Shutting down after no reports in the last %d seconds.", MAX_IDLE_TIME_SECONDS);
       stop();
       return;
     }
@@ -420,27 +409,24 @@ public class Client {
 
   private void flushAndScheduleQuota() {
     if (resetIfStopped()) {
-      log.log(Level.FINE, "did not schedule quota flush: client is stopped");
+      log.atFine().log("did not schedule quota flush: client is stopped");
       return;
     }
     int interval = quotaAggregator.getFlushIntervalMillis();
     if (interval < 0) {
-      log.log(Level.FINE, "did not schedule quota flush: caching is disabled");
+      log.atFine().log("did not schedule quota flush: caching is disabled");
       return; // cache is disabled, so no flushing it
     }
 
     if (isRunningSchedulerDirectly()) {
-      log.log(Level.FINE, "did not schedule check flush: no scheduler thread is running");
+      log.atFine().log("did not schedule check flush: no scheduler thread is running");
       return;
     }
 
-    log.log(Level.FINE, "flushing the quota aggregator");
+    log.atFine().log("flushing the quota aggregator");
     Stopwatch w = Stopwatch.createUnstarted(ticker);
     List<AllocateQuotaRequest> reqs = quotaAggregator.flush();
-    if (log.isLoggable(Level.FINE)) {
-      log.log(Level.FINE,
-          String.format("flushing %d quota from the quota aggregator", reqs.size()));
-    }
+    log.atFine().log("flushing %d quota from the quota aggregator", reqs.size());
     for (AllocateQuotaRequest req : reqs) {
       try {
         w.reset().start();
@@ -451,8 +437,8 @@ public class Client {
         statistics.recachedQuotas.incrementAndGet();
         statistics.totalQuotaCacheUpdateTimeMillis.addAndGet(w.elapsed(TimeUnit.MILLISECONDS));
       } catch (IOException e) {
-        log.log(Level.SEVERE,
-            String.format("direct send of a quota request %s failed because of %s", req, e));
+        log.atSevere().withCause(e)
+            .log("direct send of a quota request %s failed because of %s", req);
       }
     }
     scheduler.enter(new Runnable() {
@@ -744,23 +730,16 @@ public class Client {
             statistics.totalSchedulerSkiptimeMillis.addAndGet(gapMillis);
           }
           if (!block) {
-            if (log.isLoggable(Level.FINE)) {
-              log.log(Level.FINE,
-                  String.format("Scheduler on %s was not blocking, next event is in %d",
-                      Thread.currentThread(), gapMillis));
-            }
+            log.atFine().log(
+                "Scheduler on %s was not blocking, next event is in %d",
+                Thread.currentThread(), gapMillis);
             return;
           }
-          if (log.isLoggable(Level.FINE)) {
-            log.log(Level.FINE, String.format("Scheduler on %s will sleep for %d millis",
-                Thread.currentThread(), gapMillis));
-          }
+          log.atFine().log(
+              "Scheduler on %s will sleep for %d millis", Thread.currentThread(), gapMillis);
           Thread.sleep(gapMillis);
         } else {
-          if (log.isLoggable(Level.FINE)) {
-            log.log(Level.FINE,
-                String.format("Scheduler on %s will run an event", Thread.currentThread()));
-          }
+          log.atFine().log("Scheduler on %s will run an event", Thread.currentThread());
           Stopwatch w = Stopwatch.createStarted(ticker);
           next.getScheduledAction().run();
           if (statistics != null) {

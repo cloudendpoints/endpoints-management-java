@@ -35,14 +35,11 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-
+import com.google.common.flogger.FluentLogger;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 
@@ -50,7 +47,7 @@ import javax.annotation.Nullable;
  * MethodRegistry provides registry of the API methods defined by a Service.
  */
 public class MethodRegistry {
-  private static final Logger log = Logger.getLogger(MethodRegistry.class.getName());
+  private static final FluentLogger log = FluentLogger.forEnclosingClass();
   private static final String OPTIONS_VERB = "OPTIONS";
   private final Service theService;
   private final Map<String, AuthInfo> authInfos;
@@ -89,17 +86,17 @@ public class MethodRegistry {
     url = StringUtils.stripTrailingSlash(url);
     List<Info> infos = infosByHttpMethod.get(httpMethod);
     if (infos == null) {
-      log.log(Level.FINE,
-          String.format("no information about any urls for HTTP method %s when checking %s", httpMethod, url));
+      log.atFine().log(
+          "no information about any urls for HTTP method %s when checking %s", httpMethod, url);
       return null;
     }
     for (Info info : infos) {
-      log.log(Level.FINE, String.format("trying %s with template %s", url, info.getTemplate()));
+      log.atFine().log("trying %s with template %s", url, info.getTemplate());
       if (info.getTemplate().matches(url)) {
-        log.log(Level.FINE, String.format("%s matched %s", url, info.getTemplate()));
+        log.atFine().log("%s matched %s", url, info.getTemplate());
         return info;
       } else {
-        log.log(Level.FINE, String.format("%s did not matched %s", url, info.getTemplate()));
+        log.atFine().log("%s did not matched %s", url, info.getTemplate());
       }
     }
 
@@ -119,7 +116,7 @@ public class MethodRegistry {
       String httpMethod = httpMethodFrom(r);
       if (Strings.isNullOrEmpty(url) || Strings.isNullOrEmpty(httpMethod)
           || Strings.isNullOrEmpty(r.getSelector())) {
-        log.log(Level.WARNING, "invalid HTTP binding detected");
+        log.atWarning().log("invalid HTTP binding detected");
         continue;
       }
       Info theMethod = getOrCreateInfo(r.getSelector());
@@ -150,11 +147,10 @@ public class MethodRegistry {
         infosByHttpMethod.put(httpMethod.toLowerCase(), infos);
       }
       infos.add(theMethod);
-      log.log(Level.FINE,
-          String.format("registered template %s under method %s", t, httpMethod));
+      log.atFine().log("registered template %s under method %s", t, httpMethod);
       return true;
     } catch (ValidationException e) {
-      log.log(Level.WARNING, String.format("invalid HTTP template %s provided", url));
+      log.atWarning().log("invalid HTTP template %s provided", url);
       return false;
     }
   }
@@ -187,13 +183,11 @@ public class MethodRegistry {
     for (SystemParameterRule r : theService.getSystemParameters().getRulesList()) {
       Info info = extractedMethods.get(r.getSelector());
       if (info == null) {
-        log.log(Level.WARNING,
-            String.format("bad system parameter: no HTTP rule for %s", r.getSelector()));
+        log.atWarning().log("bad system parameter: no HTTP rule for %s", r.getSelector());
       } else {
         for (SystemParameter parameter : r.getParametersList()) {
           if (Strings.isNullOrEmpty(parameter.getName())) {
-            log.log(Level.WARNING,
-                String.format("bad system parameter: no parameter name for %s", r.getSelector()));
+            log.atWarning().log("bad system parameter: no parameter name for %s", r.getSelector());
             continue;
           }
           if (!Strings.isNullOrEmpty(parameter.getHttpHeader())) {
@@ -215,8 +209,7 @@ public class MethodRegistry {
     for (UsageRule r : theService.getUsage().getRulesList()) {
       Info info = extractedMethods.get(r.getSelector());
       if (info == null) {
-        log.log(Level.WARNING,
-            String.format("bad usage selector: no HTTP rule for %s", r.getSelector()));
+        log.atWarning().log("bad usage selector: no HTTP rule for %s", r.getSelector());
       } else {
         info.setAllowUnregisteredCalls(r.getAllowUnregisteredCalls());
       }

@@ -21,12 +21,10 @@ import com.google.api.control.model.Distributions;
 import com.google.api.control.model.Timestamps;
 import com.google.api.servicecontrol.v1.MetricValue;
 import com.google.api.servicecontrol.v1.MetricValue.Builder;
+import com.google.common.flogger.FluentLogger;
 import com.google.common.hash.HashCode;
 import com.google.common.hash.Hasher;
 import com.google.common.hash.Hashing;
-
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Provide functions that enable aggregation of {@link MetricValue}s.
@@ -35,7 +33,7 @@ public final class MetricValues {
   private static final String MSG_NOT_MERGABLE = "Metric type not mergeabe";
   private static final String MSG_CANNOT_MERGE_DIFFERENT_TYPES =
       "Cannot merge metrics with different types of value";
-  private static final Logger log = Logger.getLogger(MetricValues.class.getName());
+  private static final FluentLogger log = FluentLogger.forEnclosingClass();
 
   private MetricValues() {}
 
@@ -79,8 +77,7 @@ public final class MetricValues {
    */
   public static MetricValue merge(MetricKind kind, MetricValue prior, MetricValue latest) {
     if (prior.getValueCase() != latest.getValueCase()) {
-      log.log(Level.WARNING, "Could not merge different types of metric: {0}, {1}",
-          new Object[] {prior, latest});
+      log.atWarning().log("Could not merge different types of metric: %s, %s", prior, latest);
       throw new IllegalArgumentException(MSG_CANNOT_MERGE_DIFFERENT_TYPES);
     }
     if (kind == MetricKind.DELTA) {
@@ -88,7 +85,7 @@ public final class MetricValues {
       mergeTimestamps(builder, prior, latest);
       mergeValues(builder, prior, latest);
       return builder.build();
-    } else if (Timestamps.COMPARATOR.compare(prior.getEndTime(), latest.getEndTime()) == -1) {
+    } else if (Timestamps.COMPARATOR.compare(prior.getEndTime(), latest.getEndTime()) < 0) {
       return latest;
     } else {
       return prior;
@@ -108,8 +105,8 @@ public final class MetricValues {
         builder.setInt64Value(prior.getInt64Value() + latest.getInt64Value());
         break;
       default:
-        log.log(Level.WARNING, "Could not merge logs with unmergable metric types: {0}, {1}",
-            new Object[] {prior, latest});
+        log.atWarning()
+            .log("Could not merge logs with unmergable metric types: %s, %s", prior, latest);
         throw new IllegalArgumentException(MSG_NOT_MERGABLE);
     }
   }
