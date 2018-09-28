@@ -164,8 +164,7 @@ public class Client {
         try {
           transport.services().report(serviceName, req).execute();
         } catch (IOException e) {
-          log.atSevere().withCause(e)
-              .log("direct send of a report request failed because of %s");
+          log.atSevere().withCause(e).log("direct send of a report request failed");
         }
       }
       this.stopped = true;  // the scheduler thread will set running to false
@@ -208,8 +207,7 @@ public class Client {
       checkAggregator.addResponse(req, resp);
       return resp;
     } catch (IOException e) {
-      log.atSevere().withCause(e)
-          .log("direct send of a check request %s failed because of %s", req);
+      log.atSevere().withCause(e).log("direct send of a check request %s failed", req);
       return null;
     }
   }
@@ -231,8 +229,7 @@ public class Client {
       quotaAggregator.cacheResponse(req, resp);
       return resp;
     } catch (IOException e) {
-      log.atSevere().withCause(e)
-          .log("direct send of a quota request %s failed because of %s", req);
+      log.atSevere().withCause(e).log("direct send of a quota request %s failed", req);
       AllocateQuotaResponse dummyResponse = AllocateQuotaResponse.getDefaultInstance();
       quotaAggregator.cacheResponse(req, dummyResponse);
       return dummyResponse;
@@ -261,8 +258,7 @@ public class Client {
         transport.services().report(serviceName, req).execute();
         statistics.totalTransportedReportTimeMillis.addAndGet(w.elapsed(TimeUnit.MILLISECONDS));
       } catch (IOException e) {
-        log.atSevere().withCause(e)
-            .log("direct send of a report request %s failed because of %s", req);
+        log.atSevere().withCause(e).log("direct send of a report request %s failed", req);
       }
     }
 
@@ -270,7 +266,7 @@ public class Client {
       try {
         scheduler.run(false /* don't block */);
       } catch (InterruptedException e) {
-        log.atSevere().withCause(e).log("direct run of scheduler failed because of %s");
+        log.atSevere().withCause(e).log("direct run of scheduler failed");
       }
     }
     logStatistics();
@@ -281,7 +277,7 @@ public class Client {
       return;
     }
     if (statistics.totalReports.get() % statsLogFrequency == 0) {
-      log.atInfo().log(statistics.toString());
+      log.atInfo().log("stats=%s", statistics);
     }
   }
 
@@ -355,8 +351,7 @@ public class Client {
         checkAggregator.addResponse(req, resp);
         statistics.totalCheckCacheUpdateTimeMillis.addAndGet(w.elapsed(TimeUnit.MILLISECONDS));
       } catch (IOException e) {
-        log.atSevere().withCause(e)
-            .log("direct send of a check request %s failed because of %s", req);
+        log.atSevere().withCause(e).log("direct send of a check request %s failed", req);
       }
     }
     scheduler.enter(new Runnable() {
@@ -437,8 +432,7 @@ public class Client {
         statistics.recachedQuotas.incrementAndGet();
         statistics.totalQuotaCacheUpdateTimeMillis.addAndGet(w.elapsed(TimeUnit.MILLISECONDS));
       } catch (IOException e) {
-        log.atSevere().withCause(e)
-            .log("direct send of a quota request %s failed because of %s", req);
+        log.atSevere().withCause(e).log("direct send of a quota request %s failed", req);
       }
     }
     scheduler.enter(new Runnable() {

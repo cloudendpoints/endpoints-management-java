@@ -455,7 +455,7 @@ public class ControlFilter implements Filter {
       return;
     }
     if (statistics.totalFiltered.get() % statsLogFrequency == 0) {
-      log.atInfo().log(statistics.toString());
+      log.atInfo().log("stats=%s", statistics);
     }
   }
 

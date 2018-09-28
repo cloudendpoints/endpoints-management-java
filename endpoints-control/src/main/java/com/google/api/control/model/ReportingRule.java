@@ -27,6 +27,7 @@ import com.google.api.Service;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.common.flogger.FluentLogger;
+import com.google.common.flogger.LazyArg;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -89,11 +90,15 @@ public class ReportingRule {
    * @param labelNames the names of the {@code KnownLabels} to use
    * @return {@code ReportingRule}
    */
-  public static ReportingRule fromKnownInputs(@Nullable String[] logs,
+  public static ReportingRule fromKnownInputs(@Nullable final String[] logs,
       @Nullable Set<String> metricNames, @Nullable Set<String> labelNames) {
     log.atFine().log(
         "creating rule from log names %s, metric names %s, labelNames %s",
-        Arrays.toString(logs), metricNames, labelNames);
+        new LazyArg<String>() {
+          public String evaluate() {
+            return Arrays.toString(logs);
+          }
+        }, metricNames, labelNames);
     Map<String, KnownMetrics> namedRuleMetrics = Maps.newHashMap();
     if (metricNames != null) {
       for (KnownMetrics m : KnownMetrics.values()) {
