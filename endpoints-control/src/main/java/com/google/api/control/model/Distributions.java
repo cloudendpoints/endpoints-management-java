@@ -23,14 +23,12 @@ import com.google.api.servicecontrol.v1.Distribution.ExplicitBuckets;
 import com.google.api.servicecontrol.v1.Distribution.ExponentialBuckets;
 import com.google.api.servicecontrol.v1.Distribution.LinearBuckets;
 import com.google.common.collect.Sets;
+import com.google.common.flogger.FluentLogger;
 import com.google.common.math.DoubleMath;
 import com.google.common.primitives.Doubles;
-
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Utility methods for working with {@link Distribution} instances.
@@ -46,7 +44,7 @@ public final class Distributions {
   private static final String MSG_DOUBLE_TOO_LOW = "%s should be > %f";
   private static final String MSG_BAD_NUM_FINITE_BUCKETS = "number of finite buckets should be > 0";
   private static final double TOLERANCE = 1e-5;
-  private static final Logger log = Logger.getLogger(Distributions.class.getName());
+  private static final FluentLogger log = FluentLogger.forEnclosingClass();
 
   private Distributions() {}
 
@@ -277,8 +275,7 @@ public final class Distributions {
       index = 1 + ((int) Math.round((value - buckets.getOffset()) / buckets.getWidth()));
     }
     long newCount = distribution.getBucketCounts(index) + 1;
-    log.log(Level.FINE, "Updating explicit bucket {0} to {1} for {2}",
-        new Object[] {index, newCount, value});
+    log.atFine().log("Updating explicit bucket %d to %d for %f", index, newCount, value);
     distribution.setBucketCounts(index, newCount);
   }
 
@@ -296,10 +293,7 @@ public final class Distributions {
       index = Math.min(buckets.getNumFiniteBuckets() + 1, index);
     }
     long newCount = distribution.getBucketCounts(index) + 1;
-    if (log.isLoggable(Level.FINE)) {
-      log.log(Level.FINE, "Updating explicit bucket {0} to {1} for {2}",
-          new Object[] {index, newCount, value});
-    }
+    log.atFine().log("Updating explicit bucket %d to %d for %f", index, newCount, value);
     distribution.setBucketCounts(index, newCount);
   }
 
@@ -320,10 +314,7 @@ public final class Distributions {
       index += 1;
     }
     long newCount = distribution.getBucketCounts(index) + 1;
-    if (log.isLoggable(Level.FINE)) {
-      log.log(Level.FINE, "Updating explicit bucket {0} to {1} for {2}",
-          new Object[] {index, newCount, value});
-    }
+    log.atFine().log("Updating explicit bucket %d to %d for %f", index, newCount, value);
     distribution.setBucketCounts(index, newCount);
   }
 }

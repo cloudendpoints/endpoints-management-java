@@ -35,6 +35,8 @@ dependencies {
   compile "com.fasterxml.jackson.core:jackson-core:${jacksonVersion}"
   compile "com.fasterxml.jackson.core:jackson-databind:${jacksonVersion}"
   compile "com.google.guava:guava:${guavaVersion}"
+  compile "com.google.flogger:flogger:${floggerVersion}"
+  runtime "com.google.flogger:flogger-system-backend:${floggerVersion}"
   compile "com.google.http-client:google-http-client:${httpClientVersion}"
   compile "javax.servlet:servlet-api:${servletApiVersion}"
   compile "org.bitbucket.b_c:jose4j:${jose4jVersion}"

@@ -26,21 +26,19 @@ import com.google.api.Monitoring.MonitoringDestination;
 import com.google.api.Service;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-
+import com.google.common.flogger.FluentLogger;
+import com.google.common.flogger.LazyArg;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
 import javax.annotation.Nullable;
 
 /**
  * ReportingRule determines how to fill a report request.
  */
 public class ReportingRule {
-  private static final Logger log = Logger.getLogger(ReportingRule.class.getName());
+  private static final FluentLogger log = FluentLogger.forEnclosingClass();
 
   /**
    * MetricSupporter defines a method that determines is a metric is supported
@@ -92,17 +90,22 @@ public class ReportingRule {
    * @param labelNames the names of the {@code KnownLabels} to use
    * @return {@code ReportingRule}
    */
-  public static ReportingRule fromKnownInputs(@Nullable String[] logs,
+  public static ReportingRule fromKnownInputs(@Nullable final String[] logs,
       @Nullable Set<String> metricNames, @Nullable Set<String> labelNames) {
-    log.fine(String.format("creating rule from log names %s, metric names %s, labelNames %s",
-        Arrays.toString(logs), metricNames, labelNames));
+    log.atFine().log(
+        "creating rule from log names %s, metric names %s, labelNames %s",
+        new LazyArg<String>() {
+          public String evaluate() {
+            return Arrays.toString(logs);
+          }
+        }, metricNames, labelNames);
     Map<String, KnownMetrics> namedRuleMetrics = Maps.newHashMap();
     if (metricNames != null) {
       for (KnownMetrics m : KnownMetrics.values()) {
         if (m.getUpdater() == null || !metricNames.contains(m.getName())) {
           continue;
         }
-        log.fine(String.format("Adding metric named '%s' to the rule", m.getName()));
+        log.atFine().log("Adding metric named '%s' to the rule", m.getName());
         namedRuleMetrics.put(m.getName(), m);
       }
     }
@@ -112,7 +115,7 @@ public class ReportingRule {
         if (k.getUpdater() == null || !labelNames.contains(k.getName())) {
           continue;
         }
-        log.fine(String.format("Adding label named '%s' to the rule", k.getName()));
+        log.atFine().log("Adding label named '%s' to the rule", k.getName());
         namedRuleLabels.put(k.getName(), k);
       }
     }
@@ -247,8 +250,7 @@ public class ReportingRule {
     for (LabelDescriptor d : labelDescs) {
       LabelDescriptor existing = labels.get(d.getKey());
       if (existing != null && !existing.getValueType().equals(d.getValueType())) {
-        log.log(Level.WARNING,
-            String.format("halted label scan: conflicting label in %s", d.getKey()));
+        log.atWarning().log("halted label scan: conflicting label in %s", d.getKey());
         return false;
       }
     }
@@ -267,7 +269,7 @@ public class ReportingRule {
         return addLabelsFromDescriptors(d.getLabelsList(), labels, check);
       }
     }
-    log.log(Level.WARNING, String.format("bad log label scan: log %s was not found", name));
+    log.atWarning().log("bad log label scan: log %s was not found", name);
     return false;
   }
 
@@ -279,8 +281,8 @@ public class ReportingRule {
         return addLabelsFromDescriptors(d.getLabelsList(), labels, check);
       }
     }
-    log.log(Level.WARNING,
-        String.format("bad monitored resource label scan: resource %s was not found", resourceType));
+    log.atWarning()
+        .log("bad monitored resource label scan: resource %s was not found", resourceType);
     return false;
   }
 

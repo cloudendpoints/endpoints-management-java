@@ -28,16 +28,14 @@ import com.google.common.base.Strings;
 import com.google.common.base.Ticker;
 import com.google.common.cache.Cache;
 import com.google.common.collect.Lists;
+import com.google.common.flogger.FluentLogger;
 import com.google.common.hash.HashCode;
 import com.google.common.hash.Hasher;
 import com.google.common.hash.Hashing;
-
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.concurrent.ConcurrentLinkedDeque;
-import java.util.logging.Logger;
-
 import javax.annotation.Nullable;
 
 /**
@@ -52,7 +50,7 @@ public class CheckRequestAggregator {
 
   private static final int NANOS_PER_MILLI = 1000000;
   private static final CheckRequest[] NO_REQUESTS = new CheckRequest[] {};
-  private static final Logger log = Logger.getLogger(CheckRequestAggregator.class.getName());
+  private static final FluentLogger log = FluentLogger.forEnclosingClass();
 
   private final String serviceName;
   private final CheckAggregationOptions options;
@@ -254,7 +252,7 @@ public class CheckRequestAggregator {
       }
       item.updateRequest(req, kinds);
       if (item.isFlushing) {
-        log.warning("latest check request has not completed");
+        log.atWarning().log("latest check request has not completed");
       }
 
       // Not current

@@ -44,8 +44,8 @@ import com.google.common.base.Stopwatch;
 import com.google.common.base.Strings;
 import com.google.common.base.Ticker;
 import com.google.common.collect.ImmutableList;
+import com.google.common.flogger.FluentLogger;
 import com.google.common.io.CountingOutputStream;
-
 import java.io.BufferedWriter;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -60,9 +60,6 @@ import java.util.Properties;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
 import javax.annotation.Nullable;
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
@@ -83,7 +80,7 @@ import javax.servlet.http.HttpServletResponseWrapper;
  * 'reported' via a call to {@link Client#report(com.google.api.servicecontrol.v1.ReportRequest)}
  */
 public class ControlFilter implements Filter {
-  private static final Logger log = Logger.getLogger(ControlFilter.class.getName());
+  private static final FluentLogger log = FluentLogger.forEnclosingClass();
   private static final String REFERER = "referer";
   private static final String PROJECT_ID_PARAM = "endpoints.projectId";
   private static final String SERVICE_NAME_PARAM = "endpoints.serviceName";
@@ -133,10 +130,10 @@ public class ControlFilter implements Filter {
     try {
       if (!Strings.isNullOrEmpty(statsFrequencyText)) {
         statsLogFrequency = Integer.parseInt(statsFrequencyText);
-        log.log(Level.WARNING, String.format("will log stats every %d reports", statsLogFrequency));
+        log.atWarning().log("will log stats every %d reports", statsLogFrequency);
       }
     } catch (NumberFormatException e) {
-      log.log(Level.WARNING, String.format("ignored invalid debug stat value %s", statsFrequencyText));
+      log.atWarning().log("ignored invalid debug stat value %s", statsFrequencyText);
     }
 
     String configServiceName = filterConfig.getInitParameter(SERVICE_NAME_PARAM);
@@ -145,9 +142,9 @@ public class ControlFilter implements Filter {
         this.client = createClient(configServiceName);
         this.client.start();
       } catch (GeneralSecurityException e) {
-        log.log(Level.SEVERE, "could not create the control client", e);
+        log.atSevere().withCause(e).log("could not create the control client");
       } catch (IOException e) {
-        log.log(Level.SEVERE, "could not create the control client", e);
+        log.atSevere().withCause(e).log("could not create the control client");
       }
     }
   }
@@ -203,13 +200,12 @@ public class ControlFilter implements Filter {
   public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
       throws IOException, ServletException {
     if (client == null) {
-      log.log(Level.INFO,
-          String.format("No control client was created - skipping service control"));
+      log.atInfo().log("No control client was created - skipping service control");
       chain.doFilter(request, response);
       return;
     }
     if (projectId == null) {
-      log.log(Level.INFO, String.format("No project Id was specified - skipping service control"));
+      log.atInfo().log("No project Id was specified - skipping service control");
       chain.doFilter(request, response);
       return;
     }
@@ -222,10 +218,8 @@ public class ControlFilter implements Filter {
     MethodRegistry.Info info = ConfigFilter.getMethodInfo(request);
     HttpServletRequest httpRequest = (HttpServletRequest) request;
     if (info == null) {
-      if (log.isLoggable(Level.FINE)) {
-        log.log(Level.FINE, String.format("no method corresponds to %s - skipping service control",
-            httpRequest.getRequestURI()));
-      }
+      log.atFine().log(
+          "no method corresponds to %s - skipping service control", httpRequest.getRequestURI());
       chain.doFilter(request, response);
       return;
     }
@@ -245,17 +239,13 @@ public class ControlFilter implements Filter {
     long consumerProjectNumber = 0;
     if (Strings.isNullOrEmpty(checkInfo.getApiKey()) && !info.shouldAllowUnregisteredCalls()) {
       errorInfo = CheckErrorInfo.API_KEY_NOT_PROVIDED;
-      if (log.isLoggable(Level.FINE)) {
-        log.log(Level.FINE, "no api key was provided");
-      }
+      log.atFine().log("no api key was provided");
     } else {
       creationTimer.reset().start();
       CheckRequest checkRequest = checkInfo.asCheckRequest(clock);
       statistics.totalChecks.incrementAndGet();
       statistics.totalCheckCreationTime.addAndGet(creationTimer.elapsed(TimeUnit.MILLISECONDS));
-      if (log.isLoggable(Level.FINE)) {
-        log.log(Level.FINE, String.format("checking using %s", checkRequest));
-      }
+      log.atFine().log("checking using %s", checkRequest);
       checkResponse = client.check(checkRequest);
       errorInfo = CheckErrorInfo.convert(checkResponse);
       if (checkResponse != null) {
@@ -266,8 +256,7 @@ public class ControlFilter implements Filter {
     // Handle check failures. This includes check transport failures, in
     // which case the checkResponse is null.
     if (errorInfo != CheckErrorInfo.OK) {
-      log.log(Level.WARNING,
-          String.format("the check did not succeed; the response %s", checkResponse));
+      log.atWarning().log("the check did not succeed; the response %s", checkResponse);
 
       // ensure the report request is created with updated api_key validity, as this determines
       // the consumer id
@@ -299,9 +288,7 @@ public class ControlFilter implements Filter {
         ReportRequest reportRequest =
             createReportRequest(info, checkInfo, appInfo, ConfigFilter.getReportRule(request),
                 timer, consumerProjectNumber);
-        if (log.isLoggable(Level.FINEST)) {
-          log.log(Level.FINEST, String.format("sending an error report request %s", reportRequest));
-        }
+        log.atFinest().log("sending an error report request %s", reportRequest);
         client.report(reportRequest);
         statistics.totalFiltered.incrementAndGet();
         statistics.totalFilteredTime.addAndGet(overallTimer.elapsed(TimeUnit.MILLISECONDS));
@@ -312,7 +299,7 @@ public class ControlFilter implements Filter {
 
     QuotaRequestInfo quotaInfo = createQuotaInfo(httpRequest, info);
     if (quotaInfo.getMetricCosts().isEmpty()) {
-      log.log(Level.FINE, "no metric costs for this method");
+      log.atFine().log("no metric costs for this method");
     } else {
       AllocateQuotaRequest quotaRequest = quotaInfo.asQuotaRequest(clock);
       AllocateQuotaResponse quotaResponse = client.allocateQuota(quotaRequest);
@@ -344,9 +331,7 @@ public class ControlFilter implements Filter {
             consumerProjectNumber);
     statistics.totalReports.incrementAndGet();
     statistics.totalReportCreationTime.addAndGet(creationTimer.elapsed(TimeUnit.MILLISECONDS));
-    if (log.isLoggable(Level.FINEST)) {
-      log.log(Level.FINEST, String.format("sending a report request %s", reportRequest));
-    }
+    log.atFinest().log("sending a report request %s", reportRequest);
     client.report(reportRequest);
     statistics.totalFiltered.incrementAndGet();
     statistics.totalFilteredTime.addAndGet(overallTimer.elapsed(TimeUnit.MILLISECONDS));
@@ -470,7 +455,7 @@ public class ControlFilter implements Filter {
       return;
     }
     if (statistics.totalFiltered.get() % statsLogFrequency == 0) {
-      log.info(statistics.toString());
+      log.atInfo().log("stats=%s", statistics);
     }
   }
 
@@ -671,8 +656,8 @@ public class ControlFilter implements Filter {
         try {
           writer = new OutputStreamWriter(getOutputStream(), getCharacterEncoding());
         } catch (UnsupportedEncodingException e) {
-          log.warning(String.format("Could not write using charset %s, using default instead",
-              getCharacterEncoding()));
+          log.atWarning().log(
+              "Could not write using charset %s, using default instead", getCharacterEncoding());
           writer = new OutputStreamWriter(getOutputStream());
         }
         newWriter = new PrintWriter(new BufferedWriter(writer), true);

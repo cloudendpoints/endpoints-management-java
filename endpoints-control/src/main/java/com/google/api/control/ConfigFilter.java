@@ -23,12 +23,9 @@ import com.google.api.control.model.MethodRegistry.Info;
 import com.google.api.control.model.ReportingRule;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
-
+import com.google.common.flogger.FluentLogger;
 import java.io.IOException;
 import java.util.Enumeration;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
 import javax.servlet.FilterConfig;
@@ -42,7 +39,7 @@ import javax.servlet.http.HttpServletResponse;
  * ConfigFilter used to load the {@code Service} and associated objects and make them available
  */
 public class ConfigFilter implements Filter {
-  private static final Logger log = Logger.getLogger(ConfigFilter.class.getName());
+  private static final FluentLogger log = FluentLogger.forEnclosingClass();
   private static final String ATTRIBUTE_ROOT = ConfigFilter.class.getName();
 
   @VisibleForTesting
@@ -94,7 +91,7 @@ public class ConfigFilter implements Filter {
       rule = ReportingRule.fromService(theService);
       registry = new MethodRegistry(theService);
     } catch (IOException | ServiceConfigException e) {
-      log.log(Level.SEVERE, "Failed to load service: %s", e);
+      log.atSevere().withCause(e).log("Failed to load service");
       theService = null;
     }
   }
@@ -103,8 +100,7 @@ public class ConfigFilter implements Filter {
   public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
       throws IOException, ServletException {
     if (theService == null) {
-      log.log(Level.WARNING,
-          "Rejecting this API request due to config loading error.");
+      log.atWarning().log("Rejecting this API request due to config loading error.");
       HttpServletResponse httpResponse = (HttpServletResponse) response;
       httpResponse.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
       return;
@@ -114,7 +110,7 @@ public class ConfigFilter implements Filter {
       httpRequest.setAttribute(SERVICE_NAME_ATTRIBUTE, theService.getName());
       httpRequest.setAttribute(REGISTRY_ATTRIBUTE, registry);
       httpRequest.setAttribute(REPORTING_ATTRIBUTE, rule);
-      log.log(Level.FINE,  String.format("Added service %s, and associated attributes to the request", theService));
+      log.atFine().log("Added service %s, and associated attributes to the request", theService);
 
       // Determine if service control is required
       String uri = httpRequest.getRequestURI();
@@ -124,7 +120,7 @@ public class ConfigFilter implements Filter {
       if (info != null) {
         httpRequest.setAttribute(METHOD_INFO_ATTRIBUTE, info);
       } else {
-        log.log(Level.FINE, "did not add method info to the request");
+        log.atFine().log("did not add method info to the request");
       }
     }
     chain.doFilter(request, response);

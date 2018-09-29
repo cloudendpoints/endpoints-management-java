@@ -27,10 +27,8 @@ import com.google.api.server.spi.auth.common.User;
 import com.google.api.server.spi.config.Singleton;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Optional;
+import com.google.common.flogger.FluentLogger;
 import com.google.common.util.concurrent.UncheckedExecutionException;
-
-import java.util.logging.Logger;
-
 import javax.servlet.http.HttpServletRequest;
 
 /**
@@ -46,7 +44,7 @@ import javax.servlet.http.HttpServletRequest;
 @Singleton
 public final class EspAuthenticator implements com.google.api.server.spi.config.Authenticator {
 
-  private static final Logger logger = Logger.getLogger(EspAuthenticator.class.getName());
+  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   private final Authenticator authenticator;
 
@@ -68,7 +66,7 @@ public final class EspAuthenticator implements com.google.api.server.spi.config.
     }
     Optional<AuthInfo> authInfo = methodInfo.getAuthInfo();
     if (!authInfo.isPresent()) {
-      logger.info("auth is not configured for this request");
+      logger.atInfo().log("auth is not configured for this request");
       return null;
     }
 
@@ -83,7 +81,7 @@ public final class EspAuthenticator implements com.google.api.server.spi.config.
       UserInfo userInfo = this.authenticator.authenticate(request, authInfo.get(), serviceName);
       return new User(userInfo.getId(), userInfo.getEmail());
     } catch (UnauthenticatedException | UncheckedExecutionException exception) {
-      logger.warning(String.format("Authentication failed: %s", exception));
+      logger.atWarning().withCause(exception).log("Authentication failed");
       return null;
     }
   }

@@ -22,16 +22,14 @@ import com.google.api.servicecontrol.v1.MetricValue;
 import com.google.api.servicecontrol.v1.MetricValueSet;
 import com.google.api.servicecontrol.v1.QuotaOperation;
 import com.google.common.collect.Maps;
-
+import com.google.common.flogger.FluentLogger;
 import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Created by tangd on 5/22/17.
  */
 public class QuotaOperationAggregator {
-  private static final Logger log = Logger.getLogger(QuotaOperationAggregator.class.getName());
+  private static final FluentLogger log = FluentLogger.forEnclosingClass();
   private QuotaOperation.Builder op;
   private Map<String, MetricValue> metricValueSets;
 
@@ -66,8 +64,7 @@ public class QuotaOperationAggregator {
 
   private MetricValue mergeDeltaMetricValue(MetricValue from, MetricValue to) {
     if (to.getValueCase() != from.getValueCase()) {
-      log.log(Level.WARNING, "Could not merge different types of metric: {0}, {1}",
-          new Object[] {from, to});
+      log.atWarning().log("Could not merge different types of metric: %s, %s", from, to);
       return to;
     }
 
@@ -92,7 +89,7 @@ public class QuotaOperationAggregator {
         builder.setInt64Value(to.getInt64Value() + from.getInt64Value());
         break;
       default:
-        log.log(Level.WARNING, "Unknown metric kind for: {0}", new Object[]{from});
+        log.atWarning().log("Unknown metric kind for: %s", from);
         break;
     }
     return builder.build();
