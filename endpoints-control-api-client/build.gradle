@@ -18,7 +18,7 @@ buildscript {
   repositories {
     mavenCentral()
   }
-  dependencies { classpath 'com.google.protobuf:protobuf-gradle-plugin:0.7.7' }
+  dependencies { classpath 'com.google.protobuf:protobuf-gradle-plugin:0.8.10' }
 }
 archivesBaseName = 'endpoints-management-api-client'
 
