@@ -148,14 +148,14 @@ public class ControlFilterTest {
 
   @Test
   public void shouldCallTheChainIfThereIsNoClient() throws IOException, ServletException {
-    ControlFilter f = new ControlFilter(null, "aProjectId", testTicker, testClock, null);
+    ControlFilter f = new ControlFilter(null, "aProjectId", testTicker, testClock, new MetadataTransport(false));
     f.doFilter(request, response, chain);
     verify(chain).doFilter(request, response);
   }
 
   @Test
   public void shouldNotUseTheClientWithoutAProjectId() throws IOException, ServletException {
-    ControlFilter f = new ControlFilter(client, null, testTicker, testClock, null);
+    ControlFilter f = new ControlFilter(client, null, testTicker, testClock, new MetadataTransport(false));
     f.doFilter(request, response, chain);
     verify(chain).doFilter(request, response);
     verify(client, never()).check(capturedCheck.capture());
@@ -163,7 +163,7 @@ public class ControlFilterTest {
 
   @Test
   public void shouldNotUseTheClientIfThereIsNoMethodInfo() throws IOException, ServletException {
-    ControlFilter f = new ControlFilter(client, TEST_PROJECT_ID, testTicker, testClock, null);
+    ControlFilter f = new ControlFilter(client, TEST_PROJECT_ID, testTicker, testClock, new MetadataTransport(false));
     when(request.getAttribute(ConfigFilter.METHOD_INFO_ATTRIBUTE)).thenReturn(null);
     f.doFilter(request, response, chain);
     verify(chain).doFilter(request, response);
@@ -177,7 +177,7 @@ public class ControlFilterTest {
     mockRequestAndResponse();
     when(client.check(any(CheckRequest.class))).thenReturn(checkResponse);
 
-    ControlFilter f = new ControlFilter(client, TEST_PROJECT_ID, testTicker, testClock, null);
+    ControlFilter f = new ControlFilter(client, TEST_PROJECT_ID, testTicker, testClock, new MetadataTransport(false));
     f.doFilter(request, response, chain);
     verify(client, times(1)).report(capturedReport.capture());
     ReportRequest aReport = capturedReport.getValue();
@@ -199,7 +199,7 @@ public class ControlFilterTest {
     mockRequestAndResponse();
     when(client.check(any(CheckRequest.class))).thenReturn(checkResponse);
 
-    ControlFilter f = new ControlFilter(client, TEST_PROJECT_ID, testTicker, testClock, null);
+    ControlFilter f = new ControlFilter(client, TEST_PROJECT_ID, testTicker, testClock, new MetadataTransport(false));
     f.doFilter(request, response, chain);
     verify(client, times(1)).report(capturedReport.capture());
     ReportRequest aReport = capturedReport.getValue();
@@ -218,7 +218,7 @@ public class ControlFilterTest {
 
   @Test
   public void shouldUseTheClientIfConfiguredOk() throws IOException, ServletException {
-    ControlFilter f = new ControlFilter(client, TEST_PROJECT_ID, testTicker, testClock, null);
+    ControlFilter f = new ControlFilter(client, TEST_PROJECT_ID, testTicker, testClock, new MetadataTransport(false));
     mockRequestAndResponse();
     when(client.check(any(CheckRequest.class))).thenReturn(checkResponse);
 
@@ -250,7 +250,7 @@ public class ControlFilterTest {
   public void shouldSendTheDefaultApiKeyIfPresent() throws IOException, ServletException {
     String[] defaultKeyNames = {"key", "api_key"};
     String testApiKey = "defaultApiKey";
-    ControlFilter f = new ControlFilter(client, TEST_PROJECT_ID, testTicker, testClock, null);
+    ControlFilter f = new ControlFilter(client, TEST_PROJECT_ID, testTicker, testClock, new MetadataTransport(false));
     for (String defaultKeyName : defaultKeyNames) {
       mockRequestAndResponse();
       when(request.getParameter(defaultKeyName)).thenReturn(testApiKey);
@@ -292,7 +292,7 @@ public class ControlFilterTest {
   @Test
   public void shouldSendAReportButNotInvokeTheChainIfTheCheckFails()
       throws IOException, ServletException {
-    ControlFilter f = new ControlFilter(client, TEST_PROJECT_ID, testTicker, testClock, null);
+    ControlFilter f = new ControlFilter(client, TEST_PROJECT_ID, testTicker, testClock, new MetadataTransport(false));
 
     // Fail because the project got deleted
     CheckResponse deleted = CheckResponse
@@ -335,7 +335,7 @@ public class ControlFilterTest {
   public void shouldSendAReportButNotInvokeTheChainIfTheCheckFailsOnBadApiKey()
       throws IOException, ServletException {
     String testApiKey = "defaultApiKey";
-    ControlFilter f = new ControlFilter(client, TEST_PROJECT_ID, testTicker, testClock, null);
+    ControlFilter f = new ControlFilter(client, TEST_PROJECT_ID, testTicker, testClock, new MetadataTransport(false));
 
     // Fail because the project got deleted
     CheckResponse deleted = CheckResponse
@@ -386,7 +386,7 @@ public class ControlFilterTest {
   @Test
   public void shouldSendAReportAndInvokeTheChainIfTheCheckErrors()
       throws IOException, ServletException {
-    ControlFilter f = new ControlFilter(client, TEST_PROJECT_ID, testTicker, testClock, null);
+    ControlFilter f = new ControlFilter(client, TEST_PROJECT_ID, testTicker, testClock, new MetadataTransport(false));
 
     // Return null from check to indicate that transport fail occurred
     mockRequestAndResponse();
@@ -419,7 +419,7 @@ public class ControlFilterTest {
 
   @Test
   public void shouldStopTheClientWhenDestroyed() throws IOException, ServletException {
-    ControlFilter f = new ControlFilter(client, TEST_PROJECT_ID, testTicker, testClock, null);
+    ControlFilter f = new ControlFilter(client, TEST_PROJECT_ID, testTicker, testClock, new MetadataTransport(false));
     f.destroy();
     verify(client, times(1)).stop();
   }
@@ -427,7 +427,7 @@ public class ControlFilterTest {
   @Test
   public void shouldSendAReportButNotInvokeTheChainWhenNeededApiKeyIsNotProvided()
       throws IOException, ServletException {
-    ControlFilter f = new ControlFilter(client, TEST_PROJECT_ID, testTicker, testClock, null);
+    ControlFilter f = new ControlFilter(client, TEST_PROJECT_ID, testTicker, testClock, new MetadataTransport(false));
 
     // Fail because the api key is needed but no provided
     mockRequestAndResponse();
@@ -462,7 +462,7 @@ public class ControlFilterTest {
   public void shouldSucceedWhenANeededApiKeyIsPresent() throws IOException, ServletException {
     String[] defaultKeyNames = {"key", "api_key"};
     String testApiKey = "defaultApiKey";
-    ControlFilter f = new ControlFilter(client, TEST_PROJECT_ID, testTicker, testClock, null);
+    ControlFilter f = new ControlFilter(client, TEST_PROJECT_ID, testTicker, testClock, new MetadataTransport(false));
     info.setAllowUnregisteredCalls(false); // the means that the API key is necessary
 
     for (String defaultKeyName : defaultKeyNames) {
