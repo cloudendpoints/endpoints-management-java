@@ -1,4 +1,5 @@
 language: java
+jdk: openjdk8
 install: ./gradlew assemble -x :endpoints-management-control-appengine-all:assemble -x :endpoints-management-control-all:assemble
 script: ./gradlew check -x :endpoints-management-control-appengine-all:check -x :endpoints-management-control-all:check
 after_success:
