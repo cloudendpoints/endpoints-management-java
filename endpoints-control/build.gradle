@@ -18,7 +18,7 @@ buildscript {
   repositories {
     mavenCentral()
   }
-  dependencies { classpath 'com.google.protobuf:protobuf-gradle-plugin:0.7.7' }
+  dependencies { classpath 'com.google.protobuf:protobuf-gradle-plugin:0.8.10' }
 }
 
 configureMaven(
@@ -48,7 +48,8 @@ processResources {
 }
 
 dependencies {
-  compileOnly "com.google.auto.value:auto-value:${autoValueVersion}"
+  compile "com.google.auto.value:auto-value-annotations:${autoValueVersion}"
+  annotationProcessor "com.google.auto.value:auto-value:${autoValueVersion}"
   compile "com.google.code.findbugs:jsr305:${jsr305Version}"
   compile "com.fasterxml.jackson.core:jackson-core:${jacksonVersion}"
   compile "com.google.flogger:flogger:${floggerVersion}"

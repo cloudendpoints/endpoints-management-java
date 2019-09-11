@@ -26,7 +26,7 @@ To install test versions to Maven for easier dependency management, simply run:
 Java Versions
 -------------
 
-Java 7 or above is required for using this library.
+Java 8 or above is required for using this library.
 
 Contributing
 ------------
