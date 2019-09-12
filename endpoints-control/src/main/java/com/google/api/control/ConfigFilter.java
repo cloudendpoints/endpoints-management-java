@@ -114,8 +114,9 @@ public class ConfigFilter implements Filter {
 
       // Determine if service control is required
       String uri = httpRequest.getRequestURI();
-      String method = getRequestMethodOverride(httpRequest);
-      httpRequest.setAttribute(HTTP_METHOD_OVERRIDE_ATTRIBUTE, method);
+      String methodOverride = getRequestMethodOverride(httpRequest);
+      httpRequest.setAttribute(HTTP_METHOD_OVERRIDE_ATTRIBUTE, methodOverride);
+      String method = methodOverride != null ? methodOverride : httpRequest.getMethod();
       Info info = registry.lookup(method, uri);
       if (info != null) {
         httpRequest.setAttribute(METHOD_INFO_ATTRIBUTE, info);
