@@ -76,6 +76,18 @@ subprojects {
     sourceCompatibility = project.sourceCompatibility
     targetCompatibility = project.targetCompatibility
   }
+
+  ext {
+    libraries = [
+      grpcBom: "io.grpc:grpc-bom:${grpcVersion}",
+      grpcStub: "io.grpc:grpc-stub",
+      grpcProtobuf: "io.grpc:grpc-protobuf",
+
+      protobufJavaBom: "com.google.protobuf:protobuf-bom:${protobufJavaVersion}",
+      protobufJava: "com.google.protobuf:protobuf-java",
+      protobufJavaUtil: "com.google.protobuf:protobuf-java-util",
+    ]
+  }
 }
 
 def configureMaven(project, projectName, projectDescription) {

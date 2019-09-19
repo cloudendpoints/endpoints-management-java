@@ -23,12 +23,13 @@ archivesBaseName = 'endpoints-management-config'
 
 dependencies {
   compile(project(":endpoints-management-protos"))
-  compile "com.google.protobuf:protobuf-java:3.0.0"
+  compile platform(libraries.protobufJavaBom)
+  compile "com.google.protobuf:protobuf-java"
   compile "com.google.apis:google-api-services-servicemanagement:$servicemanagementVersion"
   compileOnly "com.google.appengine:appengine-api-1.0-sdk:$appengineSdkVersion"
   compile "com.google.guava:guava:$guavaVersion"
   compile "com.google.http-client:google-http-client:$httpClientVersion"
-  compile "com.google.protobuf:protobuf-java-util:$protobufUtilVersion"
+  compile "com.google.protobuf:protobuf-java-util"
 
   testCompile "org.mockito:mockito-core:$mockitoVersion"
   testCompile "junit:junit:$junitVersion"

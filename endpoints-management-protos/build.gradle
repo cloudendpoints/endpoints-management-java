@@ -12,8 +12,8 @@ apply plugin: 'com.google.protobuf'
 
 description = 'GRPC library for the servicecontrol-v1 service'
 // TODO: use a flag to determine whether to produce a release or a snapshot
-sourceCompatibility = 1.6
-targetCompatibility = 1.6
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
 
 repositories {
   mavenCentral()
@@ -21,9 +21,12 @@ repositories {
 }
 
 dependencies {
-  compile "com.google.protobuf:protobuf-java:3.0.0"
-  compile "io.grpc:grpc-protobuf:1.14.0"
-  compile "io.grpc:grpc-stub:1.14.0"
+  compile platform(libraries.protobufJavaBom),
+          libraries.protobufJava
+
+  compile platform(libraries.grpcBom),
+          libraries.grpcStub,
+          libraries.grpcProtobuf
 }
 
 protobuf {
@@ -31,11 +34,11 @@ protobuf {
     // The version of protoc must match protobuf-java. If you don't depend on
     // protobuf-java directly, you will be transitively depending on the
     // protobuf-java version that grpc depends on.
-    artifact = "com.google.protobuf:protoc:3.0.0-beta-4"
+    artifact = "com.google.protobuf:protoc:${protobufJavaVersion}"
   }
   plugins {
     grpc {
-      artifact = 'io.grpc:protoc-gen-grpc-java:0.15.0'
+      artifact = "io.grpc:protoc-gen-grpc-java:${grpcVersion}"
     }
   }
   generateProtoTasks {
