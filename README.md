@@ -16,13 +16,17 @@ It achieves this by
 The main documents for consuming Endpoints can be found at
 https://cloud.google.com/endpoints/docs/frameworks/java
 
+## Build package
+
+    git submodule init && git pull --recurse-submodules=yes
+    ./gradlew build
+
 ## Installing to local maven
 
 To install test versions to Maven for easier dependency management, simply run:
 
     gradle install
-
-
+    
 Java Versions
 -------------
 
