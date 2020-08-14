@@ -179,7 +179,9 @@ public class ReportRequestAggregator {
     if (cache == null) {
       return false;
     }
-    Preconditions.checkArgument(req.getServiceName().equals(serviceName), "service name mismatch");
+    Preconditions.checkArgument(req.getServiceName().equals(serviceName),
+        String.format("service name mismatch. Aggregator service '%s', request service '%s'",
+          serviceName, req.getServiceName()));
     if (hasHighImportanceOperation(req)) {
       return false;
     }
