@@ -121,7 +121,9 @@ public class QuotaRequestAggregator {
   }
 
   public AllocateQuotaResponse allocateQuota(AllocateQuotaRequest req) {
-    Preconditions.checkArgument(req.getServiceName().equals(serviceName), "service name mismatch");
+    Preconditions.checkArgument(req.getServiceName().equals(serviceName),
+        String.format("service name mismatch. Aggregator service '%s', request service '%s'",
+          serviceName, req.getServiceName()));
     Preconditions.checkArgument(
         req.hasAllocateOperation(), "expected quota operation was not present");
 

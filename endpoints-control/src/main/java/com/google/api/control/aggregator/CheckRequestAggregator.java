@@ -218,7 +218,9 @@ public class CheckRequestAggregator {
     if (cache == null) {
       return null;
     }
-    Preconditions.checkArgument(req.getServiceName().equals(serviceName), "service name mismatch");
+    Preconditions.checkArgument(req.getServiceName().equals(serviceName),
+        String.format("service name mismatch. Aggregator service '%s', request service '%s'",
+          serviceName, req.getServiceName()));
     Preconditions.checkNotNull(req.getOperation(), "expected check operation was not present");
     if (req.getOperation().getImportance() != Importance.LOW) {
       return null; // send the request now if importance is not LOW
