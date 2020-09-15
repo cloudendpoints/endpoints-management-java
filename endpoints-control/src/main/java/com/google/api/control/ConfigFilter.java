@@ -110,7 +110,7 @@ public class ConfigFilter implements Filter {
       httpRequest.setAttribute(SERVICE_NAME_ATTRIBUTE, theService.getName());
       httpRequest.setAttribute(REGISTRY_ATTRIBUTE, registry);
       httpRequest.setAttribute(REPORTING_ATTRIBUTE, rule);
-      log.atFine().log("Added service %s, and associated attributes to the request", theService);
+      log.atFine().log("Added service %s, and associated attributes to the request", theService.getName());
 
       // Determine if service control is required
       String uri = httpRequest.getRequestURI();
