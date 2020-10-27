@@ -354,7 +354,13 @@ public class Client {
         log.atSevere().withCause(e).log("direct send of a check request %s failed", req);
       }
     }
-    scheduler.enter(new Runnable() {
+    // copy scheduler into a local variable to avoid data races beween this method and stop()
+    Scheduler currentScheduler = scheduler;
+    if (resetIfStopped()) {
+      log.atFine().log("did not schedule succeeding check flush: client is stopped");
+      return;
+    }
+    currentScheduler.enter(new Runnable() {
       @Override
       public void run() {
         flushAndScheduleChecks(); // Do this again after the interval
@@ -394,7 +400,13 @@ public class Client {
       stop();
       return;
     }
-    scheduler.enter(new Runnable() {
+    // copy scheduler into a local variable to avoid data races beween this method and stop()
+    Scheduler currentScheduler = scheduler;
+    if (resetIfStopped()) {
+      log.atFine().log("did not schedule succeeding report flush: client is stopped");
+      return;
+    }
+    currentScheduler.enter(new Runnable() {
       @Override
       public void run() {
         flushAndScheduleReports(); // Do this again after the interval
@@ -435,7 +447,13 @@ public class Client {
         log.atSevere().withCause(e).log("direct send of a quota request %s failed", req);
       }
     }
-    scheduler.enter(new Runnable() {
+    // copy scheduler into a local variable to avoid data races beween this method and stop()
+    Scheduler currentScheduler = scheduler;
+    if (resetIfStopped()) {
+      log.atFine().log("did not schedule succeeding quota flush: client is stopped");
+      return;
+    }
+    currentScheduler.enter(new Runnable() {
       @Override
       public void run() {
         flushAndScheduleQuota(); // Do this again after the interval
