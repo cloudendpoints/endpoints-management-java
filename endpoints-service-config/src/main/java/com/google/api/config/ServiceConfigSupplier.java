@@ -191,7 +191,7 @@ public final class ServiceConfigSupplier implements Supplier<Service> {
   private static Service parseHttpResponse(HttpResponse httpResponse) {
     try {
       Builder builder = Service.newBuilder();
-      JsonFormat.parser().merge(httpResponse.parseAsString(), builder);
+      JsonFormat.parser().ignoringUnknownFields().merge(httpResponse.parseAsString(), builder);
       return builder.build();
     } catch (IOException exception) {
       throw new ServiceConfigException(
