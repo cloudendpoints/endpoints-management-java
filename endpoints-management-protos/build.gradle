@@ -27,6 +27,8 @@ dependencies {
   compile platform(libraries.grpcBom),
           libraries.grpcStub,
           libraries.grpcProtobuf
+
+  implementation libraries.javaAnnotations
 }
 
 protobuf {
