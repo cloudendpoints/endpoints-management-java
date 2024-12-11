@@ -33,25 +33,20 @@ import com.google.api.client.testing.http.MockLowLevelHttpRequest;
 import com.google.api.client.testing.http.MockLowLevelHttpResponse;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.util.JsonFormat;
-
-import org.junit.Before;
-import org.junit.Test;
-
 import java.io.IOException;
 import java.util.LinkedList;
+import org.junit.Before;
+import org.junit.Test;
 
 /**
  * Tests for {@link ServiceConfigSupplier}.
  */
 public final class ServiceConfigSupplierTest {
-
   private static final String SERVICE_NAME = "test-service-name";
   private static final String SERVICE_VERSION = "test-service-version";
 
-  private static final Service SERVICE = Service.newBuilder()
-      .setName(SERVICE_NAME)
-      .setId(SERVICE_VERSION)
-      .build();
+  private static final Service SERVICE =
+      Service.newBuilder().setName(SERVICE_NAME).setId(SERVICE_VERSION).build();
 
   private final Environment mockEnvironment = mock(Environment.class);
   private final GoogleCredential mockCredential = mock(GoogleCredential.class);
@@ -72,8 +67,7 @@ public final class ServiceConfigSupplierTest {
       fail();
     } catch (IllegalArgumentException exception) {
       assertEquals(
-          "Environment variable 'ENDPOINTS_SERVICE_NAME' is not set",
-          exception.getMessage());
+          "Environment variable 'ENDPOINTS_SERVICE_NAME' is not set", exception.getMessage());
     }
   }
 
@@ -94,10 +88,21 @@ public final class ServiceConfigSupplierTest {
   public void testFetchSuccessfully() throws InvalidProtocolBufferException {
     when(mockEnvironment.getVariable("ENDPOINTS_SERVICE_NAME")).thenReturn(SERVICE_NAME);
     when(mockEnvironment.getVariable("ENDPOINTS_SERVICE_VERSION")).thenReturn(SERVICE_VERSION);
-
     String content = JsonFormat.printer().print(SERVICE);
     testHttpTransport.addResponse(200, content);
 
+    assertEquals(SERVICE, fetcher.get());
+  }
+
+  @Test
+  public void testFetchWithUnkownFields() throws InvalidProtocolBufferException {
+    when(mockEnvironment.getVariable("ENDPOINTS_SERVICE_NAME")).thenReturn(SERVICE_NAME);
+    when(mockEnvironment.getVariable("ENDPOINTS_SERVICE_VERSION")).thenReturn(SERVICE_VERSION);
+
+    String unknownField = ",\"unknown_key\":\"unknown_value\"\n";
+    String contentBase = JsonFormat.printer().print(SERVICE);
+    String content = contentBase.substring(0,contentBase.length()-1) + unknownField + contentBase.charAt(contentBase.length()-1);
+    testHttpTransport.addResponse(200, content);
     assertEquals(SERVICE, fetcher.get());
   }
 
@@ -124,10 +129,7 @@ public final class ServiceConfigSupplierTest {
     when(mockEnvironment.getVariable("ENDPOINTS_SERVICE_NAME")).thenReturn(SERVICE_NAME);
     when(mockEnvironment.getVariable("ENDPOINTS_SERVICE_VERSION")).thenReturn(SERVICE_VERSION);
 
-    Service service = Service.newBuilder()
-        .setName(SERVICE_NAME)
-        .setId("random-version")
-        .build();
+    Service service = Service.newBuilder().setName(SERVICE_NAME).setId("random-version").build();
     String content = JsonFormat.printer().print(service);
     testHttpTransport.addResponse(200, content);
 
