@@ -101,7 +101,7 @@ public final class ServiceConfigSupplierTest {
 
     String unknownField = ",\"unknown_key\":\"unknown_value\"\n";
     String contentBase = JsonFormat.printer().print(SERVICE);
-    String content = contentBase.substring(0,contentBase.length()-1) + unknownField + contentBase.charAt(contentBase.length()-1);
+    String content = contentBase.substring(0,contentBase.length() - 1) + unknownField + contentBase.charAt(contentBase.length() - 1);
     testHttpTransport.addResponse(200, content);
     assertEquals(SERVICE, fetcher.get());
   }
