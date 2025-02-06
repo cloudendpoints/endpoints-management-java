@@ -23,9 +23,7 @@ archivesBaseName = 'endpoints-management-config'
 
 dependencies {
   compile(project(":endpoints-management-protos"))
-  compile platform(libraries.protobufJavaBom),
-          libraries.protobufJava,
-          libraries.protobufJavaUtil
+  compile libraries.protobufJavaUtil
 
   compile "com.google.apis:google-api-services-servicemanagement:$servicemanagementVersion"
   compileOnly "com.google.appengine:appengine-api-1.0-sdk:$appengineSdkVersion"
